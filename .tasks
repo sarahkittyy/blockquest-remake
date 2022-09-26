@@ -1,0 +1,13 @@
+[build]
+
+command=cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && make
+cwd=build
+
+[test]
+
+command=make test
+cwd=build
+
+[run]
+
+command=./build/bq-r
