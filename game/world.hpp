@@ -38,13 +38,12 @@ private:
 
 	// physics constants
 	const struct physics {
-		float xv_max	 = 12.54f;
-		float yv_max	 = 20.00f;
-		float x_accel	 = 60.0f;
-		float x_decel	 = 60.0f;
-		float grav		 = 60.f;
-		float jump_v	 = 17.f;
-		float shorthop_v = 8.5f;
+		float xv_max  = 12.54f;
+		float yv_max  = 20.00f;
+		float x_accel = 60.0f;
+		float x_decel = 60.0f;
+		float grav	  = 60.f;
+		float jump_v  = 17.f;
 	} phys;
 
 	// units are in tiles
@@ -52,6 +51,8 @@ private:
 	float m_yp = 0;	  // player y pos
 	float m_xv = 0;	  // player x vel
 	float m_yv = 0;	  // player y vel
+
+	sf::Time m_time_airborne = sf::seconds(0);	 // counts the number of frames we're airborne for, for coyote time
 
 	enum dir {
 		up	  = 0,
@@ -102,8 +103,9 @@ private:
 	bool m_test_touching_any(dir d, std::function<bool(tile)> pred) const;
 	bool m_test_touching_none(dir d, std::function<bool(tile)> pred) const;
 
-	bool m_player_grounded() const;		// is the player on solid ground
-	bool m_tile_above_player() const;	// is there a tile directly above the player
+	bool m_player_grounded() const;					// is the player on solid ground
+	bool m_player_grounded_ago(sf::Time t) const;	// has a player been grounded in the last t seconds?
+	bool m_tile_above_player() const;				// is there a tile directly above the player
 
 	sf::Vector2f m_player_size() const;	  // width and height of the full player aabb
 };

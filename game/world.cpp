@@ -43,6 +43,7 @@ void world::m_restart_world() {
 	m_sync_player_position();
 	m_player.setScale(1, 1);
 	m_mt_mgr.restart();
+	m_time_airborne = sf::seconds(0);
 }
 
 /*
@@ -79,6 +80,13 @@ void world::update(sf::Time dt) {
 	m_xp += mp_offset.x;
 	m_yp += mp_offset.y;
 
+	bool grounded = m_player_grounded();
+	if (grounded) {
+		m_time_airborne = sf::seconds(0);
+	} else {
+		m_time_airborne += dt;
+	}
+
 	// controls
 	if (keyed(Key::Right)) {
 		// wallkicking
@@ -106,8 +114,10 @@ void world::update(sf::Time dt) {
 		}
 	}
 
-	if (keyed(Key::Up) && m_player_grounded() && !m_tile_above_player()) {
+	if (keyed(Key::Up) && m_player_grounded_ago(sf::milliseconds(75)) && !m_tile_above_player()) {
 		m_yv = -phys.jump_v * gravity_sign;
+		// so that we can't jump twice :)
+		m_time_airborne = sf::seconds(999);
 		m_r.play_sound("jump");
 	}
 	/////////////////////
@@ -426,6 +436,10 @@ void world::m_sync_player_position() {
 
 bool world::m_player_grounded() const {
 	return m_test_touching_any(m_flip_gravity ? dir::up : dir::down, [](tile t) { return t.solid(); });
+}
+
+bool world::m_player_grounded_ago(sf::Time t) const {
+	return m_time_airborne < t;
 }
 
 bool world::m_tile_above_player() const {
