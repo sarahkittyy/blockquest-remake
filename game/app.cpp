@@ -27,14 +27,14 @@ int app::run() {
 		l.map().set(i, 0, tile::block);
 	}
 	l.map().set(0, 1, tile(tile::block, { .moving = 3 }));
-	l.map().set(2, 14, tile::begin);
+	l.map().set(2, 14, tile::end);
 	l.map().set(1, 13, tile::block);
 
 	// l.map().set(1, 14, tile(tile::block, { .moving = 2 }));
-	l.map().set(0, 14, tile(tile::block, { .moving = 2 }));
-	l.map().set(15, 13, tile(tile::gravity, { .moving = 4 }));
+	l.map().set(2, 13, tile(tile::gravity, { .moving = 2 }));
+	l.map().set(15, 14, tile(tile::block, { .moving = 4 }));
 
-	l.map().set(14, 14, tile::end);
+	l.map().set(15, 13, tile::begin);
 
 	l.map().set_editor_view(false);
 

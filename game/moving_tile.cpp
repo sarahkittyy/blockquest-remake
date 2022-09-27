@@ -2,6 +2,8 @@
 
 #include "debug.hpp"
 
+#include <algorithm>
+
 ////////////////////// MANAGER METHODS //////////////////////////////
 
 moving_tile_manager::moving_tile_manager(resource& r, tilemap& t)
@@ -63,9 +65,13 @@ void moving_tile_manager::update(sf::Time dt) {
 		sf::FloatRect aabb = t.get_aabb(new_xp, new_yp);
 		debug::get().box(util::scale(aabb, float(m_tmap.tile_size())), sf::Color::Red);
 		auto contacts = m_tmap.intersects(aabb);
-		if (m_handle_contact(contacts)) {
-			auto [pos, tile] = *contacts.begin();
-			debug::get() << "contacted " << pos << "\n";
+		decltype(contacts) solid_contacts;
+		std::copy_if(contacts.begin(), contacts.end(), std::back_inserter(solid_contacts), [](std::pair<sf::Vector2f, tile> t) {
+			return t.second.solid();
+		});
+		if (m_handle_contact(solid_contacts)) {
+			auto [pos, tile] = *solid_contacts.begin();
+			debug::log() << "contacted " << pos << "\n";
 			if (std::abs(new_xv) > 0.01f) {
 				new_xp = new_xp > pos.x
 							 ? pos.x + 1.f	  // hitting right side of block
@@ -108,10 +114,7 @@ void moving_tile_manager::update(sf::Time dt) {
 }
 
 bool moving_tile_manager::m_handle_contact(std::vector<std::pair<sf::Vector2f, tile>> contacts) {
-	if (contacts.size() == 0) return false;
-	return std::any_of(contacts.begin(), contacts.end(), [](const std::pair<sf::Vector2f, tile>& pair) -> bool {
-		return pair.second.solid();
-	});
+	return contacts.size() != 0;
 }
 
 void moving_tile_manager::restart() {

@@ -77,6 +77,8 @@ private:
 	sf::FloatRect m_get_player_bottom_aabb(float x, float y) const;
 	sf::FloatRect m_get_player_left_aabb(float x, float y) const;
 	sf::FloatRect m_get_player_right_aabb(float x, float y) const;
+	sf::FloatRect m_get_player_x_aabb(float x, float y) const;
+	sf::FloatRect m_get_player_y_aabb(float x, float y) const;
 
 	// aabbs that extend a little further out to test if we're up against, but not directly touching the tile
 	sf::FloatRect m_get_player_ghost_aabb(float x, float y, dir d) const;
@@ -84,12 +86,14 @@ private:
 	sf::FloatRect m_get_player_bottom_ghost_aabb(float x, float y) const;
 	sf::FloatRect m_get_player_left_ghost_aabb(float x, float y) const;
 	sf::FloatRect m_get_player_right_ghost_aabb(float x, float y) const;
+	sf::FloatRect m_get_player_x_ghost_aabb(float x, float y) const;
+	sf::FloatRect m_get_player_y_ghost_aabb(float x, float y) const;
 
-	std::vector<tile> m_touching[4];						// tiles being touched on all four sides of the player
-	void m_update_touching();								// update the list of tiles being touched
-	std::array<moving_tile*, 4> m_moving_platform_handle;	// moving platform, if we're on one
-	void m_update_mp();										// update the moving platforms we're touching
-	sf::Vector2f m_mp_player_offset(sf::Time dt) const;		// update the player based on the touched moving platforms
+	std::vector<tile> m_touching[4];									  // tiles being touched on all four sides of the player
+	void m_update_touching();											  // update the list of tiles being touched
+	std::array<std::optional<moving_tile>, 4> m_moving_platform_handle;	  // moving platform, if we're on one
+	void m_update_mp();													  // update the moving platforms we're touching
+	sf::Vector2f m_mp_player_offset(sf::Time dt) const;					  // update the player based on the touched moving platforms
 
 	bool m_player_is_squeezed();   // check if the player is being squeezed
 

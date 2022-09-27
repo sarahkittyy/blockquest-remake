@@ -12,7 +12,7 @@ world::world(resource& r, level l)
 	  m_player(r.tex("assets/player.png")),
 	  m_start_x(0),
 	  m_start_y(0),
-	  m_moving_platform_handle{ nullptr, nullptr, nullptr, nullptr } {
+	  m_moving_platform_handle() {
 	m_player.set_animation("walk");
 	m_player.setOrigin(m_player.size().x / 2.f, m_player.size().y / 2.f);
 	m_init_world();
@@ -34,8 +34,8 @@ void world::m_init_world() {
 
 void world::m_restart_world() {
 	// move the player to the start
-	m_xp		   = m_start_x + 0.5f;
-	m_yp		   = m_start_y + 0.5f;
+	m_xp		   = m_start_x + 0.499f;
+	m_yp		   = m_start_y + 0.4f;
 	m_xv		   = 0;
 	m_yv		   = 0;
 	m_flip_gravity = false;
@@ -70,9 +70,6 @@ void world::update(sf::Time dt) {
 
 	// -1 if gravity is flipped. used for y velocity calculations
 	float gravity_sign = m_flip_gravity ? -1 : 1;
-
-	// check if we're on a moving platform
-	m_update_mp();
 
 	// update moving platforms
 	m_mt_mgr.update(dt);
@@ -132,21 +129,15 @@ void world::update(sf::Time dt) {
 	float intended_x = m_xp + m_xv * dt.asSeconds();
 	float intended_y = m_yp + m_yv * dt.asSeconds();
 
-	bool moving_right = m_xv + mp_offset.x > 0;
-	bool moving_down  = m_yv + mp_offset.y > 0;
-
-
-	debug::get() << "moving right = " << moving_right << "\n";
-
 	bool x_collided = false;
 	bool y_collided = false;
 
 	float cx = initial_x, cy = initial_y;
 
-	debug::get().box(util::scale<float>(m_get_player_top_aabb(cx, cy), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_bottom_aabb(cx, cy), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_left_aabb(cx, cy), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_right_aabb(cx, cy), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_top_ghost_aabb(cx, cy), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_bottom_ghost_aabb(cx, cy), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_left_ghost_aabb(cx, cy), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_right_ghost_aabb(cx, cy), m_player.size().x));
 
 	// subdivide the movement into x and y steps
 	for (float t = 0; t < 1.0f && !m_dead; t += 0.1f) {
@@ -155,7 +146,7 @@ void world::update(sf::Time dt) {
 			cx = util::lerp(initial_x, intended_x, t);
 
 			// check x collision
-			sf::FloatRect aabb	  = moving_right ? m_get_player_right_aabb(cx, cy) : m_get_player_left_aabb(cx, cy);
+			sf::FloatRect aabb	  = m_get_player_x_aabb(cx, cy);
 			auto collided_static  = m_tmap.intersects(aabb);
 			auto collided_dynamic = m_mt_mgr.intersects(aabb);
 			auto collided		  = util::merge_contacts(collided_static, collided_dynamic);
@@ -169,7 +160,7 @@ void world::update(sf::Time dt) {
 									   : pos.x - 0.5f + ((1 - m_player_size().x) / 2.f);   // hitting left side of block
 				x_collided		 = true;
 				// if we're walking into a moving platform moving away from us, then we want to follow it, not bounce off it
-				moving_tile* walking_into = m_moving_platform_handle[int(cx > pos.x ? dir::left : dir::right)];
+				std::optional<moving_tile> walking_into = m_moving_platform_handle[int(cx > pos.x ? dir::left : dir::right)];
 				if (walking_into && util::same_sign(walking_into->vel().x, m_xv) && std::abs(m_xv) > 0.01f) {
 					m_xv = walking_into->vel().x;
 				} else {
@@ -184,7 +175,7 @@ void world::update(sf::Time dt) {
 			cy = util::lerp(initial_y, intended_y, t);
 
 			// check y collision
-			sf::FloatRect aabb	  = moving_down ? m_get_player_bottom_aabb(cx, cy) : m_get_player_top_aabb(cx, cy);
+			sf::FloatRect aabb	  = m_get_player_y_aabb(cx, cy);
 			auto collided_static  = m_tmap.intersects(aabb);
 			auto collided_dynamic = m_mt_mgr.intersects(aabb);
 			auto collided		  = util::merge_contacts(collided_static, collided_dynamic);
@@ -208,6 +199,33 @@ void world::update(sf::Time dt) {
 	m_xp = intended_x;
 	m_yp = intended_y;
 
+	/*static bool arr[4] = { false, false, false, false };
+	for (int i = 0; i < 4; ++i) {
+		if (!!m_moving_platform_handle[i] != arr[i]) {
+			debug::log() << "mp u="
+						 << !!m_moving_platform_handle[0]
+						 << " d="
+						 << !!m_moving_platform_handle[2]
+						 << " r="
+						 << !!m_moving_platform_handle[1]
+						 << " l="
+						 << !!m_moving_platform_handle[3]
+						 << "\n";
+			debug::log() << "touching Y-: " << m_touching[int(dir::up)] << "\n";
+			debug::log() << "touching Y+: " << m_touching[int(dir::down)] << "\n";
+			debug::log() << "touching X-: " << m_touching[int(dir::left)] << "\n";
+			debug::log() << "touching X+: " << m_touching[int(dir::right)] << "\n";
+			debug::log() << "-----------------------------"
+						 << "\n";
+			break;
+		}
+	}
+	for (int i = 0; i < 4; ++i) {
+		arr[i] = !!m_moving_platform_handle[i];
+	}*/
+
+	// check if we're on a moving platform
+	m_update_mp();
 	// update "touching" list
 	m_update_touching();
 
@@ -297,19 +315,11 @@ void world::m_update_touching() {
 
 void world::m_update_mp() {
 	for (int i = 0; i < 4; ++i) {
-		m_moving_platform_handle[i] = nullptr;
-		sf::FloatRect aabb;
-		// up and down are different, because they are extended specifically to detect ceilings and floors
-		// whatever is considered "up" should be shrunk
-		// down is fine
-		if (i == m_flip_gravity ? dir::down : dir::up) {
-			aabb = m_get_player_ghost_aabb(m_xp, m_yp, dir(i));
-		} else {
-			aabb = m_get_player_ghost_aabb(m_xp, m_yp, dir(i));
-		}
-		auto intersects = m_mt_mgr.intersects_raw(aabb);
+		m_moving_platform_handle[i].reset();
+		sf::FloatRect aabb = m_get_player_ghost_aabb(m_xp, m_yp, dir(i));
+		auto intersects	   = m_mt_mgr.intersects_raw(aabb);
 		if (intersects.size() != 0) {
-			m_moving_platform_handle[i] = &(intersects.begin()->second);
+			m_moving_platform_handle[i].emplace(intersects.begin()->second);
 		}
 	}
 }
@@ -317,9 +327,16 @@ void world::m_update_mp() {
 sf::Vector2f world::m_mp_player_offset(sf::Time dt) const {
 	sf::Vector2f offset(0, 0);
 
+	// check the one we're standing on first
+	std::optional<moving_tile> standing_on = m_moving_platform_handle[int(m_flip_gravity ? dir::up : dir::down)];
+	if (standing_on) {
+		offset.x += standing_on->vel().x * dt.asSeconds();
+		offset.y += standing_on->vel().y * dt.asSeconds();
+	}
+
 	// check left / right moving platforms
-	moving_tile* left  = m_moving_platform_handle[int(dir::left)];
-	moving_tile* right = m_moving_platform_handle[int(dir::right)];
+	std::optional<moving_tile> left	 = m_moving_platform_handle[int(dir::left)];
+	std::optional<moving_tile> right = m_moving_platform_handle[int(dir::right)];
 	// if they're moving towards us, push the character
 	if (left && left->vel().x > 0) {
 		offset.x += left->vel().x * dt.asSeconds();
@@ -328,12 +345,6 @@ sf::Vector2f world::m_mp_player_offset(sf::Time dt) const {
 		offset.x += right->vel().x * dt.asSeconds();
 	}
 
-	// check the one we're standing on first
-	moving_tile* standing_on = m_moving_platform_handle[int(m_flip_gravity ? dir::up : dir::down)];
-	if (standing_on) {
-		offset.x += standing_on->vel().x * dt.asSeconds();
-		offset.y += standing_on->vel().y * dt.asSeconds();
-	}
 
 	return offset;
 }
@@ -485,6 +496,28 @@ sf::FloatRect world::m_get_player_right_aabb(float x, float y) const {
 	return ret;
 }
 
+sf::FloatRect world::m_get_player_x_aabb(float x, float y) const {
+	sf::FloatRect aabb = m_get_player_aabb(x, y);
+	sf::FloatRect ret;
+	ret.left   = aabb.left;
+	ret.top	   = aabb.top + 0.1f;
+	ret.width  = aabb.width;
+	ret.height = aabb.height - 0.2f;
+
+	return ret;
+}
+
+sf::FloatRect world::m_get_player_y_aabb(float x, float y) const {
+	sf::FloatRect aabb = m_get_player_aabb(x, y);
+	sf::FloatRect ret;
+	ret.left   = aabb.left + 0.1f;
+	ret.top	   = aabb.top;
+	ret.width  = aabb.width - 0.2f;
+	ret.height = aabb.height;
+
+	return ret;
+}
+
 sf::FloatRect world::m_get_player_ghost_aabb(float x, float y, dir d) const {
 	switch (d) {
 	case up: return m_get_player_top_ghost_aabb(x, y);
@@ -515,6 +548,20 @@ sf::FloatRect world::m_get_player_left_ghost_aabb(float x, float y) const {
 sf::FloatRect world::m_get_player_right_ghost_aabb(float x, float y) const {
 	sf::FloatRect aabb = m_get_player_right_aabb(x, y);
 	aabb.left += 0.05f;
+	return aabb;
+}
+
+sf::FloatRect world::m_get_player_x_ghost_aabb(float x, float y) const {
+	sf::FloatRect aabb = m_get_player_x_aabb(x, y);
+	aabb.left -= 0.05f;
+	aabb.width += 0.1f;
+	return aabb;
+}
+
+sf::FloatRect world::m_get_player_y_ghost_aabb(float x, float y) const {
+	sf::FloatRect aabb = m_get_player_y_aabb(x, y);
+	aabb.top -= 0.15f;
+	aabb.height += 0.3f;
 	return aabb;
 }
 
