@@ -38,12 +38,13 @@ private:
 
 	// physics constants
 	const struct physics {
-		float xv_max  = 12.54f;
-		float yv_max  = 20.00f;
-		float x_accel = 60.0f;
-		float x_decel = 60.0f;
-		float grav	  = 60.f;
-		float jump_v  = 17.f;
+		float xv_max	 = 12.54f;
+		float yv_max	 = 20.00f;
+		float x_accel	 = 60.0f;
+		float x_decel	 = 60.0f;
+		float grav		 = 60.f;
+		float jump_v	 = 17.f;
+		float shorthop_v = 8.5f;
 	} phys;
 
 	// units are in tiles
@@ -51,7 +52,6 @@ private:
 	float m_yp = 0;	  // player y pos
 	float m_xv = 0;	  // player x vel
 	float m_yv = 0;	  // player y vel
-
 
 	enum dir {
 		up	  = 0,

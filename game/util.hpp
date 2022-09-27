@@ -23,6 +23,9 @@ float lerp(float min, float max, float t);
 // returns true if the two numbers are the same sign
 bool same_sign(float a, float b);
 
+// returns true if neither number is zero
+bool neither_zero(float a, float b);
+
 /**
  * @brief merge two contact lists together
  *

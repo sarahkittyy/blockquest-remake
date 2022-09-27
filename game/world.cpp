@@ -370,8 +370,10 @@ bool world::m_player_is_squeezed() {
 	auto solid = [](tile t) { return t.solid(); };
 
 	// these strange if-statements are purposeful to allow short-circuiting of this expensive operation
-	bool touching_left_static	= !m_moving_platform_handle[dir::left] && m_test_touching_any(dir::left, solid);
-	bool touching_right_static	= !m_moving_platform_handle[dir::right] && m_test_touching_any(dir::right, solid);
+	bool touching_left_static = (!m_moving_platform_handle[dir::left] || m_moving_platform_handle[dir::left]->vel().x == 0) &&	 //
+								m_test_touching_any(dir::left, solid);
+	bool touching_right_static = (!m_moving_platform_handle[dir::right] || m_moving_platform_handle[dir::right]->vel().x == 0) &&	//
+								 m_test_touching_any(dir::right, solid);
 	bool touching_left_dynamic	= m_moving_platform_handle[dir::left] && m_moving_platform_handle[dir::left]->vel().x > 0;
 	bool touching_right_dynamic = m_moving_platform_handle[dir::right] && m_moving_platform_handle[dir::right]->vel().x < 0;
 	if ((touching_left_static && touching_right_dynamic) ||	  //
@@ -380,8 +382,10 @@ bool world::m_player_is_squeezed() {
 		return true;
 	}
 	// y-axis is special in that we're touching the ceiling when standing below one, so we test for moving platforms
-	bool touching_up_static	   = !m_moving_platform_handle[dir::up] && m_test_touching_any(dir::up, solid);
-	bool touching_down_static  = !m_moving_platform_handle[dir::down] && m_test_touching_any(dir::down, solid);
+	bool touching_up_static = (!m_moving_platform_handle[dir::up] || m_moving_platform_handle[dir::up]->vel().y == 0) &&   //
+							  m_test_touching_any(dir::up, solid);
+	bool touching_down_static = (!m_moving_platform_handle[dir::down] || m_moving_platform_handle[dir::down]->vel().y == 0) &&	 //
+								m_test_touching_any(dir::down, solid);
 	bool touching_up_dynamic   = m_moving_platform_handle[dir::up] && m_moving_platform_handle[dir::up]->vel().y > 0;
 	bool touching_down_dynamic = m_moving_platform_handle[dir::down] && m_moving_platform_handle[dir::down]->vel().y < 0;
 	return (touching_up_static && touching_down_dynamic)	  //

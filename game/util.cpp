@@ -26,4 +26,8 @@ bool same_sign(float a, float b) {
 	return a * b >= 0.0f;
 }
 
+bool neither_zero(float a, float b) {
+	return a != 0 && b != 0;
+}
+
 }

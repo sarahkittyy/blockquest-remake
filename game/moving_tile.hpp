@@ -53,8 +53,10 @@ public:
 	// retrieve the internal tile instance
 	operator tile() const;
 
-	sf::FloatRect get_aabb() const;					  // retrieves the bounding box of the tile
-	sf::FloatRect get_aabb(float x, float y) const;	  // retrieves the bounding box of the tile
+	sf::FloatRect get_aabb() const;							// retrieves the bounding box of the tile
+	sf::FloatRect get_aabb(float x, float y) const;			// retrieves the bounding box of the tile
+	sf::FloatRect get_ghost_aabb() const;					// retrieves the bounding box of the tile for inter-tile collisions
+	sf::FloatRect get_ghost_aabb(float x, float y) const;	// retrieves the bounding box of the tile for inter-tile collisions
 
 	sf::Vector2f size() const;	 // retrieves the width and height of the aabb
 	sf::Vector2f vel() const;	 // retrieve the current velocity

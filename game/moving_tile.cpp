@@ -62,7 +62,7 @@ void moving_tile_manager::update(sf::Time dt) {
 		float new_yv = t.m_yv;
 
 		// check for static collision
-		sf::FloatRect aabb = t.get_aabb(new_xp, new_yp);
+		sf::FloatRect aabb = t.get_ghost_aabb(new_xp, new_yp);
 		debug::get().box(util::scale(aabb, float(m_tmap.tile_size())), sf::Color::Red);
 		auto contacts = m_tmap.intersects(aabb);
 		decltype(contacts) solid_contacts;
@@ -87,8 +87,12 @@ void moving_tile_manager::update(sf::Time dt) {
 			// check for collision between other moving tiles
 			for (int j = 0; j < m_tiles.size(); ++j) {
 				if (i == j) continue;
-				moving_tile& t2			= m_tiles[j];
-				sf::FloatRect tile_aabb = t2.get_aabb();
+				moving_tile& t2 = m_tiles[j];
+				if (
+					(util::same_sign(t2.vel().x, t.vel().x) && util::neither_zero(t.vel().x, t2.vel().x)) ||   //
+					(util::same_sign(t2.vel().y, t.vel().y) && util::neither_zero(t.vel().y, t2.vel().y))	   //
+				) { continue; }
+				sf::FloatRect tile_aabb = t2.get_ghost_aabb();
 				if (aabb.intersects(tile_aabb)) {
 					if (std::abs(new_xv) > 0.01f) {
 						new_xp = new_xp > tile_aabb.left
@@ -154,6 +158,10 @@ sf::FloatRect moving_tile::get_aabb() const {
 	return get_aabb(m_xp, m_yp);
 }
 
+sf::FloatRect moving_tile::get_ghost_aabb() const {
+	return get_ghost_aabb(m_xp, m_yp);
+}
+
 moving_tile::operator tile() const {
 	return m_t;
 }
@@ -169,6 +177,22 @@ sf::Vector2f moving_tile::pos() const {
 sf::FloatRect moving_tile::get_aabb(float x, float y) const {
 	sf::Vector2f sz = size();
 	return sf::FloatRect(x + (1 - sz.x) / 2.f, y + (1 - sz.y) / 2.f, sz.x, sz.y);
+}
+
+sf::FloatRect moving_tile::get_ghost_aabb(float x, float y) const {
+	// ghost AABB will be normal sized on the axis parallel to motion, and
+	// shrunk on the perpendicular axis
+	// as perpendicular moving platforms should never interact?
+	sf::Vector2f sz = size();
+	sf::FloatRect aabb(x + (1 - sz.x) / 2.f, y + (1 - sz.y) / 2.f, sz.x, sz.y);
+	if (m_xv == 0) {
+		aabb.left += 0.05f;
+		aabb.width -= 0.1f;
+	} else if (m_yv == 0) {
+		aabb.top += 0.05f;
+		aabb.height -= 0.1f;
+	}
+	return aabb;
 }
 
 void moving_tile::m_sync_position() {

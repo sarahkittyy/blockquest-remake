@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 #include "debug.hpp"
 
@@ -33,18 +34,23 @@ int app::run() {
 	// l.map().set(1, 14, tile(tile::block, { .moving = 2 }));
 	l.map().set(2, 13, tile(tile::gravity, { .moving = 2 }));
 	l.map().set(15, 14, tile(tile::block, { .moving = 4 }));
+	l.map().set(14, 14, tile(tile::block, { .moving = 4 }));
 
 	l.map().set(15, 13, tile::begin);
 
 	l.map().set_editor_view(false);
 
-	world w(m_r, l);
-	w.setScale(2.0f, 2.0f);
-	debug::get().setScale(2.0f, 2.0f);
-
 	std::ofstream file("misc/moving_test.json");
 	file << l.serialize();
 	file.close();
+
+	std::ifstream ifile("misc/test.json");
+	nlohmann::json j = nlohmann::json::parse(ifile);
+	l.deserialize(j);
+
+	world w(m_r, l);
+	w.setScale(2.0f, 2.0f);
+	debug::get().setScale(2.0f, 2.0f);
 
 	// app loop
 	while (m_window.isOpen()) {
