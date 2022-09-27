@@ -38,12 +38,15 @@ private:
 
 	// physics constants
 	const struct physics {
-		float xv_max  = 12.54f;
-		float yv_max  = 20.00f;
-		float x_accel = 60.0f;
-		float x_decel = 60.0f;
-		float grav	  = 60.f;
-		float jump_v  = 17.f;
+		float xv_max		  = 12.54f;
+		float yv_max		  = 20.00f;
+		float x_accel		  = 60.0f;
+		float x_decel		  = 60.0f;
+		float jump_v		  = 17.0f;
+		float grav			  = 60.f;
+		float shorthop_factor = 0.5f;
+		float air_control	  = 0.7f;
+		int coyote_millis	  = 75;
 	} phys;
 
 	// units are in tiles
@@ -53,6 +56,7 @@ private:
 	float m_yv = 0;	  // player y vel
 
 	sf::Time m_time_airborne = sf::seconds(0);	 // counts the number of frames we're airborne for, for coyote time
+	bool m_jumping			 = false;
 
 	enum dir {
 		up	  = 0,

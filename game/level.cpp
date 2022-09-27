@@ -2,7 +2,7 @@
 
 level::level(resource& r)
 	: m_r(r),
-	  m_tmap(m_r.tex("assets/tiles.png"), 16, 16, 16) {
+	  m_tmap(m_r.tex("assets/tiles.png"), 32, 32, 16) {
 }
 
 void level::draw(sf::RenderTarget& t, sf::RenderStates s) const {

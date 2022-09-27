@@ -35,7 +35,7 @@ void world::m_init_world() {
 void world::m_restart_world() {
 	// move the player to the start
 	m_xp		   = m_start_x + 0.499f;
-	m_yp		   = m_start_y + 0.4f;
+	m_yp		   = m_start_y + 0.499f;
 	m_xv		   = 0;
 	m_yv		   = 0;
 	m_flip_gravity = false;
@@ -44,6 +44,7 @@ void world::m_restart_world() {
 	m_player.setScale(1, 1);
 	m_mt_mgr.restart();
 	m_time_airborne = sf::seconds(0);
+	m_jumping		= false;
 }
 
 /*
@@ -88,21 +89,22 @@ void world::update(sf::Time dt) {
 	}
 
 	// controls
+	float air_control_factor = grounded ? 1 : phys.air_control;
 	if (keyed(Key::Right)) {
 		// wallkicking
 		// normal acceleration
 		if (m_xv < 0) {
-			m_xv += phys.x_decel * dt.asSeconds();
+			m_xv += phys.x_decel * dt.asSeconds() * air_control_factor;
 		}
-		m_xv += phys.x_accel * dt.asSeconds();
+		m_xv += phys.x_accel * dt.asSeconds() * air_control_factor;
 		m_player.setScale(-1, gravity_sign);
 	} else if (keyed(Key::Left)) {
 		// wallkicking
 		// normal acceleration
 		if (m_xv > 0) {
-			m_xv -= phys.x_decel * dt.asSeconds();
+			m_xv -= phys.x_decel * dt.asSeconds() * air_control_factor;
 		}
-		m_xv -= phys.x_accel * dt.asSeconds();
+		m_xv -= phys.x_accel * dt.asSeconds() * air_control_factor;
 		m_player.setScale(1, gravity_sign);
 	} else {
 		if (m_xv > (phys.x_decel / 2.f) * dt.asSeconds()) {
@@ -114,17 +116,25 @@ void world::update(sf::Time dt) {
 		}
 	}
 
-	if (keyed(Key::Up) && m_player_grounded_ago(sf::milliseconds(75)) && !m_tile_above_player()) {
-		m_yv = -phys.jump_v * gravity_sign;
-		// so that we can't jump twice :)
-		m_time_airborne = sf::seconds(999);
-		m_r.play_sound("jump");
+	if (keyed(Key::Up)) {
+		if (m_player_grounded_ago(sf::milliseconds(phys.coyote_millis)) && !m_tile_above_player()) {
+			m_yv = -phys.jump_v * gravity_sign;
+			// so that we can't jump twice :)
+			m_time_airborne = sf::seconds(999);
+			m_jumping		= true;
+			m_r.play_sound("jump");
+		}
+	} else {
+		if (m_jumping) {
+			m_jumping = false;
+			m_yv *= phys.shorthop_factor;
+		}
 	}
 	/////////////////////
 
 	m_xv = util::clamp(m_xv, -phys.xv_max, phys.xv_max);
 
-	// gravity
+	// gravity based on if we're jumping or not
 	m_yv += phys.grav * dt.asSeconds() * gravity_sign;
 	if (m_flip_gravity) {
 		m_yv = util::clamp(m_yv, -phys.yv_max, phys.jump_v);
@@ -144,10 +154,17 @@ void world::update(sf::Time dt) {
 
 	float cx = initial_x, cy = initial_y;
 
-	debug::get().box(util::scale<float>(m_get_player_top_ghost_aabb(cx, cy), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_bottom_ghost_aabb(cx, cy), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_left_ghost_aabb(cx, cy), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_right_ghost_aabb(cx, cy), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_top_aabb(cx, cy), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_bottom_aabb(cx, cy), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_left_aabb(cx, cy), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_right_aabb(cx, cy), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_top_ghost_aabb(cx, cy), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_bottom_ghost_aabb(cx, cy), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_left_ghost_aabb(cx, cy), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_right_ghost_aabb(cx, cy), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_aabb(cx, cy), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_x_aabb(cx, cy), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_y_aabb(cx, cy), m_player.size().x));
 
 	// subdivide the movement into x and y steps
 	for (float t = 0; t < 1.0f && !m_dead; t += 0.1f) {
@@ -169,6 +186,8 @@ void world::update(sf::Time dt) {
 									   ? pos.x + 1.5f - ((1 - m_player_size().x) / 2.f)	   // hitting right side of block
 									   : pos.x - 0.5f + ((1 - m_player_size().x) / 2.f);   // hitting left side of block
 				x_collided		 = true;
+				// edge case to solve a bug in which moving against a bottom-right corner would trap you
+				intended_x -= m_xv < 0 ? 0.01f : 0;
 				// if we're walking into a moving platform moving away from us, then we want to follow it, not bounce off it
 				std::optional<moving_tile> walking_into = m_moving_platform_handle[int(cx > pos.x ? dir::left : dir::right)];
 				if (walking_into && util::same_sign(walking_into->vel().x, m_xv) && std::abs(m_xv) > 0.01f) {
@@ -196,11 +215,13 @@ void world::update(sf::Time dt) {
 				// retrieve the first solid collision
 				auto [pos, tile] = m_first_solid(collided);
 				intended_y		 = cy > pos.y
-									   ? pos.y + 1.5f - ((1 - m_player_size().y) / 2.f)	   // hitting bottom side of block
-									   : pos.y - 0.5f + ((1 - m_player_size().y) / 2.f);   // hitting top side of block
-				cy				 = intended_y;
-				y_collided		 = true;
-				m_yv			 = 0;
+									   ? pos.y + 1.5f
+									   : pos.y - 0.5f + ((1 - m_player_size().y) / 6.f);   // hitting top side of block
+				// edge case for upside down platform sticking
+				intended_y += m_jumping && m_flip_gravity ? 0.01f : 0;
+				cy		   = intended_y;
+				y_collided = true;
+				m_yv	   = 0;
 			}
 		}
 	}
@@ -208,31 +229,6 @@ void world::update(sf::Time dt) {
 
 	m_xp = intended_x;
 	m_yp = intended_y;
-
-	/*static bool arr[4] = { false, false, false, false };
-	for (int i = 0; i < 4; ++i) {
-		if (!!m_moving_platform_handle[i] != arr[i]) {
-			debug::log() << "mp u="
-						 << !!m_moving_platform_handle[0]
-						 << " d="
-						 << !!m_moving_platform_handle[2]
-						 << " r="
-						 << !!m_moving_platform_handle[1]
-						 << " l="
-						 << !!m_moving_platform_handle[3]
-						 << "\n";
-			debug::log() << "touching Y-: " << m_touching[int(dir::up)] << "\n";
-			debug::log() << "touching Y+: " << m_touching[int(dir::down)] << "\n";
-			debug::log() << "touching X-: " << m_touching[int(dir::left)] << "\n";
-			debug::log() << "touching X+: " << m_touching[int(dir::right)] << "\n";
-			debug::log() << "-----------------------------"
-						 << "\n";
-			break;
-		}
-	}
-	for (int i = 0; i < 4; ++i) {
-		arr[i] = !!m_moving_platform_handle[i];
-	}*/
 
 	// check if we're on a moving platform
 	m_update_mp();
@@ -368,10 +364,18 @@ void world::m_update_animation() {
 
 	// jumping
 	if (std::abs(m_yv) > 0.01f) {
-		if (m_yv < phys.yv_max * 0.5f) {
-			m_player.set_animation("jump");
-		} else if (m_yv > phys.yv_max * 0.5f) {
-			m_player.set_animation("fall");
+		if (m_flip_gravity) {
+			if (m_yv > -phys.yv_max * 0.5f) {
+				m_player.set_animation("jump");
+			} else if (m_yv < -phys.yv_max * 0.5f) {
+				m_player.set_animation("fall");
+			}
+		} else {
+			if (m_yv < phys.yv_max * 0.5f) {
+				m_player.set_animation("jump");
+			} else if (m_yv > phys.yv_max * 0.5f) {
+				m_player.set_animation("fall");
+			}
 		}
 	}
 }
@@ -447,16 +451,20 @@ bool world::m_tile_above_player() const {
 }
 
 sf::Vector2f world::m_player_size() const {
-	return { 0.825f, 0.9f };
+	return { 0.8f, 0.8f };
 }
 
 sf::FloatRect world::m_get_player_aabb(float x, float y) const {
 	// aabb will be the sprite's full hitbox, minus 3 px on the x axis
 	sf::FloatRect ret;
 	ret.left   = x - 0.5f + ((1 - m_player_size().x) / 2.f);
-	ret.top	   = y - 0.5f + ((1 - m_player_size().y) / 2.f);
+	ret.top	   = y - 0.5f + ((1 - m_player_size().y) / 1.2f);
 	ret.width  = m_player_size().x;
 	ret.height = m_player_size().y;
+
+	if (m_flip_gravity) {
+		ret.top -= ((1 - m_player_size().y) / 1.2f);
+	}
 
 	return ret;
 }
@@ -474,7 +482,7 @@ sf::FloatRect world::m_get_player_top_aabb(float x, float y) const {
 	sf::FloatRect aabb = m_get_player_aabb(x, y);
 	sf::FloatRect ret;
 	ret.left   = aabb.left + 0.1f;
-	ret.top	   = aabb.top;
+	ret.top	   = aabb.top - 0.1f;
 	ret.width  = aabb.width - 0.2f;
 	ret.height = 0.1f;
 
@@ -547,13 +555,13 @@ sf::FloatRect world::m_get_player_ghost_aabb(float x, float y, dir d) const {
 
 sf::FloatRect world::m_get_player_top_ghost_aabb(float x, float y) const {
 	sf::FloatRect aabb = m_get_player_top_aabb(x, y);
-	aabb.top -= 0.15f;
+	aabb.top -= 0.2f;
 	return aabb;
 }
 
 sf::FloatRect world::m_get_player_bottom_ghost_aabb(float x, float y) const {
 	sf::FloatRect aabb = m_get_player_bottom_aabb(x, y);
-	aabb.top += 0.15f;
+	aabb.top += 0.3f;
 	return aabb;
 }
 

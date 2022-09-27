@@ -8,7 +8,7 @@
 #include "debug.hpp"
 
 app::app()
-	: m_window(sf::VideoMode(1366, 768), "BlockQuest Remake") {
+	: m_window(sf::VideoMode(1920, 1080), "BlockQuest Remake") {
 	ImGui::SFML::Init(m_window);
 }
 
@@ -23,30 +23,47 @@ int app::run() {
 	m_r.load_sound("wallkick", "assets/sound/wallkick.flac");
 
 	level l(m_r);
-	for (int i = 0; i < 16; ++i) {
-		l.map().set(i, 15, tile::block);
+	for (int i = 0; i < 32; ++i) {
+		l.map().set(i, 31, tile::block);
 		l.map().set(i, 0, tile::block);
+		l.map().set(0, i, tile::block);
+		l.map().set(31, i, tile::ladder);
 	}
-	l.map().set(0, 1, tile(tile::block, { .moving = 3 }));
-	l.map().set(2, 14, tile::end);
-	l.map().set(1, 13, tile::block);
 
-	// l.map().set(1, 14, tile(tile::block, { .moving = 2 }));
-	l.map().set(2, 13, tile(tile::gravity, { .moving = 2 }));
-	l.map().set(15, 14, tile(tile::block, { .moving = 4 }));
-	l.map().set(14, 14, tile(tile::block, { .moving = 4 }));
+	l.map().set(1, 30, tile::begin);
+	l.map().set(1, 29, tile::block);
+	l.map().set(1, 2, tile::block);
+	l.map().set(18, 30, tile::end);
 
-	l.map().set(15, 13, tile::begin);
+	l.map().set(16, 31, tile::gravity);
+	l.map().set(16, 29, tile::block);
+	l.map().set(16, 2, tile::block);
+	l.map().set(16, 0, tile::gravity);
+
+	l.map().set(8, 30, tile::block);
+	l.map().set(8, 29, tile::block);
+	l.map().set(9, 28, tile::block);
+	l.map().set(11, 27, tile::block);
+	l.map().set(18, 27, tile(tile::block, { .moving = 4 }));
+
+	l.map().set(8, 1, tile::block);
+	l.map().set(8, 2, tile::block);
+	l.map().set(9, 3, tile::block);
+	l.map().set(11, 4, tile::block);
+	l.map().set(18, 4, tile(tile::block, { .moving = 4 }));
+
+	l.map().set(23, 30, tile::block);
+	l.map().set(23, 28, tile::block);
+
+	l.map().set(23, 1, tile::block);
+	l.map().set(23, 3, tile::block);
+
 
 	l.map().set_editor_view(false);
 
-	std::ofstream file("misc/moving_test.json");
+	std::ofstream file("misc/test.json");
 	file << l.serialize();
 	file.close();
-
-	std::ifstream ifile("misc/test.json");
-	nlohmann::json j = nlohmann::json::parse(ifile);
-	l.deserialize(j);
 
 	world w(m_r, l);
 	w.setScale(2.0f, 2.0f);
