@@ -22,6 +22,7 @@ struct tile {
 		begin = 0,
 		end,
 		block,
+		ice,
 		gravity,
 		spike,
 		ladder,
