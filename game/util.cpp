@@ -22,6 +22,13 @@ merge_contacts(const std::vector<std::pair<sf::Vector2f, tile>>& a, const std::v
 	return ret;
 }
 
+sf::Vector2f normalize(sf::Vector2f in) {
+	float mag = std::hypot(in.x, in.y);
+	in.x /= mag;
+	in.y /= mag;
+	return in;
+}
+
 bool same_sign(float a, float b) {
 	return a * b >= 0.0f;
 }

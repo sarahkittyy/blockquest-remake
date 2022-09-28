@@ -13,6 +13,8 @@ struct tile_props {
 	int moving = 0;	  // 0 = stationary, 1 = up, 2 = right, 3 = down, 4 = left
 };
 
+class tilemap;
+
 // tile structure
 struct tile {
 	// ordered enum for tile data in the tilemap
@@ -52,8 +54,15 @@ struct tile {
 	bool operator!=(const tile_type&& type) const;	 // check if a tile is not of a given type
 	operator int() const;							 // retrieve the texture index of the tile
 
+	int x() const;	 // x pos of the tile
+	int y() const;	 // y pos of the tile
+
 	bool harmful() const;	// will this tile hurt the player
 	bool solid() const;		// can the player walk on this tile
+private:
+	friend class tilemap;
+	tile(tile_type type, int x, int y);
+	int m_x = -1, m_y = -1;
 };
 
 // stores and renders all static tiles in a level

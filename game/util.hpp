@@ -40,6 +40,8 @@ sf::Rect<T> scale(sf::Rect<T> r, T f) {	  // scale a rectangle by a scalar
 	return sf::Rect<T>(r.left * f, r.top * f, r.width * f, r.height * f);
 }
 
+sf::Vector2f normalize(sf::Vector2f in);
+
 // for hashing sf::Vector2<T> instances
 template <class T>
 struct vector_hash {
@@ -53,6 +55,7 @@ struct vector_hash {
 };
 
 float deg2rad(float d);
+
 float rad2deg(float r);
 
 }

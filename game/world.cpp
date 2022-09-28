@@ -5,6 +5,7 @@
 #include "util.hpp"
 
 #include "particles/death.hpp"
+#include "particles/gravity.hpp"
 
 world::world(resource& r, level l)
 	: m_r(r),
@@ -247,6 +248,15 @@ void world::update(sf::Time dt) {
 
 	// handle gravity blocks
 	if (m_test_touching_any(m_flip_gravity ? dir::up : dir::down, [](tile t) { return t == tile::gravity; })) {
+		// gravity particles
+		auto& gp = m_pmgr.spawn<particles::gravity>(m_r, m_flip_gravity);
+		for (auto& tile : m_touching[m_flip_gravity ? dir::up : dir::down]) {
+			if (tile == tile::gravity) {
+				gp.setPosition(tile.x() + 0.5f, tile.y() + (m_flip_gravity ? 1 : 0));
+				break;
+			}
+		}
+
 		m_r.play_sound("gravityflip");
 		m_flip_gravity = !m_flip_gravity;
 		m_player.setScale(m_player.getScale().x, m_flip_gravity ? -1 : 1);

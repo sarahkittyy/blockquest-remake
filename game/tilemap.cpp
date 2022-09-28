@@ -124,17 +124,19 @@ std::vector<std::pair<sf::Vector2f, tile>> tilemap::intersects(sf::FloatRect aab
 }
 
 void tilemap::set(int x, int y, tile t) {
+	t.m_x				  = x;
+	t.m_y				  = y;
 	m_tiles[x + y * m_xs] = t;
 	m_update_quad(x + y * m_xs);
 }
 
 tile tilemap::get(int x, int y) const {
-	if (m_oob(x, y)) return tile::block;
+	if (m_oob(x, y)) return tile(tile::block, x, y);
 	return m_tiles[x + y * m_xs];
 }
 
 tile tilemap::get(int i) const {
-	if (m_oob(i)) return tile::block;
+	if (m_oob(i)) return tile(tile::block, i / m_xs, i % m_ys);
 	return m_tiles[i];
 }
 
@@ -186,10 +188,16 @@ nlohmann::json tilemap::serialize() const {
 
 void tilemap::deserialize(const nlohmann::json& j) {
 	m_tiles.clear();
+	int idx = 0;   // for tracking x and y pos
 	for (auto& tile_data : j) {
+		int x = idx / m_xs;
+		int y = idx % m_xs;
 		tile t;
 		t.deserialize(tile_data);
+		t.m_x = x;
+		t.m_y = y;
 		m_tiles.push_back(t);
+		idx++;
 	}
 	m_flush_va();
 }
@@ -212,12 +220,27 @@ tile::tile(tile_type t, tile_props props)
 	  props(props) {
 }
 
+tile::tile(tile_type t, int x, int y)
+	: type(t),
+	  props(tile_props()) {
+	m_x = x;
+	m_y = y;
+}
+
 bool tile::operator==(const tile_type&& type) const {
 	return type == this->type;
 }
 
 bool tile::operator!=(const tile_type&& type) const {
 	return type != this->type;
+}
+
+int tile::x() const {
+	return m_x;
+}
+
+int tile::y() const {
+	return m_y;
 }
 
 // tile type defs
