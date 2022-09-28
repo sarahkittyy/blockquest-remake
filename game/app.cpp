@@ -32,6 +32,7 @@ int app::run() {
 
 	l.map().set(1, 30, tile::begin);
 	l.map().set(1, 29, tile::block);
+	l.map().set(1, 26, tile::spike);
 	l.map().set(1, 2, tile::block);
 	l.map().set(18, 30, tile::end);
 
@@ -39,6 +40,7 @@ int app::run() {
 	l.map().set(16, 29, tile::block);
 	l.map().set(16, 2, tile::block);
 	l.map().set(16, 0, tile::gravity);
+	l.map().set(17, 16, tile::spike);
 
 	l.map().set(8, 30, tile::block);
 	l.map().set(8, 29, tile::block);

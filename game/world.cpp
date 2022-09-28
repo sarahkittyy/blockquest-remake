@@ -4,6 +4,8 @@
 #include "imgui_internal.h"
 #include "util.hpp"
 
+#include "particles/death.hpp"
+
 world::world(resource& r, level l)
 	: m_r(r),
 	  m_tmap(l.map()),
@@ -16,6 +18,7 @@ world::world(resource& r, level l)
 	m_player.set_animation("walk");
 	m_player.setOrigin(m_player.size().x / 2.f, m_player.size().y / 2.f);
 	m_init_world();
+	m_pmgr.setScale(l.map().tile_size(), l.map().tile_size());
 }
 
 void world::m_init_world() {
@@ -60,6 +63,8 @@ http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platforme
 void world::update(sf::Time dt) {
 	auto keyed = sf::Keyboard::isKeyPressed;
 	using Key  = sf::Keyboard;
+
+	m_pmgr.update(dt);
 
 	// deaths are handled here to deal with dying mid-logic
 	if (m_dead) {
@@ -412,6 +417,7 @@ void world::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	t.draw(m_tmap, s);
 	t.draw(m_mt_mgr, s);
 	t.draw(m_player, s);
+	t.draw(m_pmgr, s);
 }
 
 void world::m_player_die() {
@@ -432,6 +438,9 @@ void world::m_player_die() {
 				 << "\n";
 	m_dead = true;
 	m_r.play_sound("gameover");
+	auto& dp = m_pmgr.spawn<particles::death>(m_r);
+	dp.setPosition(m_xp, m_yp);
+	dp.setScale(0.5f, 0.5f);
 }
 
 void world::m_sync_player_position() {

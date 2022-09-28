@@ -52,4 +52,7 @@ struct vector_hash {
 	}
 };
 
+float deg2rad(float d);
+float rad2deg(float r);
+
 }

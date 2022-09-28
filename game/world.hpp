@@ -7,6 +7,7 @@
 
 #include "level.hpp"
 #include "moving_tile.hpp"
+#include "particles.hpp"
 #include "player.hpp"
 #include "resource.hpp"
 #include "tilemap.hpp"
@@ -26,6 +27,8 @@ private:
 
 	resource& m_r;	  // resource mgr
 	tilemap m_tmap;	  // tilemap of all static, unmoving tiles.kk, ty
+
+	particle_manager m_pmgr;   // particle manager class
 
 	moving_tile_manager m_mt_mgr;	// manages all moving tiles
 

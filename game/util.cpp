@@ -30,4 +30,12 @@ bool neither_zero(float a, float b) {
 	return a != 0 && b != 0;
 }
 
+float deg2rad(float d) {
+	return (d * M_PI) / 180.f;
+}
+
+float rad2deg(float r) {
+	return (r * 180.f) / M_PI;
+}
+
 }
