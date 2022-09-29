@@ -10,6 +10,8 @@ This is a work-in-progress remake of [BlockQuest](http://www.blockquest.net/).
 - A backend server to allow users to publish their levels
 - Search functionality to browse popular levels, download and play them
 
+All assets in `assets/` are ripped straight from the original BlockQuest SWF available for download on the [blockquest site](http://www.blockquest.net). Daigo don't sue me :p
+
 ## Dependencies
 
 - SFML 2.5
