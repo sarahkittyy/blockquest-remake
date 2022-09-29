@@ -3,6 +3,8 @@
 #include "debug.hpp"
 #include "util.hpp"
 
+#include <cmath>
+
 particle_system::particle_system(sf::Texture& t)
 	: m_t(t),
 	  m_tsz(m_t.getSize()) {
@@ -23,6 +25,7 @@ void particle_system::update(sf::Time dt) {
 			pq.first -= dt;
 		}
 	}
+	// update live particles
 	for (int i = 0; i < m_particles.size();) {
 		particle& p = m_particles[i];
 		p.lifetime -= dt;
@@ -36,6 +39,14 @@ void particle_system::update(sf::Time dt) {
 		p.ys += p.ys_v * dt.asSeconds();
 		p.xs_v += p.xs_a * dt.asSeconds();
 		p.ys_v += p.ys_a * dt.asSeconds();
+		p.m_fs_live -= dt;
+		if (p.m_fs_live <= sf::seconds(0)) {
+			p.m_cframe++;
+			p.m_fs_live = p.fs;
+			if (p.m_cframe >= p.tc) {
+				p.m_cframe = 0;
+			}
+		}
 		if (p.lifetime <= sf::seconds(0) || p.alpha <= 0) {
 			m_particles.erase(m_particles.begin() + i);
 		} else
@@ -52,6 +63,7 @@ int particle_system::particle_count() const {
 }
 
 void particle_system::emit(particle p, sf::Time after) {
+	p.m_fs_live = p.fs;
 	m_particle_queue.push_back(std::make_pair(after, p));
 }
 
@@ -66,10 +78,16 @@ void particle_system::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 		hf /= 2.f;
 		hf.x *= p.xs;
 		hf.y *= p.ys;
-		va.append(sf::Vertex({ p.xp - hf.x, p.yp - hf.y }, sf::Color(255, 255, 255, p.alpha * 255), { 0, 0 }));
-		va.append(sf::Vertex({ p.xp + hf.x, p.yp - hf.y }, sf::Color(255, 255, 255, p.alpha * 255), { m_tsz.x, 0 }));
-		va.append(sf::Vertex({ p.xp + hf.x, p.yp + hf.y }, sf::Color(255, 255, 255, p.alpha * 255), { m_tsz.x, m_tsz.y }));
-		va.append(sf::Vertex({ p.xp - hf.x, p.yp + hf.y }, sf::Color(255, 255, 255, p.alpha * 255), { 0, m_tsz.y }));
+		// texture rect management
+		sf::Vector2f sfsz(m_tsz.x / p.tx, m_tsz.y / p.ty);	 // single frame size
+		sf::Vector2f tl(p.m_cframe % p.tx, std::floor(p.m_cframe / p.tx));
+		tl.x *= sfsz.x;
+		tl.y *= sfsz.y;
+		debug::log() << "TL = " << tl << "\n";
+		va.append(sf::Vertex({ p.xp - hf.x, p.yp - hf.y }, sf::Color(255, 255, 255, p.alpha * 255), { tl.x, tl.y }));
+		va.append(sf::Vertex({ p.xp + hf.x, p.yp - hf.y }, sf::Color(255, 255, 255, p.alpha * 255), { tl.x + sfsz.x, tl.y }));
+		va.append(sf::Vertex({ p.xp + hf.x, p.yp + hf.y }, sf::Color(255, 255, 255, p.alpha * 255), { tl.x + sfsz.x, tl.y + sfsz.y }));
+		va.append(sf::Vertex({ p.xp - hf.x, p.yp + hf.y }, sf::Color(255, 255, 255, p.alpha * 255), { tl.x, tl.y + sfsz.y }));
 	}
 	t.draw(va, s);
 }

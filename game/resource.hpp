@@ -16,6 +16,8 @@ public:
 	void load_sound(std::string name, std::string path);
 	// play the sound with the given name
 	void play_sound(std::string name);
+	// fetch the sound buffer with the given name
+	sf::SoundBuffer& sound_buffer(std::string name);
 
 private:
 	std::unordered_map<std::string, sf::Texture> m_texs;

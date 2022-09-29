@@ -27,3 +27,10 @@ void resource::play_sound(std::string name) {
 	}
 	m_sounds[name].play();
 }
+
+sf::SoundBuffer& resource::sound_buffer(std::string name) {
+	if (!m_soundbufs.contains(name)) {
+		throw "a sound of that name was not found!";
+	}
+	return m_soundbufs[name];
+}

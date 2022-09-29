@@ -6,6 +6,7 @@
 
 #include "particles/death.hpp"
 #include "particles/gravity.hpp"
+#include "particles/smoke.hpp"
 
 world::world(resource& r, level l)
 	: m_r(r),
@@ -20,6 +21,25 @@ world::world(resource& r, level l)
 	m_player.setOrigin(m_player.size().x / 2.f, m_player.size().y / 2.f);
 	m_init_world();
 	m_pmgr.setScale(l.map().tile_size(), l.map().tile_size());
+
+	m_dash_sfx_thread = std::jthread([this](std::stop_token stoken) {
+		using namespace std::chrono_literals;
+		sf::Sound s(m_r.sound_buffer("dash"));
+		while (!stoken.stop_requested()) {
+			if (m_dashing && m_player_grounded() && std::abs(m_xv) > phys.xv_max) {
+				s.play();
+				auto& sp = m_pmgr.spawn<particles::smoke>(m_r);
+				sp.setPosition(m_xp, m_yp + 0.2f);
+				sp.setScale(m_dash_dir == dir::right ? -1 : 1, sp.getScale().y);
+			}
+			std::this_thread::sleep_for(120ms);
+		}
+	});
+}
+
+world::~world() {
+	m_dash_sfx_thread.request_stop();
+	m_dash_sfx_thread.join();
 }
 
 void world::m_init_world() {
@@ -49,6 +69,7 @@ void world::m_restart_world() {
 	m_mt_mgr.restart();
 	m_time_airborne = sf::seconds(0);
 	m_jumping		= false;
+	m_dashing		= false;
 }
 
 /*
@@ -94,24 +115,49 @@ void world::update(sf::Time dt) {
 		m_time_airborne += dt;
 	}
 
-	// controls
-	float air_control_factor = grounded ? 1 : phys.air_control;
-	if (keyed(Key::Right)) {
-		// wallkicking
+	// controls //
+
+	if (keyed(m_key_dash)) {
+		// can only start dashing if on the ground
+		if (grounded) {
+			if (!m_dashing) {	// start of dash
+				m_dash_dir = m_facing();
+			}
+			m_dashing = true;
+		}
+	} else if (grounded) {
+		m_dashing = false;
+	}
+
+	float air_control_factor	= grounded ? 1 : (m_dashing && keyed(m_key_dash) ? phys.dash_air_control : phys.air_control);
+	float ground_control_factor = m_dashing && grounded ? 0 : 1;
+	if (m_dashing) {
+		// if dashing, l/r controls are disabled and we accelerate at full speed in the dash direction
+		float xv_sign = m_dash_dir == dir::left ? -1 : 1;
+		m_xv += phys.dash_x_accel * dt.asSeconds() * air_control_factor * xv_sign;
+		m_player.setScale(-xv_sign, m_player.getScale().y);
+		// airborne LR controls while dashing
+		if (!grounded) {
+		}
+	}
+	if (keyed(m_key_right)) {
 		// normal acceleration
 		if (m_xv < 0) {
-			m_xv += phys.x_decel * dt.asSeconds() * air_control_factor;
+			m_xv += phys.x_decel * dt.asSeconds() * air_control_factor * ground_control_factor;
 		}
-		m_xv += phys.x_accel * dt.asSeconds() * air_control_factor;
-		m_player.setScale(-1, gravity_sign);
-	} else if (keyed(Key::Left)) {
-		// wallkicking
+		m_xv += phys.x_accel * dt.asSeconds() * air_control_factor * ground_control_factor;
+		// we can only change direction when not dashing
+		if (!m_dashing)
+			m_player.setScale(-1, m_player.getScale().y);
+	} else if (keyed(m_key_left)) {
 		// normal acceleration
 		if (m_xv > 0) {
-			m_xv -= phys.x_decel * dt.asSeconds() * air_control_factor;
+			m_xv -= phys.x_decel * dt.asSeconds() * air_control_factor * ground_control_factor;
 		}
-		m_xv -= phys.x_accel * dt.asSeconds() * air_control_factor;
-		m_player.setScale(1, gravity_sign);
+		m_xv -= phys.x_accel * dt.asSeconds() * air_control_factor * ground_control_factor;
+		// we can only change direction when not dashing
+		if (!m_dashing)
+			m_player.setScale(1, m_player.getScale().y);
 	} else {
 		if (m_xv > (phys.x_decel / 2.f) * dt.asSeconds()) {
 			m_xv -= phys.x_decel * dt.asSeconds();
@@ -122,7 +168,7 @@ void world::update(sf::Time dt) {
 		}
 	}
 
-	if (keyed(Key::Up)) {
+	if (keyed(m_key_jump)) {
 		if (m_player_grounded_ago(sf::milliseconds(phys.coyote_millis)) && !m_tile_above_player()) {
 			m_yv = -phys.jump_v * gravity_sign;
 			// so that we can't jump twice :)
@@ -138,7 +184,8 @@ void world::update(sf::Time dt) {
 	}
 	/////////////////////
 
-	m_xv = util::clamp(m_xv, -phys.xv_max, phys.xv_max);
+	float real_xv_max = m_dashing ? phys.dash_xv_max : phys.xv_max;
+	m_xv			  = util::clamp(m_xv, -real_xv_max, real_xv_max);
 
 	// gravity based on if we're jumping or not
 	m_yv += phys.grav * dt.asSeconds() * gravity_sign;
@@ -262,6 +309,7 @@ void world::update(sf::Time dt) {
 		m_player.setScale(m_player.getScale().x, m_flip_gravity ? -1 : 1);
 	}
 	// some debug info
+	debug::get() << "dt = " << dt.asMilliseconds() << "ms\n";
 	debug::get() << "velocity = " << sf::Vector2f(m_xv, m_yv) << "\n";
 	debug::get() << "touching Y-: " << m_touching[int(dir::up)] << "\n";
 	debug::get() << "touching Y+: " << m_touching[int(dir::down)] << "\n";
@@ -371,7 +419,9 @@ sf::Vector2f world::m_mp_player_offset(sf::Time dt) const {
 }
 
 void world::m_update_animation() {
-	if (std::abs(m_xv) > 0.3f) {
+	if (std::abs(m_xv) > phys.xv_max) {
+		m_player.set_animation("dash");
+	} else if (std::abs(m_xv) > 0.3f) {
 		m_player.set_animation("walk");
 	} else {
 		m_player.set_animation("stand");
@@ -467,6 +517,10 @@ bool world::m_player_grounded_ago(sf::Time t) const {
 
 bool world::m_tile_above_player() const {
 	return m_test_touching_any(m_flip_gravity ? dir::down : dir::up, [](tile t) { return t.solid(); });
+}
+
+world::dir world::m_facing() const {
+	return m_player.getScale().x < 0 ? dir::right : dir::left;
 }
 
 sf::Vector2f world::m_player_size() const {

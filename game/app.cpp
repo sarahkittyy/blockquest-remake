@@ -36,34 +36,9 @@ int app::run() {
 	l.map().set(1, 2, tile::block);
 	l.map().set(18, 30, tile::end);
 
-	l.map().set(16, 31, tile::gravity);
-	l.map().set(16, 29, tile::block);
-	l.map().set(16, 2, tile::block);
-	l.map().set(16, 0, tile::gravity);
-	l.map().set(17, 16, tile::spike);
-
-	l.map().set(8, 30, tile::block);
-	l.map().set(8, 29, tile::block);
-	l.map().set(9, 28, tile::block);
-	l.map().set(11, 27, tile::block);
-	l.map().set(18, 27, tile(tile::block, { .moving = 4 }));
-
-	l.map().set(8, 1, tile::block);
-	l.map().set(8, 2, tile::block);
-	l.map().set(9, 3, tile::block);
-	l.map().set(11, 4, tile::block);
-	l.map().set(18, 4, tile(tile::block, { .moving = 4 }));
-
-	l.map().set(23, 30, tile::block);
-	l.map().set(23, 28, tile::block);
-
-	l.map().set(23, 1, tile::block);
-	l.map().set(23, 3, tile::block);
-
-
 	l.map().set_editor_view(false);
 
-	std::ofstream file("misc/test.json");
+	std::ofstream file("misc/test_dash.json");
 	file << l.serialize();
 	file.close();
 

@@ -4,6 +4,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <algorithm>
 #include <functional>
+#include <thread>
 
 #include "level.hpp"
 #include "moving_tile.hpp"
@@ -16,6 +17,7 @@
 class world : public sf::Drawable, public sf::Transformable {
 public:
 	world(resource& r, level l);
+	~world();
 
 	void update(sf::Time dt);
 
@@ -39,17 +41,27 @@ private:
 	player m_player;			// player character
 	int m_start_x, m_start_y;	// start position
 
+	enum dir {
+		up	  = 0,
+		right = 1,
+		down  = 2,
+		left  = 3
+	};
+
 	// physics constants
 	const struct physics {
-		float xv_max		  = 12.54f;
-		float yv_max		  = 20.00f;
-		float x_accel		  = 60.0f;
-		float x_decel		  = 60.0f;
-		float jump_v		  = 17.0f;
-		float grav			  = 60.f;
-		float shorthop_factor = 0.5f;
-		float air_control	  = 0.7f;
-		int coyote_millis	  = 75;
+		float xv_max		   = 12.54f;
+		float yv_max		   = 20.00f;
+		float x_accel		   = 60.0f;
+		float x_decel		   = 60.0f;
+		float jump_v		   = 17.0f;
+		float grav			   = 60.f;
+		float shorthop_factor  = 0.5f;
+		float air_control	   = 0.7f;
+		float dash_xv_max	   = 20.f;
+		float dash_x_accel	   = 120.f;
+		float dash_air_control = 0.2f;
+		int coyote_millis	   = 75;
 	} phys;
 
 	// units are in tiles
@@ -58,15 +70,18 @@ private:
 	float m_xv = 0;	  // player x vel
 	float m_yv = 0;	  // player y vel
 
+	sf::Keyboard::Key m_key_left  = sf::Keyboard::Left;
+	sf::Keyboard::Key m_key_right = sf::Keyboard::Right;
+	sf::Keyboard::Key m_key_jump  = sf::Keyboard::Space;
+	sf::Keyboard::Key m_key_dash  = sf::Keyboard::Down;
+
 	sf::Time m_time_airborne = sf::seconds(0);	 // counts the number of frames we're airborne for, for coyote time
 	bool m_jumping			 = false;
+	bool m_dashing			 = false;
+	dir m_dash_dir			 = dir::left;
 
-	enum dir {
-		up	  = 0,
-		right = 1,
-		down  = 2,
-		left  = 3
-	};
+	// dashing produces a rythmic noise that the current update loop is not precise enough to handle
+	std::jthread m_dash_sfx_thread;
 
 	bool m_flip_gravity = false;   // is gravity flipped?
 
@@ -113,6 +128,7 @@ private:
 	bool m_player_grounded() const;					// is the player on solid ground
 	bool m_player_grounded_ago(sf::Time t) const;	// has a player been grounded in the last t seconds?
 	bool m_tile_above_player() const;				// is there a tile directly above the player
+	dir m_facing() const;							// which direction is the player facing
 
 	sf::Vector2f m_player_size() const;	  // width and height of the full player aabb
 };
