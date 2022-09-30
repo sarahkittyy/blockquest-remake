@@ -25,6 +25,7 @@ struct tile {
 		end,
 		block,
 		ice,
+		black,
 		gravity,
 		spike,
 		ladder,
@@ -57,8 +58,9 @@ struct tile {
 	int x() const;	 // x pos of the tile
 	int y() const;	 // y pos of the tile
 
-	bool harmful() const;	// will this tile hurt the player
-	bool solid() const;		// can the player walk on this tile
+	bool harmful() const;			 // will this tile hurt the player
+	bool solid() const;				 // can the player walk on this tile
+	bool blocks_wallkicks() const;	 // will this tile block wallkicks
 private:
 	friend class tilemap;
 	tile(tile_type type, int x, int y);

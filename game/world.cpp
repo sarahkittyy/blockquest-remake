@@ -76,6 +76,10 @@ void world::m_restart_world() {
 	m_right_last_frame = false;
 	m_dash_last_frame  = false;
 	m_jump_last_frame  = false;
+	m_left_this_frame  = false;
+	m_right_this_frame = false;
+	m_dash_this_frame  = false;
+	m_jump_this_frame  = false;
 }
 
 /*
@@ -89,12 +93,16 @@ http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platforme
 */
 
 void world::update(sf::Time dt) {
-	auto keyed		 = sf::Keyboard::isKeyPressed;
-	using Key		 = sf::Keyboard;
-	bool left_keyed	 = keyed(m_key_left);
-	bool right_keyed = keyed(m_key_right);
-	bool dash_keyed	 = keyed(m_key_dash);
-	bool jump_keyed	 = keyed(m_key_jump);
+	auto keyed		   = sf::Keyboard::isKeyPressed;
+	using Key		   = sf::Keyboard;
+	bool left_keyed	   = keyed(m_key_left);
+	bool right_keyed   = keyed(m_key_right);
+	bool dash_keyed	   = keyed(m_key_dash);
+	bool jump_keyed	   = keyed(m_key_jump);
+	m_left_this_frame  = left_keyed;
+	m_right_this_frame = right_keyed;
+	m_dash_this_frame  = dash_keyed;
+	m_jump_this_frame  = jump_keyed;
 
 	m_pmgr.update(dt);
 
@@ -141,6 +149,9 @@ void world::update(sf::Time dt) {
 		m_dashing = false;
 	}
 
+	debug::get() << "dashing = " << m_dashing << "\n";
+	debug::get() << "grounded = " << grounded << "\n";
+
 	float air_control_factor	  = grounded ? 1 : (m_dashing && keyed(m_key_dash) ? phys.dash_air_control : phys.air_control);
 	float ground_control_factor	  = m_dashing && grounded ? 0 : 1;
 	float wallkick_control_factor = m_is_wallkick_locked() ? 0 : 1;
@@ -161,9 +172,7 @@ void world::update(sf::Time dt) {
 	if (right_keyed) {
 		lr_inputted = !lr_inputted;
 		// wallkickthat's
-		if (!m_left_last_frame && left_keyed && !grounded && m_test_touching_any(dir::right, [](tile t) {
-				return t.solid();
-			})) {
+		if (m_can_player_wallkick(dir::left)) {
 			m_player_wallkick(dir::left);
 		} else if (!left_keyed) {
 			// normal acceleration
@@ -187,9 +196,7 @@ void world::update(sf::Time dt) {
 	if (left_keyed) {
 		lr_inputted = !lr_inputted;
 		// wallkick
-		if (!m_right_last_frame && right_keyed && !grounded && m_test_touching_any(dir::left, [](tile t) {
-				return t.solid();
-			})) {
+		if (m_can_player_wallkick(dir::right)) {
 			m_player_wallkick(dir::right);
 		} else if (!right_keyed) {
 			// normal acceleration
@@ -209,7 +216,7 @@ void world::update(sf::Time dt) {
 				m_player.setScale(1, m_player.getScale().y);
 		}
 	}
-	if (!lr_inputted && (!m_dashing || !m_jumping) && !m_is_wallkick_locked()) {
+	if (!lr_inputted && (!m_dashing && !m_jumping) && !m_is_wallkick_locked()) {
 		if (m_xv > (phys.x_decel / 2.f) * dt.asSeconds()) {
 			m_xv -= phys.x_decel *
 					friction_control_factor *
@@ -611,6 +618,15 @@ bool world::m_player_grounded() const {
 
 bool world::m_player_grounded_ago(sf::Time t) const {
 	return m_time_airborne < t;
+}
+
+bool world::m_can_player_wallkick(dir d) const {
+	bool keyed_last_frame = d == dir::left ? m_left_last_frame : m_right_last_frame;
+	bool keyed_this_frame = d == dir::left ? m_left_this_frame : m_right_this_frame;
+	return !keyed_last_frame && keyed_this_frame && !m_player_grounded() &&
+		   m_test_touching_any(d == dir::left ? dir::right : dir::left, [](tile t) {
+			   return t.solid() && !t.blocks_wallkicks();
+		   });
 }
 
 bool world::m_tile_above_player() const {

@@ -78,6 +78,11 @@ private:
 	sf::Keyboard::Key m_key_jump  = sf::Keyboard::Space;
 	sf::Keyboard::Key m_key_dash  = sf::Keyboard::Down;
 
+	// were these keys hit this frame?
+	bool m_left_this_frame	= false;
+	bool m_right_this_frame = false;
+	bool m_jump_this_frame	= false;
+	bool m_dash_this_frame	= false;
 	// were these keys hit last frame?
 	bool m_left_last_frame	= false;
 	bool m_right_last_frame = false;
@@ -142,6 +147,7 @@ private:
 
 	bool m_player_grounded() const;					// is the player on solid ground
 	bool m_player_grounded_ago(sf::Time t) const;	// has a player been grounded in the last t seconds?
+	bool m_can_player_wallkick(dir d) const;		// can the player wallkick (d = direction of kick)
 	bool m_tile_above_player() const;				// is there a tile directly above the player
 	dir m_facing() const;							// which direction is the player facing
 

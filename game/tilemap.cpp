@@ -252,7 +252,12 @@ bool tile::harmful() const {
 bool tile::solid() const {
 	return type == tile::block ||
 		   type == tile::gravity ||
-		   type == tile::ice;
+		   type == tile::ice ||
+		   type == tile::black;
+}
+
+bool tile::blocks_wallkicks() const {
+	return type == tile::black;
 }
 
 // ///////////////////
