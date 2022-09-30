@@ -57,10 +57,10 @@ private:
 		float jump_v		   = 17.0f;
 		float grav			   = 60.f;
 		float shorthop_factor  = 0.5f;
-		float air_control	   = 0.5f;
+		float air_control	   = 0.3f;
 		float dash_xv_max	   = 20.f;
 		float dash_x_accel	   = 120.f;
-		float dash_air_control = 0.3f;
+		float dash_air_control = 0.2f;
 		float wallkick_xv	   = 9.5f;
 		float wallkick_yv	   = 16.0f;
 		float ice_friction	   = 0.2f;
@@ -77,6 +77,12 @@ private:
 	sf::Keyboard::Key m_key_right = sf::Keyboard::Right;
 	sf::Keyboard::Key m_key_jump  = sf::Keyboard::Space;
 	sf::Keyboard::Key m_key_dash  = sf::Keyboard::Down;
+
+	// were these keys hit last frame?
+	bool m_left_last_frame	= false;
+	bool m_right_last_frame = false;
+	bool m_jump_last_frame	= false;
+	bool m_dash_last_frame	= false;
 
 	sf::Time m_time_airborne  = sf::seconds(0);	  // counts the number of frames we're airborne for, for coyote time
 	bool m_jumping			  = false;

@@ -68,10 +68,14 @@ void world::m_restart_world() {
 	m_sync_player_position();
 	m_player.setScale(1, 1);
 	m_mt_mgr.restart();
-	m_time_airborne	 = sf::seconds(0);
-	m_jumping		 = false;
-	m_dashing		 = false;
-	m_since_wallkick = sf::seconds(999);
+	m_time_airborne	   = sf::seconds(0);
+	m_jumping		   = false;
+	m_dashing		   = false;
+	m_since_wallkick   = sf::seconds(999);
+	m_left_last_frame  = false;
+	m_right_last_frame = false;
+	m_dash_last_frame  = false;
+	m_jump_last_frame  = false;
 }
 
 /*
@@ -85,8 +89,12 @@ http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platforme
 */
 
 void world::update(sf::Time dt) {
-	auto keyed = sf::Keyboard::isKeyPressed;
-	using Key  = sf::Keyboard;
+	auto keyed		 = sf::Keyboard::isKeyPressed;
+	using Key		 = sf::Keyboard;
+	bool left_keyed	 = keyed(m_key_left);
+	bool right_keyed = keyed(m_key_right);
+	bool dash_keyed	 = keyed(m_key_dash);
+	bool jump_keyed	 = keyed(m_key_jump);
 
 	m_pmgr.update(dt);
 
@@ -121,7 +129,7 @@ void world::update(sf::Time dt) {
 
 	// controls //
 
-	if (keyed(m_key_dash)) {
+	if (dash_keyed) {
 		// can only start dashing if on the ground
 		if (grounded) {
 			if (!m_dashing) {	// start of dash
@@ -150,14 +158,14 @@ void world::update(sf::Time dt) {
 			m_dash_dir = m_facing();
 	}
 	bool lr_inputted = false;
-	if (keyed(m_key_right)) {
+	if (right_keyed) {
 		lr_inputted = !lr_inputted;
 		// wallkickthat's
-		if (keyed(m_key_left) && !grounded && m_test_touching_any(dir::right, [](tile t) {
+		if (!m_left_last_frame && left_keyed && !grounded && m_test_touching_any(dir::right, [](tile t) {
 				return t.solid();
 			})) {
 			m_player_wallkick(dir::left);
-		} else if (!keyed(m_key_left)) {
+		} else if (!left_keyed) {
 			// normal acceleration
 			if (m_xv < 0 && !on_ice) {
 				m_xv += phys.x_decel * dt.asSeconds() *
@@ -176,14 +184,14 @@ void world::update(sf::Time dt) {
 				m_player.setScale(-1, m_player.getScale().y);
 		}
 	}
-	if (keyed(m_key_left)) {
+	if (left_keyed) {
 		lr_inputted = !lr_inputted;
 		// wallkick
-		if (keyed(m_key_right) && !grounded && m_test_touching_any(dir::left, [](tile t) {
+		if (!m_right_last_frame && right_keyed && !grounded && m_test_touching_any(dir::left, [](tile t) {
 				return t.solid();
 			})) {
 			m_player_wallkick(dir::right);
-		} else if (!keyed(m_key_right)) {
+		} else if (!right_keyed) {
 			// normal acceleration
 			if (m_xv > 0 && !on_ice) {
 				m_xv -= phys.x_decel * dt.asSeconds() *
@@ -215,8 +223,8 @@ void world::update(sf::Time dt) {
 		}
 	}
 
-	if (keyed(m_key_jump)) {
-		if (m_player_grounded_ago(sf::milliseconds(phys.coyote_millis)) && !m_tile_above_player()) {
+	if (jump_keyed) {
+		if (!m_jumping && m_player_grounded_ago(sf::milliseconds(phys.coyote_millis)) && !m_tile_above_player()) {
 			m_yv = -phys.jump_v * gravity_sign;
 			// so that we can't jump twice :)
 			m_time_airborne = sf::seconds(999);
@@ -378,6 +386,12 @@ void world::update(sf::Time dt) {
 	// update the player's animation
 	m_update_animation();
 	m_sync_player_position();
+
+	// update last frame keys
+	m_left_last_frame  = left_keyed;
+	m_right_last_frame = right_keyed;
+	m_jump_last_frame  = jump_keyed;
+	m_dash_last_frame  = dash_keyed;
 }
 
 void world::m_player_wallkick(dir d) {
