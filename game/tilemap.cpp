@@ -253,7 +253,8 @@ bool tile::solid() const {
 	return type == tile::block ||
 		   type == tile::gravity ||
 		   type == tile::ice ||
-		   type == tile::black;
+		   type == tile::black ||
+		   type == tile::ladder;
 }
 
 bool tile::blocks_wallkicks() const {

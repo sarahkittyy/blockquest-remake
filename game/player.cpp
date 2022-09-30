@@ -11,6 +11,7 @@ player::player(sf::Texture& tex)
 	add_animation("jump", { 3 });
 	add_animation("fall", { 4 });
 	add_animation("climb", { 5, 6, 7, 6 });
+	add_animation("hang", { 5 });
 	add_animation("dash_start", { 11 });
 	add_animation("dash", { 8, 9 });
 

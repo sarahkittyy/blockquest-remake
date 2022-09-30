@@ -27,7 +27,7 @@ int app::run() {
 		l.map().set(i, 31, tile::block);
 		l.map().set(i, 0, tile::ice);
 		l.map().set(0, i, tile::block);
-		l.map().set(31, i, tile::ladder);
+		l.map().set(31, i, i < 15 ? tile::ladder : tile::black);
 	}
 
 	l.map().set(1, 30, tile::begin);
@@ -37,11 +37,13 @@ int app::run() {
 	l.map().set(18, 30, tile::end);
 
 	for (int i = 5; i < 29; ++i) {
-		l.map().set(5, i, tile::block);
+		l.map().set(5, i, tile::ladder);
 		if (i % 6 == 0 && i > 9) {
 			l.map().set(4, i, tile::spike);
 		}
 	}
+
+	l.map().set(6, 3, tile::block);
 
 	l.map().set(16, 31, tile::gravity);
 	l.map().set(16, 29, tile::block);
@@ -53,7 +55,9 @@ int app::run() {
 	l.map().set(8, 29, tile::block);
 	l.map().set(9, 28, tile::block);
 	l.map().set(11, 27, tile::block);
-	l.map().set(18, 27, tile(tile::block, { .moving = 4 }));
+	l.map().set(18, 27, tile(tile::ice, { .moving = 4 }));
+	l.map().set(18, 26, tile(tile::ladder, { .moving = 4 }));
+	l.map().set(18, 25, tile(tile::ladder, { .moving = 4 }));
 
 	// l.map().set(8, 1, tile::block);
 	// l.map().set(8, 2, tile::block);

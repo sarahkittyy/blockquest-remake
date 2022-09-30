@@ -50,21 +50,24 @@ private:
 
 	// physics constants
 	const struct physics {
-		float xv_max		   = 12.54f;
-		float yv_max		   = 20.00f;
-		float x_accel		   = 60.0f;
-		float x_decel		   = 60.0f;
-		float jump_v		   = 17.0f;
-		float grav			   = 60.f;
-		float shorthop_factor  = 0.5f;
-		float air_control	   = 0.3f;
-		float dash_xv_max	   = 20.f;
-		float dash_x_accel	   = 120.f;
-		float dash_air_control = 0.2f;
-		float wallkick_xv	   = 9.5f;
-		float wallkick_yv	   = 16.0f;
-		float ice_friction	   = 0.2f;
-		int coyote_millis	   = 75;
+		float xv_max			= 12.54f;
+		float yv_max			= 20.00f;
+		float x_accel			= 60.0f;
+		float x_decel			= 60.0f;
+		float jump_v			= 17.0f;
+		float grav				= 60.f;
+		float shorthop_factor	= 0.5f;
+		float air_control		= 0.3f;
+		float dash_xv_max		= 20.f;
+		float dash_x_accel		= 120.f;
+		float dash_air_control	= 0.2f;
+		float wallkick_xv		= 9.5f;
+		float wallkick_yv		= 16.0f;
+		float ice_friction		= 0.2f;
+		float climb_yv_max		= 10.0f;
+		float climb_ya			= 180.f;
+		float climb_dismount_xv = 6.f;
+		int coyote_millis		= 75;
 	} phys;
 
 	// units are in tiles
@@ -77,23 +80,32 @@ private:
 	sf::Keyboard::Key m_key_right = sf::Keyboard::Right;
 	sf::Keyboard::Key m_key_jump  = sf::Keyboard::Space;
 	sf::Keyboard::Key m_key_dash  = sf::Keyboard::Down;
+	sf::Keyboard::Key m_key_up	  = sf::Keyboard::Up;
+	sf::Keyboard::Key m_key_down  = sf::Keyboard::Down;
 
 	// were these keys hit this frame?
 	bool m_left_this_frame	= false;
 	bool m_right_this_frame = false;
 	bool m_jump_this_frame	= false;
 	bool m_dash_this_frame	= false;
+	bool m_up_this_frame	= false;
+	bool m_down_this_frame	= false;
 	// were these keys hit last frame?
 	bool m_left_last_frame	= false;
 	bool m_right_last_frame = false;
 	bool m_jump_last_frame	= false;
 	bool m_dash_last_frame	= false;
+	bool m_up_last_frame	= false;
+	bool m_down_last_frame	= false;
 
 	sf::Time m_time_airborne  = sf::seconds(0);	  // counts the number of frames we're airborne for, for coyote time
 	bool m_jumping			  = false;
 	bool m_dashing			  = false;
 	dir m_dash_dir			  = dir::left;
 	sf::Time m_since_wallkick = sf::seconds(999);
+
+	bool m_climbing		  = false;	 // are we scaling a ladder rn
+	dir m_climbing_facing = dir::left;
 
 	// true for a period after wallkicking where we should keep facing & movnig the direction of the kick
 	bool m_is_wallkick_locked() const;
@@ -145,11 +157,14 @@ private:
 	bool m_test_touching_any(dir d, std::function<bool(tile)> pred) const;
 	bool m_test_touching_none(dir d, std::function<bool(tile)> pred) const;
 
-	bool m_player_grounded() const;					// is the player on solid ground
-	bool m_player_grounded_ago(sf::Time t) const;	// has a player been grounded in the last t seconds?
-	bool m_can_player_wallkick(dir d) const;		// can the player wallkick (d = direction of kick)
-	bool m_tile_above_player() const;				// is there a tile directly above the player
-	dir m_facing() const;							// which direction is the player facing
+	bool m_player_grounded() const;										 // is the player on solid ground
+	bool m_player_grounded_ago(sf::Time t) const;						 // has a player been grounded in the last t seconds?
+	bool m_can_player_wallkick(dir d, bool keys_pressed = true) const;	 // can the player wallkick (d = direction of kick)
+	bool m_tile_above_player() const;									 // is there a tile directly above the player
+	bool m_against_ladder(dir d) const;									 // is there a ladder in the given direction
+	dir m_facing() const;												 // which direction is the player facing
+
+	constexpr dir mirror(dir d) const;	 // left -> right, up -> down
 
 	sf::Vector2f m_player_size() const;	  // width and height of the full player aabb
 };

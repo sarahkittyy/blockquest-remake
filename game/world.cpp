@@ -80,6 +80,7 @@ void world::m_restart_world() {
 	m_right_this_frame = false;
 	m_dash_this_frame  = false;
 	m_jump_this_frame  = false;
+	m_climbing		   = false;
 }
 
 /*
@@ -99,10 +100,14 @@ void world::update(sf::Time dt) {
 	bool right_keyed   = keyed(m_key_right);
 	bool dash_keyed	   = keyed(m_key_dash);
 	bool jump_keyed	   = keyed(m_key_jump);
+	bool up_keyed	   = keyed(m_key_up);
+	bool down_keyed	   = keyed(m_key_down);
 	m_left_this_frame  = left_keyed;
 	m_right_this_frame = right_keyed;
 	m_dash_this_frame  = dash_keyed;
 	m_jump_this_frame  = jump_keyed;
+	m_up_this_frame	   = up_keyed;
+	m_down_this_frame  = down_keyed;
 
 	m_pmgr.update(dt);
 
@@ -139,7 +144,7 @@ void world::update(sf::Time dt) {
 
 	if (dash_keyed) {
 		// can only start dashing if on the ground
-		if (grounded) {
+		if (grounded && !m_climbing) {
 			if (!m_dashing) {	// start of dash
 				m_dash_dir = m_facing();
 			}
@@ -151,6 +156,7 @@ void world::update(sf::Time dt) {
 
 	debug::get() << "dashing = " << m_dashing << "\n";
 	debug::get() << "grounded = " << grounded << "\n";
+	debug::get() << "climbing = " << m_climbing << "\n";
 
 	float air_control_factor	  = grounded ? 1 : (m_dashing && keyed(m_key_dash) ? phys.dash_air_control : phys.air_control);
 	float ground_control_factor	  = m_dashing && grounded ? 0 : 1;
@@ -168,12 +174,26 @@ void world::update(sf::Time dt) {
 		else
 			m_dash_dir = m_facing();
 	}
+	// disables climbing if we're no longer against a ladder
+	if (m_climbing && !m_against_ladder(m_climbing_facing)) {
+		m_climbing = false;
+		// if we're going "up"
+		if (m_yv * gravity_sign < 0 && !m_is_wallkick_locked()) {
+			m_xv = phys.climb_dismount_xv * (m_climbing_facing == dir::left ? -1 : 1);
+		}
+	}
 	bool lr_inputted = false;
 	if (right_keyed) {
 		lr_inputted = !lr_inputted;
-		// wallkickthat's
+		// wallkick
 		if (m_can_player_wallkick(dir::left)) {
 			m_player_wallkick(dir::left);
+		} else if (!m_climbing && m_against_ladder(dir::right)) {
+			m_climbing		  = true;
+			m_climbing_facing = dir::right;
+			m_yv			  = 0;
+		} else if (m_climbing && m_against_ladder(dir::left) && m_right_last_frame) {
+			m_climbing = false;
 		} else if (!left_keyed) {
 			// normal acceleration
 			if (m_xv < 0 && !on_ice) {
@@ -198,6 +218,12 @@ void world::update(sf::Time dt) {
 		// wallkick
 		if (m_can_player_wallkick(dir::right)) {
 			m_player_wallkick(dir::right);
+		} else if (!m_climbing && m_against_ladder(dir::left)) {
+			m_climbing		  = true;
+			m_climbing_facing = dir::left;
+			m_yv			  = 0;
+		} else if (m_climbing && m_against_ladder(dir::right) && m_right_last_frame) {
+			m_climbing = false;
 		} else if (!right_keyed) {
 			// normal acceleration
 			if (m_xv > 0 && !on_ice) {
@@ -231,12 +257,14 @@ void world::update(sf::Time dt) {
 	}
 
 	if (jump_keyed) {
-		if (!m_jumping && m_player_grounded_ago(sf::milliseconds(phys.coyote_millis)) && !m_tile_above_player()) {
+		if (!m_jumping && !m_climbing && m_player_grounded_ago(sf::milliseconds(phys.coyote_millis)) && !m_tile_above_player()) {
 			m_yv = -phys.jump_v * gravity_sign;
 			// so that we can't jump twice :)
 			m_time_airborne = sf::seconds(999);
 			m_jumping		= true;
 			m_r.play_sound("jump");
+		} else if (m_climbing && !m_jump_last_frame && m_can_player_wallkick(mirror(m_climbing_facing), false)) {
+			m_player_wallkick(mirror(m_climbing_facing));
 		}
 	} else {
 		if (m_jumping) {
@@ -245,17 +273,35 @@ void world::update(sf::Time dt) {
 				m_yv *= phys.shorthop_factor;
 		}
 	}
+
+	if (m_climbing) {	// up and down controls while climbing
+		if (up_keyed) {
+			m_yv -= phys.climb_ya * dt.asSeconds() * gravity_sign;
+		} else if (down_keyed) {
+			m_yv += phys.climb_ya * dt.asSeconds() * gravity_sign;
+		} else {
+			if (m_yv > (phys.climb_ya / 2.f) * dt.asSeconds()) {
+				m_yv -= phys.climb_ya * dt.asSeconds();
+			} else if (m_yv < -(phys.climb_ya / 2.f) * dt.asSeconds()) {
+				m_yv += phys.climb_ya * dt.asSeconds();
+			} else {
+				m_yv = 0;
+			}
+		}
+		m_yv = util::clamp(m_yv, -phys.climb_yv_max, phys.climb_yv_max);
+	}
 	/////////////////////
 
 	float real_xv_max = m_dashing ? phys.dash_xv_max : phys.xv_max;
 	m_xv			  = util::clamp(m_xv, -real_xv_max, real_xv_max);
 
-	// gravity based on if we're jumping or not
-	m_yv += phys.grav * dt.asSeconds() * gravity_sign;
-	if (m_flip_gravity) {
-		m_yv = util::clamp(m_yv, -phys.yv_max, phys.jump_v);
-	} else {
-		m_yv = util::clamp(m_yv, -phys.jump_v, phys.yv_max);
+	if (!m_climbing) {	 // no gravity while climbing
+		m_yv += phys.grav * dt.asSeconds() * gravity_sign;
+		if (m_flip_gravity) {
+			m_yv = util::clamp(m_yv, -phys.yv_max, phys.jump_v);
+		} else {
+			m_yv = util::clamp(m_yv, -phys.jump_v, phys.yv_max);
+		}
 	}
 
 	// !! physics !! //
@@ -306,7 +352,9 @@ void world::update(sf::Time dt) {
 				intended_x -= m_xv < 0 ? 0.01f : 0;
 				// if we're walking into a moving platform moving away from us, then we want to follow it, not bounce off it
 				std::optional<moving_tile> walking_into = m_moving_platform_handle[int(cx > pos.x ? dir::left : dir::right)];
-				if (walking_into && util::same_sign(walking_into->vel().x, m_xv) && std::abs(m_xv) > 0.01f) {
+				if (walking_into &&
+					util::same_sign(walking_into->vel().x, m_xv) &&
+					std::abs(m_xv) > 0.01f) {
 					m_xv = walking_into->vel().x;
 				} else {
 					m_xv = 0;
@@ -399,12 +447,15 @@ void world::update(sf::Time dt) {
 	m_right_last_frame = right_keyed;
 	m_jump_last_frame  = jump_keyed;
 	m_dash_last_frame  = dash_keyed;
+	m_up_last_frame	   = up_keyed;
+	m_down_last_frame  = down_keyed;
 }
 
 void world::m_player_wallkick(dir d) {
 	if (m_is_wallkick_locked()) return;
 	float xv_sign	= d == dir::left ? -1 : 1;
 	float grav_sign = m_flip_gravity ? -1 : 1;
+	m_climbing		= false;
 	m_xv			= phys.wallkick_xv * xv_sign;
 	m_yv			= -phys.wallkick_yv * grav_sign;
 	m_xp += ((1 - m_player_size().x) / 2.f) * xv_sign;
@@ -488,7 +539,9 @@ sf::Vector2f world::m_mp_player_offset(sf::Time dt) const {
 	// check the one we're standing on first
 	std::optional<moving_tile> standing_on = m_moving_platform_handle[int(m_flip_gravity ? dir::up : dir::down)];
 	if (standing_on) {
-		offset.x += standing_on->vel().x * dt.asSeconds();
+		if (tile(*standing_on) != tile::ice) {
+			offset.x += standing_on->vel().x * dt.asSeconds();
+		}
 		offset.y += standing_on->vel().y * dt.asSeconds();
 	}
 
@@ -503,12 +556,28 @@ sf::Vector2f world::m_mp_player_offset(sf::Time dt) const {
 		offset.x += right->vel().x * dt.asSeconds();
 	}
 
+	// specific case for climbing on a moving ladder going away from us
+	if (m_climbing) {
+		if (m_climbing_facing == dir::left && left && left->vel().x < 0) {
+			offset.x += left->vel().x * dt.asSeconds();
+		}
+		if (m_climbing_facing == dir::right && right && right->vel().x > 0) {
+			offset.x += right->vel().x * dt.asSeconds();
+		}
+	}
 
 	return offset;
 }
 
 void world::m_update_animation() {
-	if (std::abs(m_xv) > phys.xv_max) {
+	if (m_climbing) {
+		if (std::abs(m_yv) > 0.01f) {
+			m_player.set_animation("climb");
+		} else {
+			m_player.set_animation("hang");
+		}
+		m_player.setScale(m_climbing_facing == dir::left ? 1 : -1, m_player.getScale().y);
+	} else if (std::abs(m_xv) > phys.xv_max) {
 		m_player.set_animation("dash");
 	} else if (std::abs(m_xv) > 0.3f) {
 		if (m_on_ice()) {
@@ -527,7 +596,7 @@ void world::m_update_animation() {
 	}
 
 	// jumping
-	if (std::abs(m_yv) > 0.01f) {
+	if (!m_climbing && std::abs(m_yv) > 0.01f) {
 		if (m_flip_gravity) {
 			if (m_yv > -phys.yv_max * 0.2f) {
 				m_player.set_animation("jump");
@@ -620,10 +689,18 @@ bool world::m_player_grounded_ago(sf::Time t) const {
 	return m_time_airborne < t;
 }
 
-bool world::m_can_player_wallkick(dir d) const {
+bool world::m_against_ladder(dir d) const {
+	return m_test_touching_any(d, [](tile t) {
+		return t == tile::ladder;
+	});
+}
+
+bool world::m_can_player_wallkick(dir d, bool keys_pressed) const {
 	bool keyed_last_frame = d == dir::left ? m_left_last_frame : m_right_last_frame;
 	bool keyed_this_frame = d == dir::left ? m_left_this_frame : m_right_this_frame;
-	return !keyed_last_frame && keyed_this_frame && !m_player_grounded() &&
+	bool just_keyed		  = !keyed_last_frame && keyed_this_frame;
+
+	return (!keys_pressed || just_keyed) && !m_player_grounded() &&
 		   m_test_touching_any(d == dir::left ? dir::right : dir::left, [](tile t) {
 			   return t.solid() && !t.blocks_wallkicks();
 		   });
@@ -791,4 +868,13 @@ bool world::m_test_touching_any(dir d, std::function<bool(tile)> pred) const {
 bool world::m_test_touching_none(dir d, std::function<bool(tile)> pred) const {
 	if (m_touching[int(d)].size() == 0) return false;
 	return std::none_of(m_touching[int(d)].begin(), m_touching[int(d)].end(), pred);
+}
+
+constexpr world::dir world::mirror(dir d) const {
+	switch (d) {
+	case dir::up: return dir::down;
+	case dir::down: return dir::up;
+	case dir::left: return dir::right;
+	case dir::right: return dir::left;
+	};
 }
