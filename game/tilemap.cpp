@@ -250,7 +250,9 @@ bool tile::harmful() const {
 }
 
 bool tile::solid() const {
-	return type == tile::block || type == tile::gravity;
+	return type == tile::block ||
+		   type == tile::gravity ||
+		   type == tile::ice;
 }
 
 // ///////////////////

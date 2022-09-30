@@ -83,7 +83,6 @@ void particle_system::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 		sf::Vector2f tl(p.m_cframe % p.tx, std::floor(p.m_cframe / p.tx));
 		tl.x *= sfsz.x;
 		tl.y *= sfsz.y;
-		debug::log() << "TL = " << tl << "\n";
 		va.append(sf::Vertex({ p.xp - hf.x, p.yp - hf.y }, sf::Color(255, 255, 255, p.alpha * 255), { tl.x, tl.y }));
 		va.append(sf::Vertex({ p.xp + hf.x, p.yp - hf.y }, sf::Color(255, 255, 255, p.alpha * 255), { tl.x + sfsz.x, tl.y }));
 		va.append(sf::Vertex({ p.xp + hf.x, p.yp + hf.y }, sf::Color(255, 255, 255, p.alpha * 255), { tl.x + sfsz.x, tl.y + sfsz.y }));

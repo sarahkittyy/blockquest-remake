@@ -28,9 +28,10 @@ world::world(resource& r, level l)
 		while (!stoken.stop_requested()) {
 			if (m_dashing && m_player_grounded() && std::abs(m_xv) > phys.xv_max) {
 				s.play();
-				auto& sp = m_pmgr.spawn<particles::smoke>(m_r);
-				sp.setPosition(m_xp, m_yp + 0.2f);
-				sp.setScale(m_dash_dir == dir::right ? -1 : 1, sp.getScale().y);
+				auto& sp		= m_pmgr.spawn<particles::smoke>(m_r);
+				float grav_sign = m_flip_gravity ? -1 : 1;
+				sp.setPosition(m_xp, m_yp + 0.2f * grav_sign);
+				sp.setScale(m_dash_dir == dir::right ? -1 : 1, grav_sign);
 			}
 			std::this_thread::sleep_for(120ms);
 		}
@@ -67,9 +68,10 @@ void world::m_restart_world() {
 	m_sync_player_position();
 	m_player.setScale(1, 1);
 	m_mt_mgr.restart();
-	m_time_airborne = sf::seconds(0);
-	m_jumping		= false;
-	m_dashing		= false;
+	m_time_airborne	 = sf::seconds(0);
+	m_jumping		 = false;
+	m_dashing		 = false;
+	m_since_wallkick = sf::seconds(999);
 }
 
 /*
@@ -115,6 +117,8 @@ void world::update(sf::Time dt) {
 		m_time_airborne += dt;
 	}
 
+	m_since_wallkick += dt;
+
 	// controls //
 
 	if (keyed(m_key_dash)) {
@@ -129,40 +133,83 @@ void world::update(sf::Time dt) {
 		m_dashing = false;
 	}
 
-	float air_control_factor	= grounded ? 1 : (m_dashing && keyed(m_key_dash) ? phys.dash_air_control : phys.air_control);
-	float ground_control_factor = m_dashing && grounded ? 0 : 1;
+	float air_control_factor	  = grounded ? 1 : (m_dashing && keyed(m_key_dash) ? phys.dash_air_control : phys.air_control);
+	float ground_control_factor	  = m_dashing && grounded ? 0 : 1;
+	float wallkick_control_factor = m_is_wallkick_locked() ? 0 : 1;
+	bool on_ice					  = m_on_ice();	  // since this is expensive
+	float friction_control_factor = on_ice && grounded ? phys.ice_friction : 1;
 	if (m_dashing) {
 		// if dashing, l/r controls are disabled and we accelerate at full speed in the dash direction
 		float xv_sign = m_dash_dir == dir::left ? -1 : 1;
-		m_xv += phys.dash_x_accel * dt.asSeconds() * air_control_factor * xv_sign;
-		m_player.setScale(-xv_sign, m_player.getScale().y);
-		// airborne LR controls while dashing
-		if (!grounded) {
+		if (grounded)
+			m_xv += phys.dash_x_accel * dt.asSeconds() *
+					air_control_factor *
+					friction_control_factor *
+					xv_sign;
+		else
+			m_dash_dir = m_facing();
+	}
+	bool lr_inputted = false;
+	if (keyed(m_key_right)) {
+		lr_inputted = !lr_inputted;
+		// wallkickthat's
+		if (keyed(m_key_left) && !grounded && m_test_touching_any(dir::right, [](tile t) {
+				return t.solid();
+			})) {
+			m_player_wallkick(dir::left);
+		} else if (!keyed(m_key_left)) {
+			// normal acceleration
+			if (m_xv < 0 && !on_ice) {
+				m_xv += phys.x_decel * dt.asSeconds() *
+						air_control_factor *
+						ground_control_factor *
+						wallkick_control_factor *
+						friction_control_factor;
+			}
+			m_xv += phys.x_accel * dt.asSeconds() *
+					air_control_factor *
+					ground_control_factor *
+					wallkick_control_factor *
+					friction_control_factor;
+			// we can only change direction when not dashing
+			if ((!m_dashing || !grounded) && !m_is_wallkick_locked())
+				m_player.setScale(-1, m_player.getScale().y);
 		}
 	}
-	if (keyed(m_key_right)) {
-		// normal acceleration
-		if (m_xv < 0) {
-			m_xv += phys.x_decel * dt.asSeconds() * air_control_factor * ground_control_factor;
+	if (keyed(m_key_left)) {
+		lr_inputted = !lr_inputted;
+		// wallkick
+		if (keyed(m_key_right) && !grounded && m_test_touching_any(dir::left, [](tile t) {
+				return t.solid();
+			})) {
+			m_player_wallkick(dir::right);
+		} else if (!keyed(m_key_right)) {
+			// normal acceleration
+			if (m_xv > 0 && !on_ice) {
+				m_xv -= phys.x_decel * dt.asSeconds() *
+						air_control_factor *
+						ground_control_factor *
+						wallkick_control_factor;
+			}
+			m_xv -= phys.x_accel * dt.asSeconds() *
+					air_control_factor *
+					ground_control_factor *
+					wallkick_control_factor *
+					friction_control_factor;
+			// we can only change direction when not dashing
+			if ((!m_dashing || !grounded) && !m_is_wallkick_locked())
+				m_player.setScale(1, m_player.getScale().y);
 		}
-		m_xv += phys.x_accel * dt.asSeconds() * air_control_factor * ground_control_factor;
-		// we can only change direction when not dashing
-		if (!m_dashing)
-			m_player.setScale(-1, m_player.getScale().y);
-	} else if (keyed(m_key_left)) {
-		// normal acceleration
-		if (m_xv > 0) {
-			m_xv -= phys.x_decel * dt.asSeconds() * air_control_factor * ground_control_factor;
-		}
-		m_xv -= phys.x_accel * dt.asSeconds() * air_control_factor * ground_control_factor;
-		// we can only change direction when not dashing
-		if (!m_dashing)
-			m_player.setScale(1, m_player.getScale().y);
-	} else {
+	}
+	if (!lr_inputted && (!m_dashing || !m_jumping) && !m_is_wallkick_locked()) {
 		if (m_xv > (phys.x_decel / 2.f) * dt.asSeconds()) {
-			m_xv -= phys.x_decel * dt.asSeconds();
+			m_xv -= phys.x_decel *
+					friction_control_factor *
+					dt.asSeconds();
 		} else if (m_xv < (-phys.x_decel / 2.f) * dt.asSeconds()) {
-			m_xv += phys.x_decel * dt.asSeconds();
+			m_xv += phys.x_decel *
+					friction_control_factor *
+					dt.asSeconds();
 		} else {
 			m_xv = 0;
 		}
@@ -179,7 +226,8 @@ void world::update(sf::Time dt) {
 	} else {
 		if (m_jumping) {
 			m_jumping = false;
-			m_yv *= phys.shorthop_factor;
+			if (!m_is_wallkick_locked())
+				m_yv *= phys.shorthop_factor;
 		}
 	}
 	/////////////////////
@@ -306,6 +354,7 @@ void world::update(sf::Time dt) {
 
 		m_r.play_sound("gravityflip");
 		m_flip_gravity = !m_flip_gravity;
+		m_dashing	   = false;
 		m_player.setScale(m_player.getScale().x, m_flip_gravity ? -1 : 1);
 	}
 	// some debug info
@@ -329,6 +378,25 @@ void world::update(sf::Time dt) {
 	// update the player's animation
 	m_update_animation();
 	m_sync_player_position();
+}
+
+void world::m_player_wallkick(dir d) {
+	if (m_is_wallkick_locked()) return;
+	float xv_sign	= d == dir::left ? -1 : 1;
+	float grav_sign = m_flip_gravity ? -1 : 1;
+	m_xv			= phys.wallkick_xv * xv_sign;
+	m_yv			= -phys.wallkick_yv * grav_sign;
+	m_xp += ((1 - m_player_size().x) / 2.f) * xv_sign;
+	auto& sp = m_pmgr.spawn<particles::smoke>(m_r);
+	sp.setPosition(m_xp - 0.35f * xv_sign, m_yp);
+	sp.setScale(xv_sign, sp.getScale().y);
+	m_r.play_sound("wallkick");
+	m_player.setScale(-xv_sign, m_player.getScale().y);
+	m_since_wallkick = sf::Time::Zero;
+}
+
+bool world::m_is_wallkick_locked() const {
+	return m_since_wallkick < sf::milliseconds(200);
 }
 
 bool world::m_handle_contact(float x, float y, std::vector<std::pair<sf::Vector2f, tile>> contacts) {
@@ -422,7 +490,17 @@ void world::m_update_animation() {
 	if (std::abs(m_xv) > phys.xv_max) {
 		m_player.set_animation("dash");
 	} else if (std::abs(m_xv) > 0.3f) {
-		m_player.set_animation("walk");
+		if (m_on_ice()) {
+			if (sf::Keyboard::isKeyPressed(m_key_left) ||
+				sf::Keyboard::isKeyPressed(m_key_right) ||
+				sf::Keyboard::isKeyPressed(m_key_dash)) {
+				m_player.set_animation("walk");
+			} else {
+				m_player.set_animation("stand");
+			}
+		} else {
+			m_player.set_animation("walk");
+		}
 	} else {
 		m_player.set_animation("stand");
 	}
@@ -430,13 +508,13 @@ void world::m_update_animation() {
 	// jumping
 	if (std::abs(m_yv) > 0.01f) {
 		if (m_flip_gravity) {
-			if (m_yv > -phys.yv_max * 0.5f) {
+			if (m_yv > -phys.yv_max * 0.2f) {
 				m_player.set_animation("jump");
 			} else if (m_yv < -phys.yv_max * 0.5f) {
 				m_player.set_animation("fall");
 			}
 		} else {
-			if (m_yv < phys.yv_max * 0.5f) {
+			if (m_yv < phys.yv_max * 0.2f) {
 				m_player.set_animation("jump");
 			} else if (m_yv > phys.yv_max * 0.5f) {
 				m_player.set_animation("fall");
@@ -505,6 +583,12 @@ void world::m_player_die() {
 
 void world::m_sync_player_position() {
 	m_player.setPosition(m_xp * m_player.size().x, m_yp * m_player.size().y);
+}
+
+bool world::m_on_ice() const {
+	return m_test_touching_any(m_flip_gravity ? dir::up : dir::down, [](tile t) -> bool {
+		return t == tile::ice;
+	});
 }
 
 bool world::m_player_grounded() const {

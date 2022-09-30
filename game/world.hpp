@@ -57,10 +57,13 @@ private:
 		float jump_v		   = 17.0f;
 		float grav			   = 60.f;
 		float shorthop_factor  = 0.5f;
-		float air_control	   = 0.7f;
+		float air_control	   = 0.5f;
 		float dash_xv_max	   = 20.f;
 		float dash_x_accel	   = 120.f;
-		float dash_air_control = 0.2f;
+		float dash_air_control = 0.3f;
+		float wallkick_xv	   = 9.5f;
+		float wallkick_yv	   = 16.0f;
+		float ice_friction	   = 0.2f;
 		int coyote_millis	   = 75;
 	} phys;
 
@@ -75,10 +78,15 @@ private:
 	sf::Keyboard::Key m_key_jump  = sf::Keyboard::Space;
 	sf::Keyboard::Key m_key_dash  = sf::Keyboard::Down;
 
-	sf::Time m_time_airborne = sf::seconds(0);	 // counts the number of frames we're airborne for, for coyote time
-	bool m_jumping			 = false;
-	bool m_dashing			 = false;
-	dir m_dash_dir			 = dir::left;
+	sf::Time m_time_airborne  = sf::seconds(0);	  // counts the number of frames we're airborne for, for coyote time
+	bool m_jumping			  = false;
+	bool m_dashing			  = false;
+	dir m_dash_dir			  = dir::left;
+	sf::Time m_since_wallkick = sf::seconds(999);
+
+	// true for a period after wallkicking where we should keep facing & movnig the direction of the kick
+	bool m_is_wallkick_locked() const;
+	bool m_on_ice() const;
 
 	// dashing produces a rythmic noise that the current update loop is not precise enough to handle
 	std::jthread m_dash_sfx_thread;
@@ -87,6 +95,7 @@ private:
 
 	void m_update_animation();		 // update the animation state of the player
 	void m_player_die();			 // run when the player dies
+	void m_player_wallkick(dir d);	 // walljump
 	bool m_dead = false;			 // used to short circuit logic in the case of a death
 	void m_sync_player_position();	 // set the player sprite's position to the internal physics position
 	// handle contacts. returns true if a collision occured.
