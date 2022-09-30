@@ -14,7 +14,6 @@ All assets in `assets/` are ripped straight from the original BlockQuest SWF ava
 
 ## Dependencies
 
-- SFML 2.5
 - C++20
 
 ## Building
