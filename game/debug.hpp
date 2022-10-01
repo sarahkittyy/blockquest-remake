@@ -67,6 +67,7 @@ private:
 	bool m_open		  = true;
 	bool m_draw_debug = false;
 	bool m_log_mode	  = false;
+	bool m_demo_open  = false;
 
 	debug();
 	debug(const debug&)			 = delete;

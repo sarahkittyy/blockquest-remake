@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <SFML/Graphics.hpp>
 
+#include "fsm.hpp"
 #include "resource.hpp"
 #include "tilemap.hpp"
 #include "world.hpp"
@@ -19,4 +20,5 @@ public:
 private:
 	sf::RenderWindow m_window;	 // app window
 	resource m_r;				 // app resource mgr
+	fsm m_fsm;					 // app state machine
 };

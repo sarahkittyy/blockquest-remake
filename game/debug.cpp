@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "imgui.h"
 #include "tilemap.hpp"
 
 debug& debug::get() {
@@ -17,10 +18,13 @@ debug& debug::log() {
 }
 
 void debug::imdraw() {
+	if (m_demo_open)
+		ImGui::ShowDemoWindow(&m_demo_open);
 	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
 	ImGui::Begin("Debug Info", &m_open, flags);
 
 	ImGui::Checkbox("Toggle debug draw", &m_draw_debug);
+	ImGui::Checkbox("Show demo window", &m_demo_open);
 
 	ImGui::TextWrapped("%s", m_data.str().c_str());
 	ImGui::TextWrapped("\n-- LOGS --\n%s", m_log.str().c_str());
