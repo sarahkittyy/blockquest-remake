@@ -316,16 +316,16 @@ void world::update(sf::Time dt) {
 
 	float cx = initial_x, cy = initial_y;
 
-	// debug::get().box(util::scale<float>(m_get_player_top_aabb(cx, cy), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_bottom_aabb(cx, cy), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_left_aabb(cx, cy), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_right_aabb(cx, cy), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_top_aabb(cx, cy), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_bottom_aabb(cx, cy), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_left_aabb(cx, cy), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_right_aabb(cx, cy), m_player.size().x));
 	// debug::get().box(util::scale<float>(m_get_player_top_ghost_aabb(cx, cy), m_player.size().x));
 	// debug::get().box(util::scale<float>(m_get_player_bottom_ghost_aabb(cx, cy), m_player.size().x));
 	// debug::get().box(util::scale<float>(m_get_player_left_ghost_aabb(cx, cy), m_player.size().x));
 	// debug::get().box(util::scale<float>(m_get_player_right_ghost_aabb(cx, cy), m_player.size().x));
 	// debug::get().box(util::scale<float>(m_get_player_aabb(cx, cy), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_x_aabb(cx, cy), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_x_aabb(cx, cy), m_player.size().x));
 	// debug::get().box(util::scale<float>(m_get_player_y_aabb(cx, cy), m_player.size().x));
 
 	// subdivide the movement into x and y steps
@@ -349,7 +349,10 @@ void world::update(sf::Time dt) {
 									   : pos.x - 0.5f + ((1 - m_player_size().x) / 2.f);   // hitting left side of block
 				x_collided		 = true;
 				// edge case to solve a bug in which moving against a bottom-right corner would trap you
-				intended_x -= m_xv < 0 ? 0.01f : 0;
+				if (cx < pos.x)
+					intended_x -= m_xv < 0 ? 0.01f : 0;
+				else if (cx > pos.x)
+					intended_x += m_xv > 0 ? 0.01f : 0;
 				// if we're walking into a moving platform moving away from us, then we want to follow it, not bounce off it
 				std::optional<moving_tile> walking_into = m_moving_platform_handle[int(cx > pos.x ? dir::left : dir::right)];
 				if (walking_into &&
@@ -715,7 +718,7 @@ world::dir world::m_facing() const {
 }
 
 sf::Vector2f world::m_player_size() const {
-	return { 0.8f, 0.8f };
+	return { 0.6f, 0.8f };
 }
 
 sf::FloatRect world::m_get_player_aabb(float x, float y) const {
