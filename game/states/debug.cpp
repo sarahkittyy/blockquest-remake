@@ -74,6 +74,7 @@ void debug::update(fsm* sm, sf::Time dt) {
 }
 
 void debug::draw(sf::RenderTarget& t, sf::RenderStates s) const {
+	s.transform *= getTransform();
 	t.draw(*m_w, s);
 }
 

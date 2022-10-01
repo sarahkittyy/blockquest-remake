@@ -12,7 +12,7 @@
 // top level app class
 class app {
 public:
-	app();
+	app(int argc, char** argv);
 	int run();
 
 	void configure_imgui_style();

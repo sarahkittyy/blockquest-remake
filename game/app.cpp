@@ -6,12 +6,24 @@
 #include <nlohmann/json.hpp>
 
 #include "debug.hpp"
-#include "states/debug.hpp"
 
-app::app()
+#include "states/debug.hpp"
+#include "states/main.hpp"
+
+app::app(int argc, char** argv)
 	: m_window(sf::VideoMode(1920, 1080), "BlockQuest Remake"),
 	  m_fsm(m_r) {
 	ImGui::SFML::Init(m_window);
+	if (argc > 1) {
+		std::string mode = argv[1];
+		if (mode == "main") {
+			m_fsm.swap_state<states::main>();
+		} else if (mode == "debug") {
+			m_fsm.swap_state<states::debug>();
+		} else {
+			m_fsm.swap_state<states::debug>();
+		}
+	}
 }
 
 int app::run() {
@@ -23,8 +35,6 @@ int app::run() {
 	m_r.load_sound("gameover", "assets/sound/gameover.flac");
 	m_r.load_sound("gravityflip", "assets/sound/gravityflip.flac");
 	m_r.load_sound("wallkick", "assets/sound/wallkick.flac");
-
-	m_fsm.swap_state<states::debug>();
 
 	configure_imgui_style();
 
@@ -135,7 +145,7 @@ void app::configure_imgui_style() {
 	colors[ImGuiCol_ModalWindowDimBg]	   = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 }
 
-int main() {
-	app app;
+int main(int argc, char** argv) {
+	app app(argc, argv);
 	return app.run();
 }

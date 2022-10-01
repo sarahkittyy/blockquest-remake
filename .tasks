@@ -5,9 +5,8 @@ cwd=build
 
 [test]
 
-command=make test
-cwd=build
+command=./build/bq-r debug
 
 [run]
 
-command=./build/bq-r
+command=./build/bq-r main
