@@ -40,10 +40,14 @@ void tilemap::m_set_quad(int i, tile t) {
 
 	if (t == tile::empty) {
 		sf::Vertex air;
-		m_va[i * 4]		= air;
-		m_va[i * 4 + 1] = air;
-		m_va[i * 4 + 2] = air;
-		m_va[i * 4 + 3] = air;
+		m_va[i * 4]			   = air;
+		m_va[i * 4 + 1]		   = air;
+		m_va[i * 4 + 2]		   = air;
+		m_va[i * 4 + 3]		   = air;
+		m_va_editor[i * 4]	   = air;
+		m_va_editor[i * 4 + 1] = air;
+		m_va_editor[i * 4 + 2] = air;
+		m_va_editor[i * 4 + 3] = air;
 		return;
 	}
 
