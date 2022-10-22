@@ -29,9 +29,11 @@ set(flags)
 
 if(WIN32)
 	set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc")
+	add_executable(bq-r WIN32 ${sources} ${imgui_sources} ${APP_ICON_RESOURCE_WINDOWS})
+	list(APPEND libs sfml-main)
+else()
+	add_executable(bq-r ${sources} ${imgui_sources} ${APP_ICON_RESOURCE_WINDOWS})
 endif()
-
-add_executable(bq-r ${sources} ${imgui_sources} ${APP_ICON_RESOURCE_WINDOWS})
 
 target_compile_options(bq-r PUBLIC ${flags})
 target_include_directories(bq-r PUBLIC ${includes})
@@ -45,6 +47,7 @@ if(WIN32)
 		$<TARGET_FILE:sfml-audio>
 		$<TARGET_FILE:sfml-network>
 		$<TARGET_FILE:sfml-system>
+		$<TARGET_FILE:sfml-main>
 		$<TARGET_FILE_DIR:bq-r>
 	)
 	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
