@@ -67,7 +67,7 @@ void moving_tile_manager::update(sf::Time dt) {
 		auto contacts = m_tmap.intersects(aabb);
 		decltype(contacts) solid_contacts;
 		std::copy_if(contacts.begin(), contacts.end(), std::back_inserter(solid_contacts), [](std::pair<sf::Vector2f, tile> t) {
-			return t.second.solid();
+			return t.second.blocks_moving_tiles();
 		});
 		if (m_handle_contact(solid_contacts)) {
 			auto [pos, tile] = *solid_contacts.begin();

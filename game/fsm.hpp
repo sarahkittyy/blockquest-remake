@@ -17,7 +17,10 @@ public:
 	virtual ~state();
 
 	virtual void update(fsm* sm, sf::Time dt);
-	virtual void imdraw();
+	virtual void imdraw(fsm* sm);
+
+	// override to change the window's background color
+	virtual sf::Color bg() const;
 
 protected:
 	virtual void draw(sf::RenderTarget&, sf::RenderStates) const;
@@ -49,6 +52,9 @@ public:
 
 	// called when it's time to render imgui
 	void imdraw();
+
+	// retrieves the background color
+	sf::Color bg() const;
 
 private:
 	void draw(sf::RenderTarget&, sf::RenderStates) const;

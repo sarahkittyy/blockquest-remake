@@ -16,6 +16,7 @@ world::world(resource& r, level l)
 	  m_player(r.tex("assets/player.png")),
 	  m_start_x(0),
 	  m_start_y(0),
+	  m_flip_gravity(false),
 	  m_moving_platform_handle() {
 	m_player.set_animation("walk");
 	m_player.setOrigin(m_player.size().x / 2.f, m_player.size().y / 2.f);
@@ -242,7 +243,7 @@ void world::update(sf::Time dt) {
 				m_player.setScale(1, m_player.getScale().y);
 		}
 	}
-	if (!lr_inputted && (!m_dashing && !m_jumping) && !m_is_wallkick_locked()) {
+	if (!lr_inputted && !m_dashing && !m_is_wallkick_locked()) {
 		if (m_xv > (phys.x_decel / 2.f) * dt.asSeconds()) {
 			m_xv -= phys.x_decel *
 					friction_control_factor *
@@ -383,12 +384,10 @@ void world::update(sf::Time dt) {
 				auto [pos, tile] = m_first_solid(collided);
 				intended_y		 = cy > pos.y
 									   ? pos.y + 1.5f
-									   : pos.y - 0.5f + ((1 - m_player_size().y) / 6.f);   // hitting top side of block
-				// edge case for upside down platform sticking
-				intended_y += m_jumping && m_flip_gravity ? 0.01f : 0;
-				cy		   = intended_y;
-				y_collided = true;
-				m_yv	   = 0;
+									   : pos.y - 0.5f + ((1 - m_player_size().y) / 6.02f);	 // hitting top side of block
+				cy				 = intended_y;
+				y_collided		 = true;
+				m_yv			 = 0;
 			}
 		}
 	}
@@ -690,6 +689,10 @@ bool world::m_player_grounded() const {
 
 bool world::m_player_grounded_ago(sf::Time t) const {
 	return m_time_airborne < t;
+}
+
+bool world::m_just_jumped() const {
+	return !m_jump_last_frame && m_jump_this_frame;
 }
 
 bool world::m_against_ladder(dir d) const {

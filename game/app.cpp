@@ -8,27 +8,14 @@
 #include "debug.hpp"
 
 #include "states/debug.hpp"
+#include "states/edit.hpp"
 #include "states/main.hpp"
 
 app::app(int argc, char** argv)
 	: m_window(sf::VideoMode(1920, 1080), "BlockQuest Remake"),
+	  m_r(m_window),
 	  m_fsm(m_r) {
 	ImGui::SFML::Init(m_window);
-	if (argc > 1) {
-		std::string mode = argv[1];
-		if (mode == "main") {
-			m_fsm.swap_state<states::main>();
-		} else if (mode == "debug") {
-			m_fsm.swap_state<states::debug>();
-		} else {
-			m_fsm.swap_state<states::debug>();
-		}
-	}
-}
-
-int app::run() {
-	sf::Clock delta_clock;	 // clock for measuring time deltas between frames
-	sf::Event evt;
 
 	m_r.load_sound("jump", "assets/sound/jump.flac");
 	m_r.load_sound("dash", "assets/sound/dash.flac");
@@ -37,6 +24,24 @@ int app::run() {
 	m_r.load_sound("wallkick", "assets/sound/wallkick.flac");
 
 	configure_imgui_style();
+
+	if (argc > 1) {
+		std::string mode = argv[1];
+		if (mode == "main") {
+			m_fsm.swap_state<states::main>();
+		} else if (mode == "debug") {
+			m_fsm.swap_state<states::debug>();
+		} else if (mode == "edit") {
+			m_fsm.swap_state<states::edit>();
+		} else {
+			m_fsm.swap_state<states::edit>();
+		}
+	}
+}
+
+int app::run() {
+	sf::Clock delta_clock;	 // clock for measuring time deltas between frames
+	sf::Event evt;
 
 	// app loop
 	while (m_window.isOpen()) {
@@ -57,11 +62,11 @@ int app::run() {
 		m_fsm.update(dt);
 
 		// imgui rendering
-		debug::get().imdraw();
 		m_fsm.imdraw();
+		debug::get().imdraw();
 		ImGui::EndFrame();
 
-		m_window.clear(sf::Color(0xC8AD7FFF));
+		m_window.clear(m_fsm.bg());
 
 		// draw
 		m_window.draw(m_fsm);
@@ -80,6 +85,9 @@ void app::configure_imgui_style() {
 	ImGuiStyle& style	  = ImGui::GetStyle();
 	style.FrameRounding	  = 6;
 	style.FrameBorderSize = 1;
+	style.WindowRounding  = 12;
+	style.TabBorderSize	  = 1;
+	style.FramePadding	  = ImVec2(18, 7);
 
 	// font
 	ImGuiIO& io = ImGui::GetIO();
@@ -89,11 +97,11 @@ void app::configure_imgui_style() {
 	ImGui::SFML::UpdateFontTexture();
 
 	// color
-	ImVec4* colors						   = style.Colors;
+	ImVec4* colors						   = ImGui::GetStyle().Colors;
 	colors[ImGuiCol_Text]				   = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
 	colors[ImGuiCol_TextDisabled]		   = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-	colors[ImGuiCol_WindowBg]			   = ImVec4(0.00f, 0.00f, 0.00f, 0.94f);
-	colors[ImGuiCol_ChildBg]			   = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_WindowBg]			   = ImVec4(0.00f, 0.00f, 0.00f, 0.88f);
+	colors[ImGuiCol_ChildBg]			   = ImVec4(0.16f, 0.10f, 0.00f, 1.00f);
 	colors[ImGuiCol_PopupBg]			   = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
 	colors[ImGuiCol_Border]				   = ImVec4(0.75f, 0.52f, 0.16f, 1.00f);
 	colors[ImGuiCol_BorderShadow]		   = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);

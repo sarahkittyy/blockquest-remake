@@ -1,8 +1,8 @@
 #include "level.hpp"
 
-level::level(resource& r)
+level::level(resource& r, int xs, int ys)
 	: m_r(r),
-	  m_tmap(m_r.tex("assets/tiles.png"), 32, 32, 16) {
+	  m_tmap(m_r.tex("assets/tiles.png"), xs, ys, 16) {
 }
 
 void level::draw(sf::RenderTarget& t, sf::RenderStates s) const {
@@ -20,7 +20,25 @@ void level::deserialize(const nlohmann::json& j) {
 	m_tmap.deserialize(j.at("tiles"));
 }
 
+bool level::valid() const {
+	return m_tmap.tile_count(tile::begin) == 1 &&
+		   m_tmap.tile_count(tile::end) == 1;
+}
+
+sf::Vector2i level::mouse_tile() const {
+	sf::Vector2f mouse_pos(sf::Mouse::getPosition(m_r.window()));
+	mouse_pos = getInverseTransform().transformPoint(mouse_pos);
+
+	return sf::Vector2i(
+		mouse_pos.x / m_tmap.tile_size(),
+		mouse_pos.y / m_tmap.tile_size());
+}
+
 tilemap& level::map() {
+	return m_tmap;
+}
+
+const tilemap& level::map() const {
 	return m_tmap;
 }
 

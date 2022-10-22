@@ -14,7 +14,15 @@ void state::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	s.transform *= getTransform();
 }
 
-void state::imdraw() {
+void state::imdraw(fsm* sm) {
+}
+
+sf::Color state::bg() const {
+	return sf::Color(0xC8AD7FFF);
+}
+
+resource& state::r() {
+	return m_r;
 }
 
 // fsm methods //
@@ -47,5 +55,9 @@ void fsm::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 }
 
 void fsm::imdraw() {
-	m_state->imdraw();
+	m_state->imdraw(this);
+}
+
+sf::Color fsm::bg() const {
+	return m_state->bg();
 }

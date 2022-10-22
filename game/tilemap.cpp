@@ -49,11 +49,7 @@ void tilemap::m_set_quad(int i, tile t) {
 	int ty = int(t) / (m_tex.getSize().x / m_ts);
 
 	// tiles only visible in editor mode
-	sf::VertexArray& va_to_modify = m_va;
-	if (t == tile::stopper) {
-		va_to_modify = m_va_editor;
-		return;
-	}
+	sf::VertexArray& va_to_modify = t.editor_only() ? m_va_editor : m_va;
 
 	// fill in the quad
 	va_to_modify[i * 4].position.x	= x * m_ts;
@@ -101,6 +97,10 @@ void tilemap::m_set_quad(int i, tile t) {
 		m_va_editor[i * 4 + 3].position.y  = (y + 1) * m_ts;
 		m_va_editor[i * 4 + 3].texCoords.x = ntx * m_ts;
 		m_va_editor[i * 4 + 3].texCoords.y = (nty + 1) * m_ts;
+	} else if (t != tile::stopper) {
+		for (int k = 0; k < 4; ++k) {
+			m_va_editor[i * 4 + k] = sf::Vertex();
+		}
 	}
 }
 
@@ -149,6 +149,10 @@ void tilemap::clear(int x, int y) {
 	set(x, y, tile::empty);
 }
 
+bool tilemap::in_bounds(sf::Vector2i pos) const {
+	return pos.x >= 0 && pos.x < m_xs && pos.y >= 0 && pos.y < m_ys;
+}
+
 sf::Vector2i tilemap::size() const {
 	return { m_xs, m_ys };
 }
@@ -157,8 +161,29 @@ int tilemap::tile_size() const {
 	return m_ts;
 }
 
+sf::Vector2f tilemap::total_size() const {
+	return sf::Vector2f(size() * tile_size());
+}
+
 int tilemap::count() const {
 	return m_xs * m_ys;
+}
+
+int tilemap::tile_count(tile::tile_type type) const {
+	return std::count_if(m_tiles.cbegin(), m_tiles.cend(), [type](const tile& t) {
+		return t.type == type;
+	});
+}
+
+sf::Vector2i tilemap::find_first_of(tile::tile_type type) const {
+	for (int x = 0; x < m_xs; ++x) {
+		for (int y = 0; y < m_ys; ++y) {
+			if (get(x, y) == type) {
+				return { x, y };
+			}
+		}
+	}
+	return { -1, -1 };
 }
 
 void tilemap::set_editor_view(bool state) {
@@ -254,11 +279,24 @@ bool tile::solid() const {
 		   type == tile::gravity ||
 		   type == tile::ice ||
 		   type == tile::black ||
-		   type == tile::ladder;
+		   type == tile::ladder ||
+		   type == tile::gravity;
 }
 
 bool tile::blocks_wallkicks() const {
 	return type == tile::black;
+}
+
+bool tile::blocks_moving_tiles() const {
+	return solid() || harmful() || type == tile::stopper;
+}
+
+bool tile::movable() const {
+	return solid() || harmful();
+}
+
+bool tile::editor_only() const {
+	return type == tile::stopper;
 }
 
 // ///////////////////
@@ -278,4 +316,32 @@ nlohmann::json tile::serialize() const {
 void tile::deserialize(const nlohmann::json& j) {
 	j.at(0).get_to(type);
 	j.at(1).get_to(props.moving);
+}
+
+std::string tile::description(tile_type type) {
+	static const std::unordered_map<tile_type, std::string> map = {
+		{ tile::empty, "An empty tile" },
+		{ tile::begin, "The player's starting position" },
+		{ tile::end, "The level's goal" },
+		{ tile::block, "A normal, ordinary block" },
+		{ tile::ice, "Like a normal block, but very slippery" },
+		{ tile::black, "Like a normal block, but cannot be wallkicked off" },
+		{ tile::gravity, "Flips gravity when stood atop" },
+		{ tile::spike, "Danger! Avoid these" },
+		{ tile::ladder, "A ladder that can be climbed" },
+		// invisible tiles
+		{ tile::stopper, "Invisible, moving tiles can interact with this but not the player." },
+		{ tile::erase, "Erase tiles" },
+		{ tile::move_up_bit, "For internal use only" },
+		{ tile::move_right_bit, "For internal use only" },
+		{ tile::move_down_bit, "For internal use only" },
+		{ tile::move_left_bit, "For internal use only" },
+		{ tile::move_up, "Makes a tile move upward" },
+		{ tile::move_right, "Makes a tile move rightward" },
+		{ tile::move_down, "Makes a tile move downward" },
+		{ tile::move_left, "Makes a tile move leftward" },
+		{ tile::move_none, "Makes a tile stationary again" },
+		{ tile::cursor, "For internal use only" }
+	};
+	return map.at(type);
 }

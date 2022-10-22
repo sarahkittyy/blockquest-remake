@@ -1,5 +1,9 @@
 #include "resource.hpp"
 
+resource::resource(sf::RenderWindow& win)
+	: m_window(win) {
+}
+
 sf::Texture& resource::tex(std::string path) {
 	if (!m_texs.contains(path)) {
 		m_texs[path].loadFromFile(path);
@@ -12,6 +16,14 @@ sf::Font& resource::font(std::string path) {
 		m_fonts[path].loadFromFile(path);
 	}
 	return m_fonts[path];
+}
+
+sf::RenderWindow& resource::window() {
+	return m_window;
+}
+
+const sf::RenderWindow& resource::window() const {
+	return m_window;
 }
 
 void resource::load_sound(std::string name, std::string path) {

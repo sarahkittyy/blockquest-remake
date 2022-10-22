@@ -38,7 +38,7 @@ file(GLOB_RECURSE sources "game/*.cpp")
 
 set(includes "game/ lib/ lib/Box2D/Box2D")
 set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system ImGui-SFML::ImGui-SFML)
-set(flags -Wall -Wno-unused -Wno-switch)
+set(flags -Wall -Wno-unused -Wno-switch -Wno-int-to-void-pointer-cast)
 
 add_executable(bq-r ${sources})
 

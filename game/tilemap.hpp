@@ -58,9 +58,14 @@ struct tile {
 	int x() const;	 // x pos of the tile
 	int y() const;	 // y pos of the tile
 
-	bool harmful() const;			 // will this tile hurt the player
-	bool solid() const;				 // can the player walk on this tile
-	bool blocks_wallkicks() const;	 // will this tile block wallkicks
+	static std::string description(tile_type type);	  // a user-friendly description of the tile
+
+	bool harmful() const;				// will this tile hurt the player
+	bool solid() const;					// can the player walk on this tile
+	bool blocks_wallkicks() const;		// will this tile block wallkicks
+	bool blocks_moving_tiles() const;	// does this tile block the movement of other moving tiles
+	bool movable() const;				// is this tile movable
+	bool editor_only() const;			//  tiles only visible in the editor
 private:
 	friend class tilemap;
 	tile(tile_type type, int x, int y);
@@ -83,12 +88,18 @@ public:
 	const std::vector<tile>& get() const;	// get all tiles
 	void clear(int x, int y);				// set the tile to air
 
+	bool in_bounds(sf::Vector2i pos) const;	  // is the given tile pos in bounds
+
 	// all tiles that intersect the given aabb
 	std::vector<std::pair<sf::Vector2f, tile>> intersects(sf::FloatRect aabb) const;
 
-	sf::Vector2i size() const;	 // get the map size
-	int tile_size() const;		 // get the size of a tile
-	int count() const;			 // total tile count
+	sf::Vector2i size() const;		   // get the map size
+	int tile_size() const;			   // get the size of a tile
+	sf::Vector2f total_size() const;   // size of the map in pixels
+	int count() const;				   // total tile count
+
+	int tile_count(tile::tile_type type) const;				  // how many tiles of a given type are there
+	sf::Vector2i find_first_of(tile::tile_type type) const;	  // find the first of a type of tile
 
 	void set_editor_view(bool state);	// toggle editor view
 

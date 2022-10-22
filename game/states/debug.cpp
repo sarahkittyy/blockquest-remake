@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include "../debug.hpp"
+
 namespace states {
 
 debug::debug(resource& r)
@@ -62,8 +64,8 @@ debug::debug(resource& r)
 	file.close();
 
 	m_w = std::make_unique<world>(r, l);
-	// w.setScale(2.0f, 2.0f);
-	// debug::get().setScale(2.0f, 2.0f);
+	m_w->setScale(2.0f, 2.0f);
+	::debug::get().setScale(2.0f, 2.0f);
 }
 
 debug::~debug() {

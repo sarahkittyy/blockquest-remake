@@ -1,6 +1,6 @@
 [build]
 
-command=cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && make
+command=make
 cwd=build
 
 [test]
@@ -9,4 +9,4 @@ command=./build/bq-r debug
 
 [run]
 
-command=./build/bq-r main
+command=./build/bq-r edit
