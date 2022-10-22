@@ -1,5 +1,6 @@
 #pragma once
 
+#include <imgui.h>
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <unordered_map>
@@ -12,6 +13,8 @@ public:
 	sf::Texture& tex(std::string path);
 	// retrieves the font at the given path
 	sf::Font& font(std::string path);
+	// imgui texture id given the path
+	ImTextureID imtex(std::string path);
 
 	// retrieve the app window handle
 	sf::RenderWindow& window();

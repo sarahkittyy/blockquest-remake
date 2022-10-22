@@ -4,6 +4,8 @@
 #include "debug.hpp"
 #include "util.hpp"
 
+#include <iomanip>
+
 tilemap::tilemap(sf::Texture& tex, int xs, int ys, int ts)
 	: m_tex(tex), m_xs(xs), m_ys(ys), m_ts(ts), m_editor(false) {
 	m_va.setPrimitiveType(sf::Quads);
@@ -149,6 +151,12 @@ void tilemap::clear(int x, int y) {
 	set(x, y, tile::empty);
 }
 
+void tilemap::clear() {
+	m_tiles.clear();
+	m_tiles.resize(m_xs * m_ys, tile::empty);
+	m_flush_va();
+}
+
 bool tilemap::in_bounds(sf::Vector2i pos) const {
 	return pos.x >= 0 && pos.x < m_xs && pos.y >= 0 && pos.y < m_ys;
 }
@@ -202,31 +210,6 @@ bool tilemap::m_oob(int i) const {
 	return i > m_tiles.size();
 }
 
-nlohmann::json tilemap::serialize() const {
-	using nlohmann::json;
-	json j = json::array();
-	for (auto& t : m_tiles) {
-		j.push_back(t.serialize());
-	}
-	return j;
-}
-
-void tilemap::deserialize(const nlohmann::json& j) {
-	m_tiles.clear();
-	int idx = 0;   // for tracking x and y pos
-	for (auto& tile_data : j) {
-		int x = idx / m_xs;
-		int y = idx % m_xs;
-		tile t;
-		t.deserialize(tile_data);
-		t.m_x = x;
-		t.m_y = y;
-		m_tiles.push_back(t);
-		idx++;
-	}
-	m_flush_va();
-}
-
 sf::IntRect tilemap::calculate_texture_rect(tile t) const {
 	sf::IntRect res;
 	res.left = int(t) % (m_tex.getSize().x / m_ts);
@@ -236,6 +219,44 @@ sf::IntRect tilemap::calculate_texture_rect(tile t) const {
 	res.width  = m_ts;
 	res.height = m_ts;
 	return res;
+}
+
+std::string tilemap::save() const {
+	std::ostringstream ss;
+	ss << std::setfill('0');
+	for (auto& tile : m_tiles) {
+		if (tile == tile::empty) {
+			ss << std::setw(1) << "/";
+			continue;
+		}
+		ss << std::setw(2);
+		ss << int(tile.type);
+		ss << std::setw(1);
+		ss << tile.props.moving;
+	}
+	return ss.str();
+}
+
+void tilemap::load(std::string str) {
+	m_tiles.clear();
+	m_tiles.resize(m_xs * m_ys, tile::empty);
+	std::istringstream ss(str);
+	for (int i = 0; i < m_xs * m_ys; ++i) {
+		m_tiles[i].m_x = i % m_xs;
+		m_tiles[i].m_y = i / m_xs;
+		if (ss.peek() == '/') {
+			m_tiles[i].type = tile::empty;
+			char ch;
+			ss >> ch;
+			continue;
+		}
+		char buf[3];
+		ss.get(buf, 3);
+		m_tiles[i].type = static_cast<tile::tile_type>(std::atoi(buf));
+		ss.get(buf, 2);
+		m_tiles[i].props.moving = std::atoi(buf);
+	}
+	m_flush_va();
 }
 
 // ! tile methods !
@@ -303,19 +324,6 @@ bool tile::editor_only() const {
 
 tile::operator int() const {
 	return int(type);
-}
-
-nlohmann::json tile::serialize() const {
-	using nlohmann::json;
-	json j = json::array();
-	j[0]   = type;
-	j[1]   = props.moving;
-	return j;
-}
-
-void tile::deserialize(const nlohmann::json& j) {
-	j.at(0).get_to(type);
-	j.at(1).get_to(props.moving);
 }
 
 std::string tile::description(tile_type type) {

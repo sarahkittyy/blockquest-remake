@@ -59,9 +59,8 @@ debug::debug(resource& r)
 
 	l.map().set_editor_view(false);
 
-	std::ofstream file("misc/test_dash.json");
-	file << l.serialize();
-	file.close();
+	std::string out = l.map().save();
+	l.map().load(out);
 
 	m_w = std::make_unique<world>(r, l);
 	m_w->setScale(2.0f, 2.0f);

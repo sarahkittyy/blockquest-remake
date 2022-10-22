@@ -10,16 +10,6 @@ void level::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	t.draw(m_tmap, s);
 }
 
-nlohmann::json level::serialize() const {
-	nlohmann::json j;
-	j["tiles"] = m_tmap.serialize();
-	return j;
-}
-
-void level::deserialize(const nlohmann::json& j) {
-	m_tmap.deserialize(j.at("tiles"));
-}
-
 bool level::valid() const {
 	return m_tmap.tile_count(tile::begin) == 1 &&
 		   m_tmap.tile_count(tile::end) == 1;

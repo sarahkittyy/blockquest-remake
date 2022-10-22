@@ -11,6 +11,11 @@ sf::Texture& resource::tex(std::string path) {
 	return m_texs[path];
 }
 
+ImTextureID resource::imtex(std::string path) {
+	sf::Texture& t = tex(path);
+	return (ImTextureID)t.getNativeHandle();
+}
+
 sf::Font& resource::font(std::string path) {
 	if (!m_fonts.contains(path)) {
 		m_fonts[path].loadFromFile(path);

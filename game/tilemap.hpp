@@ -1,7 +1,7 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
-#include <nlohmann/json.hpp>
+#include <cstring>
 #include <ranges>
 #include <unordered_map>
 #include <vector>
@@ -48,9 +48,6 @@ struct tile {
 	tile_type type;		// tile's type
 	tile_props props;	// tile's props
 
-	nlohmann::json serialize() const;
-	void deserialize(const nlohmann::json& j);
-
 	bool operator==(const tile_type&& type) const;	 // check if a tile is of a given type
 	bool operator!=(const tile_type&& type) const;	 // check if a tile is not of a given type
 	operator int() const;							 // retrieve the texture index of the tile
@@ -87,6 +84,7 @@ public:
 	tile get(int i) const;					// get a tile at a given index
 	const std::vector<tile>& get() const;	// get all tiles
 	void clear(int x, int y);				// set the tile to air
+	void clear();							// clear the entire map
 
 	bool in_bounds(sf::Vector2i pos) const;	  // is the given tile pos in bounds
 
@@ -103,8 +101,10 @@ public:
 
 	void set_editor_view(bool state);	// toggle editor view
 
-	nlohmann::json serialize() const;
-	void deserialize(const nlohmann::json& j);
+	// save this map to string
+	std::string save() const;
+	// load this map from a given string
+	void load(std::string str);
 
 private:
 	// render the map! :3

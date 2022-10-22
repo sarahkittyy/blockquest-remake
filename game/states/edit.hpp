@@ -19,15 +19,15 @@ public:
 private:
 	void draw(sf::RenderTarget&, sf::RenderStates) const;
 
-	level m_level;		// the level we are editing
+	level m_level;	 // the level we are editing
+
 	level m_cursor;		// the level that just renders the cursor
 	tilemap m_border;	// a completely static map used to render a border of blocks
 
+	char import_buffer[8192];
+
 	sf::Texture& m_tiles;	// texture of all tiles
 	tile::tile_type m_selected_tile = tile::begin;
-
-	sf::Texture& m_test_button;	  // icon for the test play button
-	sf::Texture& m_stop_button;	  // icon to stop test playing
 
 	// sets the tile on the map, false if the tile could not be placed, with an error output
 	bool m_set_tile(sf::Vector2i pos, tile::tile_type type, std::string& error);

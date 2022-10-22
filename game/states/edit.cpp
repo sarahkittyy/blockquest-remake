@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include "imgui_internal.h"
 
+#include <cstring>
 #include <stdexcept>
 
 #include "../debug.hpp"
@@ -17,9 +18,7 @@ edit::edit(resource& r)
 	  m_level(r),
 	  m_cursor(r),
 	  m_border(r.tex("assets/tiles.png"), 34, 34, 16),
-	  m_tiles(r.tex("assets/tiles.png")),
-	  m_test_button(r.tex("assets/gui/play.png")),
-	  m_stop_button(r.tex("assets/gui/create.png")) {
+	  m_tiles(r.tex("assets/tiles.png")) {
 	m_level.setOrigin(m_level.map().total_size() / 2.f);
 	m_level.setPosition((sf::Vector2f)r.window().getSize() * 0.5f);
 	m_level.setScale(2.f, 2.f);
@@ -145,11 +144,69 @@ void edit::imdraw(fsm* sm) {
 	flags |= ImGuiWindowFlags_AlwaysAutoResize;
 
 	// controls
+	bool popup_open = false;
 	ImGui::Begin("Controls", nullptr); {
-		sf::Texture& icon = !m_test_playing() ? m_test_button : m_stop_button;
+		ImTextureID icon = !m_test_playing() ? r().imtex("assets/gui/play.png") : r().imtex("assets/gui/stop.png");
 		std::string label = !m_test_playing() ? "Test Play" : "Edit";
-		if (ImGui::ImageButtonWithText((ImTextureID)icon.getNativeHandle(), label.c_str())) {
+		if (ImGui::ImageButtonWithText(icon, label.c_str())) {
 			m_toggle_test_play();
+		}
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/export.png"), "Export")) {
+			ImGui::OpenPopup("Export###Export");
+		}
+		ImGui::SameLine();
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/import.png"), "Import")) {
+			std::memset(import_buffer, 0, 8192);
+			ImGui::OpenPopup("Import###Import");
+		}
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/erase.png"), "Clear")) {
+			ImGui::OpenPopup("Clear###Confirm");
+		}
+		if (ImGui::BeginPopup("Clear###Confirm")) {
+			ImGui::Text("Are you sure you want to erase the whole level?");
+			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/yes.png"), "Yes")) {
+				r().play_sound("gameover");
+				m_level.map().clear();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/no.png"), "No")) {
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+		// import / export popups
+		if (ImGui::BeginPopupModal("Export###Export")) {
+			std::string saved = m_level.map().save();
+			ImGui::BeginChildFrame(ImGui::GetID("###ExportText"), ImVec2(-1, 200));
+			ImGui::TextWrapped("%s", saved.c_str()); 
+			ImGui::EndChildFrame();
+			ImGui::Text("Save this code or send it to a friend!");
+			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/copy.png"), "Copy")) {
+				ImGui::SetClipboardText(saved.c_str());
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Done")) {
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+		if (ImGui::BeginPopupModal("Import###Import")) {
+			ImGui::InputText("Import Level Code", import_buffer, 8192);
+			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/paste.png"), "Paste")) {
+				std::strcpy(import_buffer, ImGui::GetClipboardText());
+			}
+			ImGui::SameLine();
+			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/create.png"), "Load")) {
+				m_level.map().load(std::string(import_buffer));
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Cancel")) {
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
 		}
 	} ImGui::End();
 
@@ -197,6 +254,7 @@ void edit::imdraw(fsm* sm) {
 	ImGui::TextWrapped("%s", tile::description(m_selected_tile).c_str());
 	ImGui::EndChildFrame();
 	} ImGui::End();
+
 	// clang-format on
 }
 

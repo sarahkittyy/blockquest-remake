@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
-#include <nlohmann/json.hpp>
 
 #include "resource.hpp"
 #include "tilemap.hpp"
@@ -15,10 +14,6 @@ public:
 	const tilemap& map() const;	  // get the map
 
 	bool valid() const;	  // checks if this level is valid, i.e. has a start and end point
-
-	// json serialization
-	nlohmann::json serialize() const;
-	void deserialize(const nlohmann::json& j);
 
 	// fetches the tile the mouse is hovering over
 	sf::Vector2i mouse_tile() const;
