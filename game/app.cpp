@@ -100,7 +100,8 @@ void app::configure_imgui_style() {
 	io.Fonts->AddFontDefault();
 	io.Fonts->AddFontFromFileTTF("assets/verdana.ttf", 14);
 	io.Fonts->Build();
-	ImGui::SFML::UpdateFontTexture();
+	if (!ImGui::SFML::UpdateFontTexture())
+		throw "Could not update ImGui::SFML font texture";
 
 	// color
 	ImVec4* colors						   = ImGui::GetStyle().Colors;

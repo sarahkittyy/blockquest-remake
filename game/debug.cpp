@@ -21,6 +21,8 @@ void debug::imdraw() {
 	if (m_demo_open)
 		ImGui::ShowDemoWindow(&m_demo_open);
 	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
+	ImGui::SetNextWindowPos(ImVec2(1500, 0), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(420, 800), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Debug Info", &m_open, flags);
 
 	ImGui::Checkbox("Toggle debug draw", &m_draw_debug);

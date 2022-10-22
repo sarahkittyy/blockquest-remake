@@ -145,6 +145,7 @@ void edit::imdraw(fsm* sm) {
 
 	// controls
 	bool popup_open = false;
+	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Controls", nullptr); {
 		ImTextureID icon = !m_test_playing() ? r().imtex("assets/gui/play.png") : r().imtex("assets/gui/stop.png");
 		std::string label = !m_test_playing() ? "Test Play" : "Edit";
@@ -211,6 +212,7 @@ void edit::imdraw(fsm* sm) {
 	} ImGui::End();
 
 	// block picker
+	ImGui::SetNextWindowPos(ImVec2(100, 500), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Blocks", nullptr, flags); {
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
 	ImGui::BeginChildFrame(ImGui::GetID("BlocksPicker"), ImVec2(32 * 8, 32 * 8), flags);
