@@ -3,3 +3,4 @@ build/
 compile_commands.json
 misc/
 imgui.ini
+*:Zone.Identifier
