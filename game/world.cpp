@@ -264,6 +264,8 @@ void world::update(sf::Time dt) {
 			m_time_airborne = sf::seconds(999);
 			m_jumping		= true;
 			m_r.play_sound("jump");
+			// to prevent sticking
+			m_yp -= 0.01f * gravity_sign;
 		} else if (m_climbing && !m_jump_last_frame && m_can_player_wallkick(mirror(m_climbing_facing), false)) {
 			m_player_wallkick(mirror(m_climbing_facing));
 		}
@@ -384,7 +386,7 @@ void world::update(sf::Time dt) {
 				auto [pos, tile] = m_first_solid(collided);
 				intended_y		 = cy > pos.y
 									   ? pos.y + 1.5f
-									   : pos.y - 0.5f + ((1 - m_player_size().y) / 6.1f);	// hitting top side of block
+									   : pos.y - 0.5f + ((1 - m_player_size().y) / 6.0f);	// hitting top side of block
 				cy				 = intended_y;
 				y_collided		 = true;
 				m_yv			 = 0;
