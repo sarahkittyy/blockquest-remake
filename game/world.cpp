@@ -384,7 +384,7 @@ void world::update(sf::Time dt) {
 				auto [pos, tile] = m_first_solid(collided);
 				intended_y		 = cy > pos.y
 									   ? pos.y + 1.5f
-									   : pos.y - 0.5f + ((1 - m_player_size().y) / 6.02f);	 // hitting top side of block
+									   : pos.y - 0.5f + ((1 - m_player_size().y) / 6.1f);	// hitting top side of block
 				cy				 = intended_y;
 				y_collided		 = true;
 				m_yv			 = 0;
