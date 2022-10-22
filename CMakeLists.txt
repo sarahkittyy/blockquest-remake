@@ -8,40 +8,44 @@ FetchContent_Declare(
 	sfml
 	GIT_REPOSITORY "https://github.com/SFML/SFML.git"
 	GIT_TAG "${SFML_VERSION}"
-)
+	)
 FetchContent_GetProperties(sfml)
 if(NOT sfml_POPULATED)
 	FetchContent_Populate(sfml)
 	add_subdirectory(${sfml_SOURCE_DIR} ${sfml_BINARY_DIR})
 endif()
 
-FetchContent_Declare(
-	imgui
-	GIT_REPOSITORY https://github.com/ocornut/imgui
-)
-FetchContent_MakeAvailable(imgui)
-
-FetchContent_Declare(
-	imgui-sfml
-	GIT_REPOSITORY https://github.com/hulakdar/imgui-sfml
-)
-#add_subdirectory(imgui-sfml)
-set(IMGUI_DIR ${imgui_SOURCE_DIR})
-set(IMGUI_SFML_FIND_SFML OFF)
-set(IMGUI_SFML_IMGUI_DEMO ON)
-FetchContent_MakeAvailable(imgui-sfml)
+find_package(OpenGL REQUIRED)
 
 # not libs
 set(CMAKE_CXX_STANDARD 20)
 
 file(GLOB_RECURSE sources "game/*.cpp")
+file(GLOB imgui_sources "lib/imgui/*.cpp")
 
-set(includes "game/ lib/ lib/Box2D/Box2D")
-set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system ImGui-SFML::ImGui-SFML)
-set(flags -Wall -Wno-unused -Wno-switch -Wno-int-to-void-pointer-cast)
+set(includes game/ lib/imgui/)
+set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL)
+set(flags)
 
-add_executable(bq-r ${sources})
+if(WIN32)
+	set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc")
+endif()
+
+add_executable(bq-r ${sources} ${imgui_sources} ${APP_ICON_RESOURCE_WINDOWS})
 
 target_compile_options(bq-r PUBLIC ${flags})
 target_include_directories(bq-r PUBLIC ${includes})
 target_link_libraries(bq-r ${libs})
+
+if(WIN32)
+	add_custom_command(TARGET bq-r POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		$<TARGET_FILE:sfml-graphics>
+		$<TARGET_FILE:sfml-window>
+		$<TARGET_FILE:sfml-audio>
+		$<TARGET_FILE:sfml-network>
+		$<TARGET_FILE:sfml-system>
+		$<TARGET_FILE_DIR:bq-r>
+	)
+	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+endif()

@@ -1,7 +1,7 @@
 #include "main.hpp"
 
-#include <imgui-SFML.h>
-#include <imgui.h>
+#include "imgui-SFML.h"
+#include "imgui.h"
 
 #include "../gui/image_text_button.hpp"
 

@@ -14,7 +14,12 @@ app::app(int argc, char** argv)
 	: m_window(sf::VideoMode(1920, 1080), "BlockQuest Remake"),
 	  m_r(m_window),
 	  m_fsm(m_r) {
-	ImGui::SFML::Init(m_window);
+	if (!ImGui::SFML::Init(m_window))
+		throw "Could not initialize ImGui";
+
+	sf::Image icon;
+	icon.loadFromFile("assets/gui/play.png");
+	m_window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
 
 	m_r.load_sound("jump", "assets/sound/jump.flac");
 	m_r.load_sound("dash", "assets/sound/dash.flac");
@@ -35,6 +40,8 @@ app::app(int argc, char** argv)
 		} else {
 			m_fsm.swap_state<states::edit>();
 		}
+	} else {
+		m_fsm.swap_state<states::edit>();
 	}
 }
 

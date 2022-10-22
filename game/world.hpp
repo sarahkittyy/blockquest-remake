@@ -3,7 +3,9 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <algorithm>
+#include <array>
 #include <functional>
+#include <optional>
 #include <thread>
 
 #include "level.hpp"
