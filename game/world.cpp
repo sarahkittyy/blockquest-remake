@@ -559,6 +559,12 @@ sf::Vector2f world::m_mp_player_offset(sf::Time dt) const {
 	if (right && right->vel().x < 0) {
 		offset.x += right->vel().x * dt.asSeconds();
 	}
+	if (left && tile(*left) == tile::ladder && m_climbing && m_climbing_facing == dir::left) {
+		offset.y += left->vel().y * dt.asSeconds();
+	}
+	if (right && tile(*right) == tile::ladder && m_climbing && m_climbing_facing == dir::right) {
+		offset.y += right->vel().y * dt.asSeconds();
+	}
 
 	// specific case for climbing on a moving ladder going away from us
 	if (m_climbing) {
