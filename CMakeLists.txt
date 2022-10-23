@@ -17,9 +17,6 @@ endif()
 
 find_package(OpenGL REQUIRED)
 
-#FetchContent_Declare(openal GIT_REPOSITORY https://github.com/kcat/openal-soft)
-#FetchContent_MakeAvailable(openal)
-
 # not libs
 set(CMAKE_CXX_STANDARD 20)
 
@@ -52,7 +49,7 @@ if(WIN32)
 		$<TARGET_FILE:sfml-system>
 		$<TARGET_FILE:sfml-main>
 		$<TARGET_FILE_DIR:bq-r>
-		$<TARGET_FILE_DIR:OpenAL>
 	)
 	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/openal32.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
