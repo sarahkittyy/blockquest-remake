@@ -23,6 +23,8 @@ public:
 
 	void update(sf::Time dt);
 
+	bool won() const;
+
 private:
 	void draw(sf::RenderTarget&, sf::RenderStates) const;	// sfml draw fn
 
@@ -37,6 +39,10 @@ private:
 	moving_tile_manager m_mt_mgr;	// manages all moving tiles
 
 	level m_level;	 // the raw level data itself
+
+	// messages shown on victory
+	sf::Sprite m_game_clear;
+	sf::Sprite m_space_to_retry;
 
 	// PLAYER DATA //
 
@@ -100,6 +106,8 @@ private:
 	bool m_up_last_frame	= false;
 	bool m_down_last_frame	= false;
 
+	bool m_touched_goal = false;
+
 	sf::Time m_time_airborne  = sf::seconds(0);	  // counts the number of frames we're airborne for, for coyote time
 	bool m_jumping			  = false;
 	bool m_dashing			  = false;
@@ -120,6 +128,7 @@ private:
 
 	void m_update_animation();		 // update the animation state of the player
 	void m_player_die();			 // run when the player dies
+	void m_player_win();			 // run when the player hits the goal
 	void m_player_wallkick(dir d);	 // walljump
 	bool m_dead = false;			 // used to short circuit logic in the case of a death
 	void m_sync_player_position();	 // set the player sprite's position to the internal physics position

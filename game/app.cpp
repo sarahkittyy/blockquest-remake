@@ -26,6 +26,7 @@ app::app(int argc, char** argv)
 	m_r.load_sound("gameover", "assets/sound/gameover.flac");
 	m_r.load_sound("gravityflip", "assets/sound/gravityflip.flac");
 	m_r.load_sound("wallkick", "assets/sound/wallkick.flac");
+	m_r.load_sound("victory", "assets/sound/victory.flac");
 
 	configure_imgui_style();
 

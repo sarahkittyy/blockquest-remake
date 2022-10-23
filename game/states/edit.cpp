@@ -49,7 +49,7 @@ edit::edit(resource& r)
 	m_border.set_editor_view(true);
 	m_stroke_map.set_editor_view(true);
 
-	debug::get().setPosition(m_level.getPosition().x - m_level.getOrigin().x * 2.f, 32);
+	debug::get().setPosition(m_level.getPosition() - m_level.getOrigin() * 2.f);
 	debug::get().setScale(m_level.getScale());
 
 	for (int i = 0; i < 33; ++i) {
@@ -98,8 +98,6 @@ void edit::update(fsm* sm, sf::Time dt) {
 	if (m_test_playing()) {
 		m_test_play_world->update(dt);
 	}
-
-	debug::get() << "Debug: " << m_last_debug_msg << "\n";
 }
 
 bool edit::m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& error) {
@@ -408,6 +406,7 @@ void edit::m_toggle_test_play() {
 			return;
 		}
 		m_level.map().set_editor_view(false);
+		m_last_debug_msg = "";
 		m_test_play_world.reset(new world(r(), m_level));
 		m_test_play_world->setOrigin(m_level.map().total_size().x / 2.f, m_level.map().total_size().y);
 		m_test_play_world->setPosition(r().window().getSize().x / 2.f, r().window().getSize().y);

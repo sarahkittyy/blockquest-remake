@@ -23,6 +23,14 @@ world::world(resource& r, level l)
 	m_init_world();
 	m_pmgr.setScale(l.map().tile_size(), l.map().tile_size());
 
+	m_game_clear.setTexture(r.tex("assets/gui/victory.png"));
+	m_space_to_retry.setTexture(r.tex("assets/gui/retry.png"));
+	m_game_clear.setOrigin(m_game_clear.getLocalBounds().width / 2.f, m_game_clear.getLocalBounds().height);
+	m_space_to_retry.setOrigin(m_space_to_retry.getLocalBounds().width / 2.f, 0);
+
+	m_game_clear.setPosition(m_tmap.total_size() / 2.f);
+	m_space_to_retry.setPosition(m_tmap.total_size() / 2.f);
+
 	m_dash_sfx_thread = std::jthread([this](std::stop_token stoken) {
 		using namespace std::chrono_literals;
 		sf::Sound s(m_r.sound_buffer("dash"));
@@ -69,7 +77,7 @@ void world::m_restart_world() {
 	m_sync_player_position();
 	m_player.setScale(1, 1);
 	m_mt_mgr.restart();
-	m_time_airborne	   = sf::seconds(0);
+	m_time_airborne	   = sf::seconds(999);
 	m_jumping		   = false;
 	m_dashing		   = false;
 	m_since_wallkick   = sf::seconds(999);
@@ -82,6 +90,11 @@ void world::m_restart_world() {
 	m_dash_this_frame  = false;
 	m_jump_this_frame  = false;
 	m_climbing		   = false;
+	m_touched_goal	   = false;
+}
+
+bool world::won() const {
+	return m_touched_goal;
 }
 
 /*
@@ -121,6 +134,21 @@ void world::update(sf::Time dt) {
 	// update the player's animations
 	m_player.update();
 
+	if (won()) {
+		sf::Color opacity = m_space_to_retry.getColor();
+		int alpha		  = opacity.a;
+		alpha += 255.f * dt.asSeconds();
+		alpha	  = std::min(255, alpha);
+		opacity.a = alpha;
+		m_space_to_retry.setColor(opacity);
+		m_game_clear.setColor(opacity);
+		if (jump_keyed) {
+			m_restart_world();
+		} else {
+			return;
+		}
+	}
+
 	// -1 if gravity is flipped. used for y velocity calculations
 	float gravity_sign = m_flip_gravity ? -1 : 1;
 
@@ -158,6 +186,7 @@ void world::update(sf::Time dt) {
 	debug::get() << "dashing = " << m_dashing << "\n";
 	debug::get() << "grounded = " << grounded << "\n";
 	debug::get() << "climbing = " << m_climbing << "\n";
+	debug::get() << "won = " << won() << "\n";
 
 	float air_control_factor	  = grounded ? 1 : (m_dashing && keyed(m_key_dash) ? phys.dash_air_control : phys.air_control);
 	float ground_control_factor	  = m_dashing && grounded ? 0 : 1;
@@ -486,6 +515,9 @@ bool world::m_handle_contact(float x, float y, std::vector<std::pair<sf::Vector2
 		if (tile.harmful()) {
 			touching_harmful = true;
 		}
+		if (tile == tile::end) {
+			m_player_win();
+		}
 	}
 
 	if (touching_harmful) {
@@ -654,8 +686,21 @@ void world::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	s.transform *= getTransform();
 	t.draw(m_tmap, s);
 	t.draw(m_mt_mgr, s);
-	t.draw(m_player, s);
+	if (!won())
+		t.draw(m_player, s);
 	t.draw(m_pmgr, s);
+	if (won()) {
+		t.draw(m_game_clear, s);
+		t.draw(m_space_to_retry, s);
+	}
+}
+
+void world::m_player_win() {
+	m_touched_goal = true;
+	m_dashing	   = false;
+	m_space_to_retry.setColor(sf::Color(255, 255, 255, 0));
+	m_game_clear.setColor(sf::Color(255, 255, 255, 0));
+	m_r.play_sound("victory");
 }
 
 void world::m_player_die() {
