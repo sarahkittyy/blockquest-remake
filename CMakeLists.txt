@@ -17,6 +17,9 @@ endif()
 
 find_package(OpenGL REQUIRED)
 
+#FetchContent_Declare(openal GIT_REPOSITORY https://github.com/kcat/openal-soft)
+#FetchContent_MakeAvailable(openal)
+
 # not libs
 set(CMAKE_CXX_STANDARD 20)
 
@@ -24,7 +27,7 @@ file(GLOB_RECURSE sources "game/*.cpp")
 file(GLOB imgui_sources "lib/imgui/*.cpp")
 
 set(includes game/ lib/imgui/)
-set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL)
+set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL)
 set(flags)
 
 if(WIN32)
@@ -49,6 +52,7 @@ if(WIN32)
 		$<TARGET_FILE:sfml-system>
 		$<TARGET_FILE:sfml-main>
 		$<TARGET_FILE_DIR:bq-r>
+		$<TARGET_FILE_DIR:OpenAL>
 	)
 	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
