@@ -143,9 +143,10 @@ void world::update(sf::Time dt) {
 		opacity.a = alpha;
 		m_space_to_retry.setColor(opacity);
 		m_game_clear.setColor(opacity);
-		if (jump_keyed) {
+		if (m_just_jumped()) {
 			m_restart_world();
 		} else {
+			m_jump_last_frame = jump_keyed;
 			return;
 		}
 	}

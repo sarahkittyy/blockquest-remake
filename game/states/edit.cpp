@@ -83,7 +83,10 @@ void edit::update(fsm* sm, sf::Time dt) {
 			m_flood_fill(mouse_tile, m_selected_tile, m_level.map().get(mouse_tile.x, mouse_tile.y).type, m_last_debug_msg);
 			break;
 		case STROKE:
-			m_stroke_fill(mouse_tile, m_selected_tile, m_last_debug_msg);
+			if (m_selected_tile == tile::begin || m_selected_tile == tile::end)
+				m_set_tile(mouse_tile, m_selected_tile, m_last_debug_msg);
+			else
+				m_stroke_fill(mouse_tile, m_selected_tile, m_last_debug_msg);
 			break;
 		}
 	} else {

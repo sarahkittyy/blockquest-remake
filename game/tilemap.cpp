@@ -180,7 +180,10 @@ void tilemap::layer_over(tilemap& target, bool override) const {
 			if (here == tile::empty) continue;
 			tile there = target.get(x, y);
 			if (override || there != tile::empty) {
-				target.set(x, y, here);
+				if (here == tile::erase)
+					target.clear(x, y);
+				else
+					target.set(x, y, here);
 			}
 		}
 	}
