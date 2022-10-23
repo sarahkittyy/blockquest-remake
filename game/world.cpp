@@ -137,10 +137,9 @@ void world::update(sf::Time dt) {
 
 	if (won()) {
 		sf::Color opacity = m_space_to_retry.getColor();
-		int alpha		  = opacity.a;
-		alpha += 255.f * dt.asSeconds();
-		alpha	  = std::min(255, alpha);
-		opacity.a = alpha;
+		m_victory_alpha += 255.f * dt.asSeconds();
+		m_victory_alpha = std::min(255.f, m_victory_alpha);
+		opacity.a		= m_victory_alpha;
 		m_space_to_retry.setColor(opacity);
 		m_game_clear.setColor(opacity);
 		if (m_just_jumped()) {
@@ -699,8 +698,9 @@ void world::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 
 void world::m_player_win() {
 	if (m_touched_goal) return;
-	m_touched_goal = true;
-	m_dashing	   = false;
+	m_touched_goal	= true;
+	m_victory_alpha = 0;
+	m_dashing		= false;
 	m_space_to_retry.setColor(sf::Color(255, 255, 255, 0));
 	m_game_clear.setColor(sf::Color(255, 255, 255, 0));
 	m_r.play_sound("victory");

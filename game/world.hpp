@@ -43,6 +43,7 @@ private:
 	// messages shown on victory
 	sf::Sprite m_game_clear;
 	sf::Sprite m_space_to_retry;
+	float m_victory_alpha;
 
 	// PLAYER DATA //
 
