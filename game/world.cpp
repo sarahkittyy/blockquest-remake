@@ -404,7 +404,7 @@ void world::update(sf::Time dt) {
 	m_update_touching();
 
 	// test for being squeezed
-	if (m_player_is_squeezed()) {
+	if (m_player_is_squeezed() || m_player_oob()) {
 		m_player_die();
 	}
 
@@ -701,6 +701,10 @@ bool world::m_player_grounded_ago(sf::Time t) const {
 
 bool world::m_just_jumped() const {
 	return !m_jump_last_frame && m_jump_this_frame;
+}
+
+bool world::m_player_oob() const {
+	return m_xp < -1 || m_xp > m_level.map().size().x || m_yp < -1 || m_yp > m_level.map().size().y;
 }
 
 bool world::m_against_ladder(dir d) const {

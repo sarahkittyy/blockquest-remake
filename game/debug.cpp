@@ -18,6 +18,7 @@ debug& debug::log() {
 }
 
 void debug::imdraw() {
+	if (ndebug()) return;
 	if (m_demo_open)
 		ImGui::ShowDemoWindow(&m_demo_open);
 	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
@@ -36,11 +37,13 @@ void debug::imdraw() {
 
 
 void debug::flush() {
+	if (ndebug()) return;
 	m_data.str("");
 	m_boxes.clear();
 }
 
 void debug::draw(sf::RenderTarget& t, sf::RenderStates s) const {
+	if (ndebug()) return;
 	if (!m_draw_debug) return;
 	s.transform *= getTransform();
 	std::for_each(m_boxes.begin(), m_boxes.end(), [&t, &s](const auto& pair) {
@@ -54,12 +57,14 @@ void debug::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 }
 
 debug& debug::box(sf::FloatRect box, sf::Color color) {
+	if (ndebug()) return *this;
 	m_boxes.push_back(std::make_pair(box, color));
 	return *this;
 }
 
 template <>
 debug& debug::operator<<(sf::FloatRect val) {
+	if (ndebug()) return *this;
 	*this << "[l="
 		  << val.left
 		  << ", t="
@@ -74,6 +79,7 @@ debug& debug::operator<<(sf::FloatRect val) {
 
 template <>
 debug& debug::operator<<(tile t) {
+	if (ndebug()) return *this;
 	*this << "(" << int(t.type) << ")";
 	return *this;
 }

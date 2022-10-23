@@ -27,6 +27,10 @@ set(includes game/ lib/imgui/)
 set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL)
 set(flags)
 
+if(NOT CMAKE_BUILD_TYPE MATCHES Debug)
+	list(APPEND flags -DNDEBUG)
+endif()
+
 if(WIN32)
 	set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc")
 	add_executable(bq-r WIN32 ${sources} ${imgui_sources} ${APP_ICON_RESOURCE_WINDOWS})

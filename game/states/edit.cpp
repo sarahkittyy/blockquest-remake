@@ -17,31 +17,45 @@ edit::edit(resource& r)
 	: state(r),
 	  m_level(r),
 	  m_cursor(r),
-	  m_border(r.tex("assets/tiles.png"), 34, 34, 16),
-	  m_tiles(r.tex("assets/tiles.png")) {
-	m_level.setOrigin(m_level.map().total_size() / 2.f);
-	m_level.setPosition((sf::Vector2f)r.window().getSize() * 0.5f);
-	m_level.setScale(2.f, 2.f);
+	  m_border(r.tex("assets/tiles.png"), 34, 33, 16),
+	  // m_level_scale((r.window().getSize().y - 26) / (34 * 16.f)),
+	  m_level_scale(2.f),
+	  m_cursor_type(PENCIL),
+	  m_tiles(r.tex("assets/tiles.png")),
+	  m_tools(r.tex("assets/gui/tools.png")),
+	  m_stroke_start(-1, -1),
+	  m_stroke_active(false),
+	  m_stroke_map(r.tex("assets/tiles.png"), 32, 32, 16) {
+
+	sf::Vector2f win_sz(r.window().getSize());
+
+	m_border.setOrigin(m_border.total_size().x / 2.f, m_border.total_size().y);
+	m_stroke_map.setOrigin(m_stroke_map.total_size().x / 2.f, m_stroke_map.total_size().y);
+	m_level.setOrigin(m_level.map().total_size().x / 2.f, m_level.map().total_size().y);
+	m_cursor.setOrigin(m_cursor.map().total_size().x / 2.f, m_cursor.map().total_size().y);
+
+	m_border.setScale(m_level_scale, m_level_scale);
+	m_stroke_map.setScale(m_level_scale, m_level_scale);
+	m_level.setScale(m_level_scale, m_level_scale);
+	m_cursor.setScale(m_level_scale, m_level_scale);
+
+	m_border.setPosition(win_sz.x / 2.f, win_sz.y);
+	m_stroke_map.setPosition(win_sz.x / 2.f, win_sz.y);
+	m_level.setPosition(win_sz.x / 2.f, win_sz.y);
+	m_cursor.setPosition(win_sz.x / 2.f, win_sz.y);
+
 	m_level.map().set_editor_view(true);
-
-	m_cursor.setOrigin(m_cursor.map().total_size() / 2.f);
-	m_cursor.setPosition((sf::Vector2f)r.window().getSize() * 0.5f);
-	m_cursor.setScale(2.f, 2.f);
 	m_cursor.map().set_editor_view(true);
-
-	m_border.setOrigin(m_border.total_size() / 2.f);
-	m_border.setPosition((sf::Vector2f)r.window().getSize() * 0.5f);
-	m_border.setScale(2.f, 2.f);
 	m_border.set_editor_view(true);
+	m_stroke_map.set_editor_view(true);
 
 	debug::get().setPosition(m_level.getPosition().x - m_level.getOrigin().x * 2.f, 32);
 	debug::get().setScale(m_level.getScale());
 
-	for (int i = 0; i < 34; ++i) {
-		m_border.set(i, 0, tile::block);
-		m_border.set(i, 33, tile::block);
+	for (int i = 0; i < 33; ++i) {
 		m_border.set(0, i, tile::block);
 		m_border.set(33, i, tile::block);
+		m_border.set(i, 0, tile::block);
 	}
 
 	m_update_mouse_tile();
@@ -61,7 +75,24 @@ void edit::update(fsm* sm, sf::Time dt) {
 		!m_test_playing() &&
 		m_level.map().in_bounds(mouse_tile)) {
 		// set the tile
-		bool success = m_set_tile(mouse_tile, m_selected_tile, m_last_debug_msg);
+		switch (m_cursor_type) {
+		case PENCIL:
+			m_set_tile(mouse_tile, m_selected_tile, m_last_debug_msg);
+			break;
+		case FLOOD:
+			m_flood_fill(mouse_tile, m_selected_tile, m_level.map().get(mouse_tile.x, mouse_tile.y).type, m_last_debug_msg);
+			break;
+		case STROKE:
+			m_stroke_fill(mouse_tile, m_selected_tile, m_last_debug_msg);
+			break;
+		}
+	} else {
+		// if we're done stroking, render the line
+		if (m_stroke_active) {
+			m_stroke_active = false;
+			m_stroke_map.layer_over(m_level.map(), true);
+			m_stroke_map.clear();
+		}
 	}
 
 	if (m_test_playing()) {
@@ -69,6 +100,49 @@ void edit::update(fsm* sm, sf::Time dt) {
 	}
 
 	debug::get() << "Debug: " << m_last_debug_msg << "\n";
+}
+
+bool edit::m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& error) {
+	// exclude certain types
+	switch (type) {
+	default:
+		break;
+	case tile::move_up:
+	case tile::move_down:
+	case tile::move_left:
+	case tile::move_right:
+	case tile::move_none:
+	case tile::move_up_bit:
+	case tile::move_right_bit:
+	case tile::move_down_bit:
+	case tile::move_left_bit:
+	case tile::cursor:
+	case tile::begin:
+	case tile::end:
+		return false;
+	}
+	static sf::Vector2i last_pos;
+	if (!m_stroke_active) {
+		m_stroke_active = true;
+		m_stroke_start	= pos;
+		last_pos		= pos;
+	}
+	// clear the previous line
+	m_stroke_map.set_line(m_stroke_start, last_pos, tile::empty);
+	// for straight lines
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift)) {
+		sf::Vector2i dist = pos - m_stroke_start;
+		dist.x			  = std::abs(dist.x);
+		dist.y			  = std::abs(dist.y);
+		if (dist.x > dist.y) {
+			pos.y = m_stroke_start.y;
+		} else {
+			pos.x = m_stroke_start.x;
+		}
+	}
+	last_pos = pos;
+	m_stroke_map.set_line(m_stroke_start, pos, type);
+	return true;
 }
 
 bool edit::m_set_tile(sf::Vector2i pos, tile::tile_type type, std::string& error) {
@@ -117,6 +191,48 @@ bool edit::m_set_tile(sf::Vector2i pos, tile::tile_type type, std::string& error
 		default:
 			return false;
 		}
+		return true;
+	} catch (const std::runtime_error& e) {
+		error = e.what();
+		return false;
+	}
+}
+
+bool edit::m_flood_fill(sf::Vector2i pos, tile::tile_type type, tile::tile_type replacing, std::string& error) {
+	try {
+		tilemap& m	= m_level.map();
+		const int x = pos.x;
+		const int y = pos.y;
+		tile t		= m.get(x, y);
+		if (x < 0 || x >= m.size().x || y < 0 || y >= m.size().y) return true;
+		if (t != replacing) return true;
+		if (t == type) return true;
+		if (type == replacing) return true;
+		if (t == tile::empty && type == tile::erase) return true;
+		switch (type) {
+		case tile::move_up:
+		case tile::move_down:
+		case tile::move_left:
+		case tile::move_right:
+		case tile::move_none:
+		case tile::move_up_bit:
+		case tile::move_right_bit:
+		case tile::move_down_bit:
+		case tile::move_left_bit:
+		case tile::cursor:
+		case tile::begin:
+		case tile::end:
+			return true;
+		default:
+			break;
+		}
+
+		if (m_set_tile(pos, type, error)) {
+			m_flood_fill({ x - 1, y }, type, replacing, error);
+			m_flood_fill({ x + 1, y }, type, replacing, error);
+			m_flood_fill({ x, y - 1 }, type, replacing, error);
+			m_flood_fill({ x, y + 1 }, type, replacing, error);
+		}
 	} catch (const std::runtime_error& e) {
 		error = e.what();
 		return false;
@@ -143,6 +259,17 @@ void edit::imdraw(fsm* sm) {
 	flags |= ImGuiWindowFlags_NoResize;
 	flags |= ImGuiWindowFlags_AlwaysAutoResize;
 
+	// menu bar
+	ImGui::BeginMainMenuBar();
+	// debug msg
+	if (m_last_debug_msg.length() != 0) {
+		ImGui::TextColored(sf::Color(255, 120, 120, 255), "[!] %s", m_last_debug_msg.c_str());
+		if (ImGui::MenuItem("OK")) {
+			m_last_debug_msg = "";
+		}
+	}
+	ImGui::EndMainMenuBar();
+
 	// controls
 	bool popup_open = false;
 	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
@@ -157,7 +284,7 @@ void edit::imdraw(fsm* sm) {
 		}
 		ImGui::SameLine();
 		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/import.png"), "Import")) {
-			std::memset(import_buffer, 0, 8192);
+			std::memset(m_import_buffer, 0, 8192);
 			ImGui::OpenPopup("Import###Import");
 		}
 		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/erase.png"), "Clear")) {
@@ -194,13 +321,13 @@ void edit::imdraw(fsm* sm) {
 			ImGui::EndPopup();
 		}
 		if (ImGui::BeginPopupModal("Import###Import")) {
-			ImGui::InputText("Import Level Code", import_buffer, 8192);
+			ImGui::InputText("Import Level Code", m_import_buffer, 8192);
 			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/paste.png"), "Paste")) {
-				std::strcpy(import_buffer, ImGui::GetClipboardText());
+				std::strcpy(m_import_buffer, ImGui::GetClipboardText());
 			}
 			ImGui::SameLine();
 			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/create.png"), "Load")) {
-				m_level.map().load(std::string(import_buffer));
+				m_level.map().load(std::string(m_import_buffer));
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::SameLine();
@@ -254,6 +381,20 @@ void edit::imdraw(fsm* sm) {
 	ImGui::PopStyleVar();
 	ImGui::NewLine();
 	ImGui::TextWrapped("%s", tile::description(m_selected_tile).c_str());
+	// pencil options
+	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)PENCIL, m_level, m_cursor_type == PENCIL, 32)) {
+		m_cursor_type = PENCIL;
+	}
+	ImGui::SameLine();
+	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)FLOOD, m_level, m_cursor_type == FLOOD, 32)) {
+		m_cursor_type = FLOOD;
+	}
+	ImGui::SameLine();
+	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)STROKE, m_level, m_cursor_type == STROKE, 32)) {
+		m_cursor_type = STROKE;
+	}
+	ImGui::TextWrapped("%s", m_selected_cursor_description());
+
 	ImGui::EndChildFrame();
 	} ImGui::End();
 
@@ -268,9 +409,9 @@ void edit::m_toggle_test_play() {
 		}
 		m_level.map().set_editor_view(false);
 		m_test_play_world.reset(new world(r(), m_level));
-		m_test_play_world->setOrigin(m_level.map().total_size() / 2.f);
-		m_test_play_world->setPosition((sf::Vector2f)r().window().getSize() * 0.5f);
-		m_test_play_world->setScale(2.f, 2.f);
+		m_test_play_world->setOrigin(m_level.map().total_size().x / 2.f, m_level.map().total_size().y);
+		m_test_play_world->setPosition(r().window().getSize().x / 2.f, r().window().getSize().y);
+		m_test_play_world->setScale(m_level_scale, m_level_scale);
 	} else {
 		m_test_play_world.reset();
 		m_level.map().set_editor_view(true);
@@ -281,11 +422,23 @@ bool edit::m_test_playing() const {
 	return !!m_test_play_world;
 }
 
+const char* edit::m_selected_cursor_description() const {
+	switch (m_cursor_type) {
+	case PENCIL:
+		return "Place one tile at a time";
+	case FLOOD:
+		return "Flood fill an area with the same type of tile";
+	case STROKE:
+		return "Draw straight lines (hold SHIFT to draw X/Y parallel lines)";
+	}
+}
+
 void edit::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	s.transform *= getTransform();
 	t.draw(m_border, s);
 	if (!m_test_playing()) {
 		t.draw(m_level, s);
+		t.draw(m_stroke_map, s);
 		t.draw(m_cursor, s);
 	} else {
 		t.draw(*m_test_play_world, s);

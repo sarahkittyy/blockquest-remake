@@ -4,6 +4,7 @@
 #include "debug.hpp"
 #include "util.hpp"
 
+#include <cmath>
 #include <iomanip>
 
 tilemap::tilemap(sf::Texture& tex, int xs, int ys, int ts)
@@ -130,19 +131,31 @@ std::vector<std::pair<sf::Vector2f, tile>> tilemap::intersects(sf::FloatRect aab
 }
 
 void tilemap::set(int x, int y, tile t) {
+	if (m_oob(x, y)) return;
 	t.m_x				  = x;
 	t.m_y				  = y;
 	m_tiles[x + y * m_xs] = t;
 	m_update_quad(x + y * m_xs);
 }
 
+void tilemap::set_line(sf::Vector2i min, sf::Vector2i max, tile tl) {
+	const sf::Vector2i dist = max - min;
+	// will do 45 iterations (max necessary for diagonal across map)
+	for (float t = 0; t <= 1; t += 0.022f) {
+		sf::Vector2i lerped(
+			std::round(util::lerp(min.x, max.x, t)),
+			std::round(util::lerp(min.y, max.y, t)));
+		set(lerped.x, lerped.y, tl);
+	}
+}
+
 tile tilemap::get(int x, int y) const {
-	if (m_oob(x, y)) return tile(tile::block, x, y);
+	if (m_oob(x, y)) return m_oob_tile(x, y);
 	return m_tiles[x + y * m_xs];
 }
 
 tile tilemap::get(int i) const {
-	if (m_oob(i)) return tile(tile::block, i / m_xs, i % m_ys);
+	if (m_oob(i)) return m_oob_tile(i / m_xs, i % m_ys);
 	return m_tiles[i];
 }
 
@@ -151,7 +164,6 @@ const std::vector<tile>& tilemap::get() const {
 }
 
 void tilemap::clear(int x, int y) {
-	if (m_oob(x, y)) return;
 	set(x, y, tile::empty);
 }
 
@@ -159,6 +171,27 @@ void tilemap::clear() {
 	m_tiles.clear();
 	m_tiles.resize(m_xs * m_ys, tile::empty);
 	m_flush_va();
+}
+
+void tilemap::layer_over(tilemap& target, bool override) const {
+	for (int x = 0; x < m_xs; ++x) {
+		for (int y = 0; y < m_ys; ++y) {
+			tile here = get(x, y);
+			if (here == tile::empty) continue;
+			tile there = target.get(x, y);
+			if (override || there != tile::empty) {
+				target.set(x, y, here);
+			}
+		}
+	}
+}
+
+tile tilemap::m_oob_tile(int x, int y) const {
+	if (y >= m_ys) {
+		return tile(tile::empty, x, y);
+	} else {
+		return tile(tile::block, x, y);
+	}
 }
 
 bool tilemap::in_bounds(sf::Vector2i pos) const {

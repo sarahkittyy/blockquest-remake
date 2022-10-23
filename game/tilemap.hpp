@@ -41,7 +41,8 @@ struct tile {
 		move_down,
 		move_left,
 		move_none,
-		cursor
+		cursor,
+		border,
 	};
 	tile(tile_type type = tile_type::empty, tile_props props = tile_props());
 
@@ -79,12 +80,15 @@ public:
 	// returns the dimensions of the area in the tilemap the tile's gfx is stored
 	sf::IntRect calculate_texture_rect(tile t) const;
 
-	void set(int x, int y, tile t);			// set a tile
-	tile get(int x, int y) const;			// get a tile
-	tile get(int i) const;					// get a tile at a given index
-	const std::vector<tile>& get() const;	// get all tiles
-	void clear(int x, int y);				// set the tile to air
-	void clear();							// clear the entire map
+	void set(int x, int y, tile t);								 // set a tile
+	void set_line(sf::Vector2i min, sf::Vector2i max, tile t);	 // set a line of tiles
+	tile get(int x, int y) const;								 // get a tile
+	tile get(int i) const;										 // get a tile at a given index
+	const std::vector<tile>& get() const;						 // get all tiles
+	void clear(int x, int y);									 // set the tile to air
+	void clear();												 // clear the entire map
+
+	void layer_over(tilemap& target, bool override = true) const;	// pastes all non-empty tiles from this map to the target map
 
 	bool in_bounds(sf::Vector2i pos) const;	  // is the given tile pos in bounds
 
@@ -120,6 +124,8 @@ private:
 
 	bool m_oob(int x, int y) const;	  // check if the given tile x / y is out of bounds
 	bool m_oob(int i) const;		  // check if the given tile index is out of bounds
+
+	tile m_oob_tile(int x, int y) const;   // return the tile at the given oob position
 
 	std::vector<tile> m_tiles;	 // all tiles
 

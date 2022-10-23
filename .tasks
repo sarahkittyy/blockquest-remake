@@ -1,6 +1,6 @@
-[gen]
+[generate]
 
-command=cmake -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
+command=cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
 cwd=build
 
 [build]

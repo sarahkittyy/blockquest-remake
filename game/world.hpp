@@ -162,6 +162,7 @@ private:
 	bool m_player_grounded() const;					// is the player on solid ground
 	bool m_player_grounded_ago(sf::Time t) const;	// has a player been grounded in the last t seconds?
 	bool m_just_jumped() const;
+	bool m_player_oob() const;
 	bool m_can_player_wallkick(dir d, bool keys_pressed = true) const;	 // can the player wallkick (d = direction of kick)
 	bool m_tile_above_player() const;									 // is there a tile directly above the player
 	bool m_against_ladder(dir d) const;									 // is there a ladder in the given direction

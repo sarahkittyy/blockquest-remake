@@ -13,6 +13,7 @@ IMGUI_API bool EditorTileButton(
 	sf::Texture& tiles,
 	tile::tile_type type,
 	const level& level,
-	bool selected = false);
+	bool selected = false,
+	int tile_size = 16);
 
 }
