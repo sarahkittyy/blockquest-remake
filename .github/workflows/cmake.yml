@@ -37,10 +37,11 @@ jobs:
         cp build/*/bq-r.exe release/blockquest-remake.exe
         cp build/*/*.lib release/
         cp build/*/*.dll release/
+        cp openal32.dll release/
         cp -r assets/ release/assets/
 
     - name: Publish Windows Build
       uses: actions/upload-artifact@v2
       with:
-        name: windows-release
+        name: BlockQuestRemake
         path: release
