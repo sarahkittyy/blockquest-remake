@@ -7,6 +7,7 @@
 #include "particles/death.hpp"
 #include "particles/gravity.hpp"
 #include "particles/smoke.hpp"
+#include "particles/victory.hpp"
 
 world::world(resource& r, level l)
 	: m_r(r),
@@ -696,11 +697,15 @@ void world::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 }
 
 void world::m_player_win() {
+	if (m_touched_goal) return;
 	m_touched_goal = true;
 	m_dashing	   = false;
 	m_space_to_retry.setColor(sf::Color(255, 255, 255, 0));
 	m_game_clear.setColor(sf::Color(255, 255, 255, 0));
 	m_r.play_sound("victory");
+	auto& sp		= m_pmgr.spawn<particles::victory>(m_r);
+	float grav_sign = m_flip_gravity ? -1 : 1;
+	sp.setPosition(m_xp, m_yp + 0.2f * grav_sign);
 }
 
 void world::m_player_die() {
