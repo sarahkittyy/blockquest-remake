@@ -30,12 +30,12 @@ private:
 
 	const float m_level_scale;	 // scale of the level in the editor
 
-	enum {
+	enum cursor_type {
 		PENCIL = 0,
 		FLOOD,
 		STROKE,
 	} m_cursor_type;
-	const char* m_selected_cursor_description() const;
+	const char* m_cursor_description(cursor_type c) const;
 
 	char m_import_buffer[8192];
 

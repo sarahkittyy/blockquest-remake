@@ -380,6 +380,8 @@ void edit::m_controls(fsm* sm) {
 		ImGui::Text("Are you sure you want to erase the whole level?");
 		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/yes.png"), "Yes")) {
 			r().play_sound("gameover");
+			if (m_test_playing())
+				m_toggle_test_play();
 			m_level.map().clear();
 			ImGui::CloseCurrentPopup();
 		}
@@ -436,6 +438,9 @@ void edit::m_block_picker(fsm* sm) {
 		if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
 			m_selected_tile = i;
 		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("%s", tile::description(i).c_str());
+		}
 		ImGui::SameLine();
 		ImGui::PopID();
 	}
@@ -444,6 +449,9 @@ void edit::m_block_picker(fsm* sm) {
 		ImGui::PushID((int)i);
 		if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
 			m_selected_tile = i;
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("%s", tile::description(i).c_str());
 		}
 		ImGui::SameLine();
 		ImGui::PopID();
@@ -454,6 +462,9 @@ void edit::m_block_picker(fsm* sm) {
 		if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
 			m_selected_tile = i;
 		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("%s", tile::description(i).c_str());
+		}
 		ImGui::SameLine();
 		ImGui::PopID();
 	}
@@ -462,6 +473,9 @@ void edit::m_block_picker(fsm* sm) {
 		ImGui::PushID((int)i);
 		if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
 			m_selected_tile = i;
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("%s", tile::description(i).c_str());
 		}
 		ImGui::SameLine();
 		ImGui::PopID();
@@ -473,15 +487,24 @@ void edit::m_block_picker(fsm* sm) {
 	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)PENCIL, m_level, m_cursor_type == PENCIL, 32)) {
 		m_cursor_type = PENCIL;
 	}
+	if (ImGui::IsItemHovered()) {
+		ImGui::SetTooltip("%s", m_cursor_description(PENCIL));
+	}
 	ImGui::SameLine();
 	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)FLOOD, m_level, m_cursor_type == FLOOD, 32)) {
 		m_cursor_type = FLOOD;
+	}
+	if (ImGui::IsItemHovered()) {
+		ImGui::SetTooltip("%s", m_cursor_description(FLOOD));
 	}
 	ImGui::SameLine();
 	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)STROKE, m_level, m_cursor_type == STROKE, 32)) {
 		m_cursor_type = STROKE;
 	}
-	ImGui::TextWrapped("%s", m_selected_cursor_description());
+	if (ImGui::IsItemHovered()) {
+		ImGui::SetTooltip("%s", m_cursor_description(STROKE));
+	}
+	ImGui::TextWrapped("%s", m_cursor_description(m_cursor_type));
 
 	ImGui::EndChildFrame();
 }
@@ -532,8 +555,8 @@ bool edit::m_test_playing() const {
 	return !!m_test_play_world;
 }
 
-const char* edit::m_selected_cursor_description() const {
-	switch (m_cursor_type) {
+const char* edit::m_cursor_description(edit::cursor_type c) const {
+	switch (c) {
 	case PENCIL:
 		return "Place one tile at a time";
 	case FLOOD:
