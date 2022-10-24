@@ -1,5 +1,6 @@
 #pragma once
 
+#include <deque>
 #include <optional>
 
 #include "../fsm.hpp"
@@ -27,7 +28,9 @@ private:
 
 	void draw(sf::RenderTarget&, sf::RenderStates) const;
 
-	level m_level;	 // the level we are editing
+	level m_level;										   // the level we are editing
+	std::deque<std::vector<tilemap::diff>> m_undo_queue;   // all changes made
+	const int UNDO_MAX = 100;							   // maximum amount of undos
 
 	level m_cursor;		// the level that just renders the cursor
 	tilemap m_border;	// a completely static map used to render a border of blocks
@@ -52,18 +55,19 @@ private:
 	tile::tile_type m_selected_tile = tile::begin;
 
 	// sets the tile on the map, false if the tile could not be placed, with an error output
-	bool m_set_tile(sf::Vector2i pos, tile::tile_type type, std::string& error);
+	std::optional<tilemap::diff> m_set_tile(sf::Vector2i pos, tile::tile_type type, std::string& error);
 	// recursively flood fills the map
-	bool m_flood_fill(sf::Vector2i pos, tile::tile_type type, tile::tile_type replacing, std::string& error);
+	std::vector<tilemap::diff> m_flood_fill(sf::Vector2i pos, tile::tile_type type, tile::tile_type replacing, std::string& error);
 
 	// draw straight lines
-	bool m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& error);
+	std::vector<tilemap::diff> m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& error);
 	sf::Vector2i m_stroke_start;
 	bool m_stroke_active;
 	tilemap m_stroke_map;	// for temporary rendering of stroke tool graphics
 
 	sf::Vector2i m_old_mouse_tile;		  // the hovered tile last update, so we can reset it when the mouse moves
 	sf::Vector2i m_update_mouse_tile();	  // update the editor cursor
+	sf::Vector2i m_last_placed;			  // the position of the last clicked tile
 
 	bool m_test_playing() const;
 	std::unique_ptr<world> m_test_play_world;

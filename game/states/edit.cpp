@@ -35,7 +35,8 @@ edit::edit(resource& r)
 	  m_tools(r.tex("assets/gui/tools.png")),
 	  m_stroke_start(-1, -1),
 	  m_stroke_active(false),
-	  m_stroke_map(r.tex("assets/tiles.png"), 32, 32, 16) {
+	  m_stroke_map(r.tex("assets/tiles.png"), 32, 32, 16),
+	  m_last_placed(-1, -1) {
 
 	m_rt.create(34 * 16, 32 * 16);
 	m_map.setTexture(m_rt.getTexture());
@@ -107,6 +108,10 @@ void edit::process_event(sf::Event e) {
 void edit::update(fsm* sm, sf::Time dt) {
 	sf::Vector2i mouse_tile = m_update_mouse_tile();
 
+	if (m_undo_queue.size() > UNDO_MAX) {
+		m_undo_queue.pop_front();
+	}
+
 	// if we're not on gui, and on the map, and ready to place a tile
 	if (!ImGui::GetIO().WantCaptureMouse &&
 		sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
@@ -114,24 +119,39 @@ void edit::update(fsm* sm, sf::Time dt) {
 		m_level.map().in_bounds(mouse_tile)) {
 		// set the tile
 		switch (m_cursor_type) {
-		case PENCIL:
-			m_set_tile(mouse_tile, m_selected_tile, m_last_debug_msg);
+		case PENCIL: {
+			auto diff = m_set_tile(mouse_tile, m_selected_tile, m_last_debug_msg);
+			if (diff && m_last_placed != mouse_tile && !diff->same()) {
+				m_undo_queue.push_back({ *diff });
+			}
 			break;
-		case FLOOD:
-			m_flood_fill(mouse_tile, m_selected_tile, m_level.map().get(mouse_tile.x, mouse_tile.y).type, m_last_debug_msg);
+		}
+		case FLOOD: {
+			auto diffs = m_flood_fill(mouse_tile, m_selected_tile, m_level.map().get(mouse_tile.x, mouse_tile.y).type, m_last_debug_msg);
+			if (!diffs.empty()) {
+				m_undo_queue.push_back(diffs);
+			}
 			break;
+		}
 		case STROKE:
-			if (m_selected_tile == tile::begin || m_selected_tile == tile::end)
-				m_set_tile(mouse_tile, m_selected_tile, m_last_debug_msg);
-			else
+			if (m_selected_tile == tile::begin || m_selected_tile == tile::end) {
+				auto diff = m_set_tile(mouse_tile, m_selected_tile, m_last_debug_msg);
+				if (diff && m_last_placed != mouse_tile && !diff->same()) {
+					m_undo_queue.push_back({ *diff });
+				}
+			} else
 				m_stroke_fill(mouse_tile, m_selected_tile, m_last_debug_msg);
 			break;
 		}
+		m_last_placed = mouse_tile;
 	} else {
 		// if we're done stroking, render the line
 		if (m_stroke_active) {
 			m_stroke_active = false;
-			m_stroke_map.layer_over(m_level.map(), true);
+			auto diffs		= m_stroke_map.layer_over(m_level.map(), true);
+			if (!diffs.empty()) {
+				m_undo_queue.push_back(diffs);
+			}
 			m_stroke_map.clear();
 		}
 	}
@@ -151,9 +171,11 @@ void edit::update(fsm* sm, sf::Time dt) {
 		m_rt.draw(*m_test_play_world);
 	}
 	m_rt.display();
+
+	m_old_mouse_tile = mouse_tile;
 }
 
-bool edit::m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& error) {
+std::vector<tilemap::diff> edit::m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& error) {
 	// exclude certain types
 	switch (type) {
 	default:
@@ -170,7 +192,7 @@ bool edit::m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& er
 	case tile::cursor:
 	case tile::begin:
 	case tile::end:
-		return false;
+		return {};
 	}
 	static sf::Vector2i last_pos;
 	if (!m_stroke_active) {
@@ -192,12 +214,13 @@ bool edit::m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& er
 		}
 	}
 	last_pos = pos;
-	m_stroke_map.set_line(m_stroke_start, pos, type);
-	return true;
+	return m_stroke_map.set_line(m_stroke_start, pos, type);
 }
 
-bool edit::m_set_tile(sf::Vector2i pos, tile::tile_type type, std::string& error) {
+std::optional<tilemap::diff> edit::m_set_tile(sf::Vector2i pos, tile::tile_type type, std::string& error) {
 	try {
+		std::optional<tilemap::diff> d;
+
 		tilemap& m	= m_level.map();
 		const int x = pos.x;
 		const int y = pos.y;
@@ -209,21 +232,22 @@ bool edit::m_set_tile(sf::Vector2i pos, tile::tile_type type, std::string& error
 		case tile::spike:
 		case tile::ladder:
 		case tile::stopper:
-			m.set(x, y, type);
+			d = m.set(x, y, type);
 			break;
 		case tile::empty:
 		case tile::erase:
-			m.clear(x, y);
+			d = m.clear(x, y);
 			break;
 		case tile::move_up:
 		case tile::move_down:
 		case tile::move_left:
 		case tile::move_right:
-			if (m.get(x, y).movable())
-				m.set(x, y, tile(m.get(x, y).type, { .moving = int(type) - 13 }));
+			if (m.get(x, y).movable()) {
+				d = m.set(x, y, tile(m.get(x, y).type, { .moving = int(type) - 13 }));
+			}
 			break;
 		case tile::move_none:
-			m.set(x, y, tile(m.get(x, y).type, { .moving = 0 }));
+			d = m.set(x, y, tile(m.get(x, y).type, { .moving = 0 }));
 			break;
 		case tile::move_up_bit:
 		case tile::move_right_bit:
@@ -237,29 +261,29 @@ bool edit::m_set_tile(sf::Vector2i pos, tile::tile_type type, std::string& error
 				sf::Vector2i to_remove = m.find_first_of(type);
 				m.clear(to_remove.x, to_remove.y);
 			}
-			m.set(x, y, type);
+			d = m.set(x, y, type);
 			break;
 		default:
-			return false;
+			return {};
 		}
-		return true;
+		return d;
 	} catch (const std::runtime_error& e) {
 		error = e.what();
-		return false;
+		return {};
 	}
 }
 
-bool edit::m_flood_fill(sf::Vector2i pos, tile::tile_type type, tile::tile_type replacing, std::string& error) {
+std::vector<tilemap::diff> edit::m_flood_fill(sf::Vector2i pos, tile::tile_type type, tile::tile_type replacing, std::string& error) {
 	try {
 		tilemap& m	= m_level.map();
 		const int x = pos.x;
 		const int y = pos.y;
 		tile t		= m.get(x, y);
-		if (x < 0 || x >= m.size().x || y < 0 || y >= m.size().y) return true;
-		if (t != replacing) return true;
-		if (t == type) return true;
-		if (type == replacing) return true;
-		if (t == tile::empty && type == tile::erase) return true;
+		if (x < 0 || x >= m.size().x || y < 0 || y >= m.size().y) return {};
+		if (t != replacing) return {};
+		if (t == type) return {};
+		if (type == replacing) return {};
+		if (t == tile::empty && type == tile::erase) return {};
 		switch (type) {
 		case tile::move_up:
 		case tile::move_down:
@@ -273,22 +297,30 @@ bool edit::m_flood_fill(sf::Vector2i pos, tile::tile_type type, tile::tile_type 
 		case tile::cursor:
 		case tile::begin:
 		case tile::end:
-			return true;
+			return {};
 		default:
 			break;
 		}
 
-		if (m_set_tile(pos, type, error)) {
-			m_flood_fill({ x - 1, y }, type, replacing, error);
-			m_flood_fill({ x + 1, y }, type, replacing, error);
-			m_flood_fill({ x, y - 1 }, type, replacing, error);
-			m_flood_fill({ x, y + 1 }, type, replacing, error);
+		std::vector<tilemap::diff> ret;
+		auto d = m_set_tile(pos, type, error);
+		if (d) {
+			ret.push_back(*d);
+			auto ret1 = m_flood_fill({ x - 1, y }, type, replacing, error);
+			auto ret2 = m_flood_fill({ x + 1, y }, type, replacing, error);
+			auto ret3 = m_flood_fill({ x, y - 1 }, type, replacing, error);
+			auto ret4 = m_flood_fill({ x, y + 1 }, type, replacing, error);
+			ret.reserve(ret1.size() + ret2.size() + ret3.size() + ret4.size() + 1);
+			ret.insert(ret.end(), ret1.begin(), ret1.end());
+			ret.insert(ret.end(), ret2.begin(), ret2.end());
+			ret.insert(ret.end(), ret3.begin(), ret3.end());
+			ret.insert(ret.end(), ret4.begin(), ret4.end());
 		}
+		return ret;
 	} catch (const std::runtime_error& e) {
 		error = e.what();
-		return false;
+		return {};
 	}
-	return true;
 }
 
 sf::Vector2i edit::m_update_mouse_tile() {
@@ -299,8 +331,8 @@ sf::Vector2i edit::m_update_mouse_tile() {
 	const sf::Vector2i mouse_tile = m_level.mouse_tile(mouse_pos);
 	debug::get() << mouse_tile << "\n";
 	if (mouse_tile != m_old_mouse_tile) {
+		m_last_placed = { -1, -1 };
 		m_cursor.map().clear(m_old_mouse_tile.x, m_old_mouse_tile.y);
-		m_old_mouse_tile = mouse_tile;
 		if (m_cursor.map().in_bounds(mouse_tile)) {
 			m_cursor.map().set(mouse_tile.x, mouse_tile.y, tile::cursor);
 		}
@@ -576,6 +608,15 @@ void edit::m_block_picker(fsm* sm) {
 		ImGui::SetTooltip("%s", m_cursor_description(STROKE));
 	}
 	ImGui::TextWrapped("%s", m_cursor_description(m_cursor_type));
+	ImGui::BeginDisabled(m_undo_queue.empty());
+	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Undo")) {
+		std::vector<tilemap::diff> diffs = m_undo_queue.back();
+		m_undo_queue.pop_back();
+		for (auto& diff : diffs) {
+			m_level.map().undo(diff);
+		}
+	}
+	ImGui::EndDisabled();
 
 	ImGui::EndChildFrame();
 }

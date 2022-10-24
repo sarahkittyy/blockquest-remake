@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <cstring>
+#include <optional>
 #include <ranges>
 #include <unordered_map>
 #include <vector>
@@ -79,18 +80,31 @@ public:
 	// construct with the tilemap's size in tiles, and the size of a single tile's texture
 	tilemap(sf::Texture& tex, int xs, int ys, int ts);
 
+	struct diff {
+		int x;
+		int y;
+		tile::tile_type before;
+		tile::tile_type after;
+		inline constexpr bool same() const {
+			return before == after;
+		}
+	};
+
 	// returns the dimensions of the area in the tilemap the tile's gfx is stored
 	sf::IntRect calculate_texture_rect(tile t) const;
 
-	void set(int x, int y, tile t);								 // set a tile
-	void set_line(sf::Vector2i min, sf::Vector2i max, tile t);	 // set a line of tiles
-	tile get(int x, int y) const;								 // get a tile
-	tile get(int i) const;										 // get a tile at a given index
-	const std::vector<tile>& get() const;						 // get all tiles
-	void clear(int x, int y);									 // set the tile to air
-	void clear();												 // clear the entire map
+	std::optional<diff> set(int x, int y, tile t);							  // set a tile
+	std::vector<diff> set_line(sf::Vector2i min, sf::Vector2i max, tile t);	  // set a line of tiles
+	tile get(int x, int y) const;											  // get a tile
+	tile get(int i) const;													  // get a tile at a given index
+	const std::vector<tile>& get() const;									  // get all tiles
+	std::optional<diff> clear(int x, int y);								  // set the tile to air
+	std::vector<diff> clear();												  // clear the entire map
 
-	void layer_over(tilemap& target, bool override = true) const;	// pastes all non-empty tiles from this map to the target map
+	void undo(diff d);	 // undoes a change
+
+	std::vector<diff> layer_over(tilemap& target, bool override = true) const;	 // pastes all non-empty tiles from this map to the target map
+	void copy_to(tilemap& target) const;										 // copy this map over to the target one
 
 	bool in_bounds(sf::Vector2i pos) const;	  // is the given tile pos in bounds
 
@@ -113,6 +127,8 @@ public:
 	std::string save() const;
 	// load this map from a given string
 	void load(std::string str);
+
+	static bool diffs_equal(std::vector<diff> a, std::vector<diff> b);	 // are the two diff sets equal?
 
 private:
 	// render the map! :3

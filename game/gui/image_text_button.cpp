@@ -45,8 +45,11 @@ bool ImageButtonWithText(ImTextureID texId, const char* label, const ImVec2& ima
 	bool pressed = ButtonBehavior(bb, id, &hovered, &held);
 
 	// Render
-	const ImU32 col = GetColorU32((hovered && held) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered
-																					  : ImGuiCol_Button);
+	const ImU32 col = GetColorU32((hovered && held)
+									  ? ImGuiCol_ButtonActive
+								  : hovered
+									  ? ImGuiCol_ButtonHovered
+									  : ImGuiCol_Button);
 	RenderFrame(bb.Min, bb.Max, col, true, ImClamp((float)ImMin(padding.x, padding.y), 0.0f, style.FrameRounding));
 	if (bg_col.w > 0.0f)
 		window->DrawList->AddRectFilled(image_bb.Min, image_bb.Max, GetColorU32(bg_col));

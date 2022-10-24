@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <iomanip>
+#include <unordered_set>
 
 tilemap::tilemap(sf::Texture& tex, int xs, int ys, int ts)
 	: m_tex(tex), m_xs(xs), m_ys(ys), m_ts(ts), m_editor(false) {
@@ -130,23 +131,40 @@ std::vector<std::pair<sf::Vector2f, tile>> tilemap::intersects(sf::FloatRect aab
 	return ret;
 }
 
-void tilemap::set(int x, int y, tile t) {
-	if (m_oob(x, y)) return;
+std::optional<tilemap::diff> tilemap::set(int x, int y, tile t) {
+	if (m_oob(x, y)) return {};
+
+	tilemap::diff d;
+	d.x		 = x;
+	d.y		 = y;
+	d.before = m_tiles[x + y * m_xs].type;
+	d.after	 = t.type;
+
 	t.m_x				  = x;
 	t.m_y				  = y;
 	m_tiles[x + y * m_xs] = t;
 	m_update_quad(x + y * m_xs);
+	return d;
 }
 
-void tilemap::set_line(sf::Vector2i min, sf::Vector2i max, tile tl) {
+std::vector<tilemap::diff> tilemap::set_line(sf::Vector2i min, sf::Vector2i max, tile tl) {
+	std::vector<tilemap::diff> ret;
+
 	const sf::Vector2i dist = max - min;
+	std::unordered_set<sf::Vector2i, util::vector_hash<int>> already_passed;
 	// will do 45 iterations (max necessary for diagonal across map)
 	for (float t = 0; t <= 1; t += 0.022f) {
 		sf::Vector2i lerped(
 			std::round(util::lerp(min.x, max.x, t)),
 			std::round(util::lerp(min.y, max.y, t)));
-		set(lerped.x, lerped.y, tl);
+		if (already_passed.contains(lerped)) continue;
+		already_passed.insert(lerped);
+		auto diff = set(lerped.x, lerped.y, tl);
+		if (diff) {
+			ret.push_back(*diff);
+		}
 	}
+	return ret;
 }
 
 tile tilemap::get(int x, int y) const {
@@ -163,28 +181,62 @@ const std::vector<tile>& tilemap::get() const {
 	return m_tiles;
 }
 
-void tilemap::clear(int x, int y) {
-	set(x, y, tile::empty);
+std::optional<tilemap::diff> tilemap::clear(int x, int y) {
+	return set(x, y, tile::empty);
 }
 
-void tilemap::clear() {
+std::vector<tilemap::diff> tilemap::clear() {
+	std::vector<tilemap::diff> ret;
+	for (int x = 0; x < m_xs; ++x) {
+		for (int y = 0; y < m_ys; ++y) {
+			ret.push_back({
+				.x		= x,
+				.y		= y,
+				.before = m_tiles[x + y * m_xs].type,
+				.after	= tile::empty,
+			});
+		}
+	}
 	m_tiles.clear();
 	m_tiles.resize(m_xs * m_ys, tile::empty);
 	m_flush_va();
+	return ret;
 }
 
-void tilemap::layer_over(tilemap& target, bool override) const {
+void tilemap::undo(diff d) {
+	int x = d.x;
+	int y = d.y;
+	tile before(d.before, x, y);
+	set(x, y, before);
+}
+
+std::vector<tilemap::diff> tilemap::layer_over(tilemap& target, bool override) const {
+	std::vector<tilemap::diff> ret;
 	for (int x = 0; x < m_xs; ++x) {
 		for (int y = 0; y < m_ys; ++y) {
 			tile here = get(x, y);
 			if (here == tile::empty) continue;
 			tile there = target.get(x, y);
 			if (override || there != tile::empty) {
-				if (here == tile::erase)
-					target.clear(x, y);
-				else
-					target.set(x, y, here);
+				if (here == tile::erase) {
+					auto diff = target.clear(x, y);
+					if (diff)
+						ret.push_back(*diff);
+				} else {
+					auto diff = target.set(x, y, here);
+					if (diff)
+						ret.push_back(*diff);
+				}
 			}
+		}
+	}
+	return ret;
+}
+
+void tilemap::copy_to(tilemap& target) const {
+	for (int x = 0; x < m_xs; ++x) {
+		for (int y = 0; y < m_ys; ++y) {
+			target.set(x, y, get(x, y));
 		}
 	}
 }
@@ -314,6 +366,25 @@ void tilemap::load(std::string str) {
 		m_tiles[i].props.moving = std::atoi(buf);
 	}
 	m_flush_va();
+}
+
+bool tilemap::diffs_equal(std::vector<tilemap::diff> a, std::vector<tilemap::diff> b) {
+	if (a.size() != b.size()) return false;
+	for (int i = 0; i < a.size(); ++i) {
+		tilemap::diff a0 = a[i];
+		bool found_match = false;
+		for (int j = 0; j < b.size(); ++j) {
+			tilemap::diff b0 = a[j];
+			if (a0.x == b0.x && a0.y == b0.y && a0.after == b0.after) {
+				found_match = true;
+				break;
+			}
+		}
+		if (!found_match) {
+			return false;
+		}
+	}
+	return true;
 }
 
 // ! tile methods !
