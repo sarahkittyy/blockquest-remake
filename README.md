@@ -1,5 +1,7 @@
 # bq-r
 
+[Download the latest release here :)](https://github.com/sarahkittyy/blockquest-remake/releases/latest)
+
 This is a work-in-progress remake of [BlockQuest](http://www.blockquest.net/).
 
 ![Run](gifs/run.gif)
