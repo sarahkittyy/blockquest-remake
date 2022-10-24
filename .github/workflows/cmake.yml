@@ -47,6 +47,14 @@ jobs:
       with:
         name: BlockQuestRemake
         path: release
+      if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    
+    - name: Zip files
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: vimtor/action-zip@v1
+      with:
+        files: release/
+        dest: BlockQuestRemake.zip
 
     - name: Create Release Tag
       uses: softprops/action-gh-release@v1
