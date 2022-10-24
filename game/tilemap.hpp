@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "imgui_internal.h"
+
 #include "util.hpp"
 
 // bitflags for tile properties
@@ -91,6 +93,8 @@ public:
 	void layer_over(tilemap& target, bool override = true) const;	// pastes all non-empty tiles from this map to the target map
 
 	bool in_bounds(sf::Vector2i pos) const;	  // is the given tile pos in bounds
+
+	ImRect calc_uvs(tile::tile_type type) const;   // calculates the uv coordinates of a tile for imgui purposes
 
 	// all tiles that intersect the given aabb
 	std::vector<std::pair<sf::Vector2f, tile>> intersects(sf::FloatRect aabb) const;

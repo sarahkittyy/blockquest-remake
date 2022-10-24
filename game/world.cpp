@@ -310,6 +310,9 @@ void world::update(sf::Time dt) {
 	if (m_climbing) {	// up and down controls while climbing
 		if (up_keyed) {
 			m_yv -= phys.climb_ya * dt.asSeconds() * gravity_sign;
+			// to prevent sticking
+			if (m_player_grounded())
+				m_yp -= 0.01f * gravity_sign;
 		} else if (down_keyed) {
 			m_yv += phys.climb_ya * dt.asSeconds() * gravity_sign;
 		} else {

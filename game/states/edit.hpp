@@ -4,6 +4,8 @@
 #include "../level.hpp"
 #include "../world.hpp"
 
+#include "../gui/gif.hpp"
+
 namespace states {
 
 // level editor
@@ -23,6 +25,8 @@ private:
 
 	level m_cursor;		// the level that just renders the cursor
 	tilemap m_border;	// a completely static map used to render a border of blocks
+
+	std::array<std::pair<ImGui::Gif, const char*>, 5> m_rules_gifs;	  // the 5 gifs of the rules
 
 	const float m_level_scale;	 // scale of the level in the editor
 
@@ -58,6 +62,11 @@ private:
 	void m_toggle_test_play();
 
 	std::string m_last_debug_msg;
+
+	// gui stuff
+	void m_menu_bar(fsm* sm);
+	void m_controls(fsm* sm);
+	void m_block_picker(fsm* sm);
 };
 
 }

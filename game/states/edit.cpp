@@ -18,7 +18,16 @@ edit::edit(resource& r)
 	  m_level(r),
 	  m_cursor(r),
 	  m_border(r.tex("assets/tiles.png"), 34, 33, 16),
-	  // m_level_scale((r.window().getSize().y - 26) / (34 * 16.f)),
+	  m_rules_gifs({ std::make_pair(ImGui::Gif(r.tex("assets/gifs/run.png"), 33, { 240, 240 }, 20),
+									"Use left & right to run"),
+					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/jump.png"), 19, { 240, 240 }, 20),
+									"Space to jump"),
+					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/dash.png"), 19, { 240, 240 }, 20),
+									"Down to dash"),
+					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/wallkick.png"), 37, { 240, 240 }, 20),
+									"Left + Right to wallkick"),
+					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/climb.png"), 25, { 240, 240 }, 20),
+									"Up & Down to climb") }),
 	  m_level_scale(2.f),
 	  m_cursor_type(PENCIL),
 	  m_tiles(r.tex("assets/tiles.png")),
@@ -254,14 +263,93 @@ sf::Vector2i edit::m_update_mouse_tile() {
 	return mouse_tile;
 }
 
-void edit::imdraw(fsm* sm) {
-	// clang-format off
-	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
-	flags |= ImGuiWindowFlags_NoResize;
-	flags |= ImGuiWindowFlags_AlwaysAutoResize;
+void edit::m_menu_bar(fsm* sm) {
+	// rules
+	if (ImGui::MenuItem("Rules")) {
+		ImGui::OpenPopup("Rules###Rules");
+	}
+	if (ImGui::BeginPopup("Rules###Rules")) {
+		ImGui::BeginTable("###Rules", 2);
+		ImGui::TableNextColumn();
+		ImRect uvs;
 
-	// menu bar
-	ImGui::BeginMainMenuBar();
+		uvs = m_level.map().calc_uvs(tile::begin);
+		ImGui::Text("Start here");
+		ImGui::TableNextColumn();
+		ImGui::Image(
+			reinterpret_cast<ImTextureID>(m_tiles.getNativeHandle()),
+			ImVec2(64, 64),
+			uvs.Min, uvs.Max);
+		ImGui::TableNextRow();
+
+		uvs = m_level.map().calc_uvs(tile::end);
+		ImGui::TableNextColumn();
+		ImGui::Text("Try to reach the goal");
+		ImGui::TableNextColumn();
+		ImGui::Image(
+			reinterpret_cast<ImTextureID>(m_tiles.getNativeHandle()),
+			ImVec2(64, 64),
+			uvs.Min, uvs.Max);
+		ImGui::TableNextRow();
+
+		uvs = m_level.map().calc_uvs(tile::spike);
+		ImGui::TableNextColumn();
+		ImGui::Text("Avoid spikes");
+		ImGui::TableNextColumn();
+		ImGui::Image(
+			reinterpret_cast<ImTextureID>(m_tiles.getNativeHandle()),
+			ImVec2(64, 64),
+			uvs.Min, uvs.Max);
+		ImGui::TableNextRow();
+
+		uvs = m_level.map().calc_uvs(tile::gravity);
+		ImGui::TableNextColumn();
+		ImGui::Text("Flip gravity");
+		ImGui::TableNextColumn();
+		ImGui::Image(
+			reinterpret_cast<ImTextureID>(m_tiles.getNativeHandle()),
+			ImVec2(64, 64),
+			uvs.Min, uvs.Max);
+		ImGui::TableNextRow();
+
+		uvs = m_level.map().calc_uvs(tile::ladder);
+		ImGui::TableNextColumn();
+		ImGui::Text("Climb up ladders");
+		ImGui::TableNextColumn();
+		ImGui::Image(
+			reinterpret_cast<ImTextureID>(m_tiles.getNativeHandle()),
+			ImVec2(64, 64),
+			uvs.Min, uvs.Max);
+		ImGui::TableNextRow();
+
+		uvs = m_level.map().calc_uvs(tile::ice);
+		ImGui::TableNextColumn();
+		ImGui::Text("Watch your step");
+		ImGui::TableNextColumn();
+		ImGui::Image(
+			reinterpret_cast<ImTextureID>(m_tiles.getNativeHandle()),
+			ImVec2(64, 64),
+			uvs.Min, uvs.Max);
+		ImGui::TableNextRow();
+
+		ImGui::EndTable();
+		ImGui::EndPopup();
+	}
+	// controls
+	if (ImGui::MenuItem("Controls")) {
+		ImGui::OpenPopup("Controls###Controls");
+	}
+	if (ImGui::BeginPopup("Controls###Controls")) {
+		ImGui::BeginTable("###Gifs", 5);
+		for (auto& [gif, desc] : m_rules_gifs) {
+			ImGui::TableNextColumn();
+			gif.update();
+			gif.draw({ 240, 240 });
+			ImGui::Text("%s", desc);
+		}
+		ImGui::EndTable();
+		ImGui::EndPopup();
+	}
 	// debug msg
 	if (m_last_debug_msg.length() != 0) {
 		ImGui::TextColored(sf::Color(255, 120, 120, 255), "[!] %s", m_last_debug_msg.c_str());
@@ -269,116 +357,115 @@ void edit::imdraw(fsm* sm) {
 			m_last_debug_msg = "";
 		}
 	}
-	ImGui::EndMainMenuBar();
+}
 
-	// controls
-	bool popup_open = false;
-	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Controls", nullptr); {
-		ImTextureID icon = !m_test_playing() ? r().imtex("assets/gui/play.png") : r().imtex("assets/gui/stop.png");
-		std::string label = !m_test_playing() ? "Test Play" : "Edit";
-		if (ImGui::ImageButtonWithText(icon, label.c_str())) {
-			m_toggle_test_play();
-		}
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/export.png"), "Export")) {
-			ImGui::OpenPopup("Export###Export");
+void edit::m_controls(fsm* sm) {
+	ImTextureID icon  = !m_test_playing() ? r().imtex("assets/gui/play.png") : r().imtex("assets/gui/stop.png");
+	std::string label = !m_test_playing() ? "Test Play" : "Edit";
+	if (ImGui::ImageButtonWithText(icon, label.c_str())) {
+		m_toggle_test_play();
+	}
+	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/export.png"), "Export")) {
+		ImGui::OpenPopup("Export###Export");
+	}
+	ImGui::SameLine();
+	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/import.png"), "Import")) {
+		std::memset(m_import_buffer, 0, 8192);
+		ImGui::OpenPopup("Import###Import");
+	}
+	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/erase.png"), "Clear")) {
+		ImGui::OpenPopup("Clear###Confirm");
+	}
+	if (ImGui::BeginPopup("Clear###Confirm")) {
+		ImGui::Text("Are you sure you want to erase the whole level?");
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/yes.png"), "Yes")) {
+			r().play_sound("gameover");
+			m_level.map().clear();
+			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/import.png"), "Import")) {
-			std::memset(m_import_buffer, 0, 8192);
-			ImGui::OpenPopup("Import###Import");
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/no.png"), "No")) {
+			ImGui::CloseCurrentPopup();
 		}
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/erase.png"), "Clear")) {
-			ImGui::OpenPopup("Clear###Confirm");
+		ImGui::EndPopup();
+	}
+	// import / export popups
+	if (ImGui::BeginPopupModal("Export###Export")) {
+		std::string saved = m_level.map().save();
+		ImGui::BeginChildFrame(ImGui::GetID("###ExportText"), ImVec2(-1, 200));
+		ImGui::TextWrapped("%s", saved.c_str());
+		ImGui::EndChildFrame();
+		ImGui::Text("Save this code or send it to a friend!");
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/copy.png"), "Copy")) {
+			ImGui::SetClipboardText(saved.c_str());
+			ImGui::CloseCurrentPopup();
 		}
-		if (ImGui::BeginPopup("Clear###Confirm")) {
-			ImGui::Text("Are you sure you want to erase the whole level?");
-			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/yes.png"), "Yes")) {
-				r().play_sound("gameover");
-				m_level.map().clear();
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::SameLine();
-			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/no.png"), "No")) {
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
+		ImGui::SameLine();
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Done")) {
+			ImGui::CloseCurrentPopup();
 		}
-		// import / export popups
-		if (ImGui::BeginPopupModal("Export###Export")) {
-			std::string saved = m_level.map().save();
-			ImGui::BeginChildFrame(ImGui::GetID("###ExportText"), ImVec2(-1, 200));
-			ImGui::TextWrapped("%s", saved.c_str()); 
-			ImGui::EndChildFrame();
-			ImGui::Text("Save this code or send it to a friend!");
-			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/copy.png"), "Copy")) {
-				ImGui::SetClipboardText(saved.c_str());
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::SameLine();
-			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Done")) {
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
+		ImGui::EndPopup();
+	}
+	if (ImGui::BeginPopupModal("Import###Import")) {
+		ImGui::InputText("Import Level Code", m_import_buffer, 8192);
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/paste.png"), "Paste")) {
+			std::strcpy(m_import_buffer, ImGui::GetClipboardText());
 		}
-		if (ImGui::BeginPopupModal("Import###Import")) {
-			ImGui::InputText("Import Level Code", m_import_buffer, 8192);
-			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/paste.png"), "Paste")) {
-				std::strcpy(m_import_buffer, ImGui::GetClipboardText());
-			}
-			ImGui::SameLine();
-			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/create.png"), "Load")) {
-				m_level.map().load(std::string(m_import_buffer));
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::SameLine();
-			if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Cancel")) {
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
+		ImGui::SameLine();
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/create.png"), "Load")) {
+			m_level.map().load(std::string(m_import_buffer));
+			ImGui::CloseCurrentPopup();
 		}
-	} ImGui::End();
+		ImGui::SameLine();
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Cancel")) {
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+}
 
-	// block picker
-	ImGui::SetNextWindowPos(ImVec2(100, 500), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Blocks", nullptr, flags); {
+void edit::m_block_picker(fsm* sm) {
+	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
+	flags |= ImGuiWindowFlags_NoResize;
+	flags |= ImGuiWindowFlags_AlwaysAutoResize;
+
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
 	ImGui::BeginChildFrame(ImGui::GetID("BlocksPicker"), ImVec2(32 * 8, 32 * 8), flags);
-		for(tile::tile_type i = tile::begin; i <= tile::ice; i = (tile::tile_type)(int(i) + 1)) {
-			ImGui::PushID((int)i);
-			if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
-				m_selected_tile = i;
-			}
-			ImGui::SameLine();
-			ImGui::PopID();
+	for (tile::tile_type i = tile::begin; i <= tile::ice; i = (tile::tile_type)(int(i) + 1)) {
+		ImGui::PushID((int)i);
+		if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
+			m_selected_tile = i;
 		}
-		ImGui::NewLine();
-		for(tile::tile_type i = tile::black; i <= tile::ladder; i = (tile::tile_type)(int(i) + 1)) {
-			ImGui::PushID((int)i);
-			if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
-				m_selected_tile = i;
-			}
-			ImGui::SameLine();
-			ImGui::PopID();
+		ImGui::SameLine();
+		ImGui::PopID();
+	}
+	ImGui::NewLine();
+	for (tile::tile_type i = tile::black; i <= tile::ladder; i = (tile::tile_type)(int(i) + 1)) {
+		ImGui::PushID((int)i);
+		if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
+			m_selected_tile = i;
 		}
-		ImGui::NewLine();
-		for(tile::tile_type i = tile::stopper; i <= tile::erase; i = (tile::tile_type)(int(i) + 1)) {
-			ImGui::PushID((int)i);
-			if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
-				m_selected_tile = i;
-			}
-			ImGui::SameLine();
-			ImGui::PopID();
+		ImGui::SameLine();
+		ImGui::PopID();
+	}
+	ImGui::NewLine();
+	for (tile::tile_type i = tile::stopper; i <= tile::erase; i = (tile::tile_type)(int(i) + 1)) {
+		ImGui::PushID((int)i);
+		if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
+			m_selected_tile = i;
 		}
-		ImGui::NewLine();
-		for(tile::tile_type i = tile::move_up; i <= tile::move_none; i = (tile::tile_type)(int(i) + 1)) {
-			ImGui::PushID((int)i);
-			if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
-				m_selected_tile = i;
-			}
-			ImGui::SameLine();
-			ImGui::PopID();
+		ImGui::SameLine();
+		ImGui::PopID();
+	}
+	ImGui::NewLine();
+	for (tile::tile_type i = tile::move_up; i <= tile::move_none; i = (tile::tile_type)(int(i) + 1)) {
+		ImGui::PushID((int)i);
+		if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
+			m_selected_tile = i;
 		}
+		ImGui::SameLine();
+		ImGui::PopID();
+	}
 	ImGui::PopStyleVar();
 	ImGui::NewLine();
 	ImGui::TextWrapped("%s", tile::description(m_selected_tile).c_str());
@@ -397,9 +484,30 @@ void edit::imdraw(fsm* sm) {
 	ImGui::TextWrapped("%s", m_selected_cursor_description());
 
 	ImGui::EndChildFrame();
-	} ImGui::End();
+}
 
-	// clang-format on
+void edit::imdraw(fsm* sm) {
+	// clang-format off
+	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
+	flags |= ImGuiWindowFlags_NoResize;
+	flags |= ImGuiWindowFlags_AlwaysAutoResize;
+
+	// menu bar
+	ImGui::BeginMainMenuBar();
+	m_menu_bar(sm);
+	ImGui::EndMainMenuBar();
+
+	// controls
+	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
+	ImGui::Begin("Controls", nullptr);
+	m_controls(sm);
+	ImGui::End();
+
+	// block picker
+	ImGui::SetNextWindowPos(ImVec2(100, 500), ImGuiCond_FirstUseEver);
+	ImGui::Begin("Blocks", nullptr, flags);
+	m_block_picker(sm);
+	ImGui::End();
 }
 
 void edit::m_toggle_test_play() {
