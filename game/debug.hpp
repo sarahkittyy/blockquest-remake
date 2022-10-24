@@ -66,7 +66,7 @@ public:
 
 	debug& box(sf::FloatRect box, sf::Color c = sf::Color(127, 127, 127, 127));
 
-	void imdraw();	 // render to imgui
+	void imdraw(sf::Time dt);	// render to imgui
 
 private:
 	void draw(sf::RenderTarget& t, sf::RenderStates s) const;	// sfml draw
@@ -79,6 +79,9 @@ private:
 	bool m_draw_debug = false;
 	bool m_log_mode	  = false;
 	bool m_demo_open  = false;
+
+	sf::Clock m_last_dt_reset_clock;   // for resetting m_last_dt
+	sf::Time m_last_dt;				   // stores imdraw() dt values so they don't have to be updated every frame, but can be staggered
 
 	debug();
 	debug(const debug&)			 = delete;

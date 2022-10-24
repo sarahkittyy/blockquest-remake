@@ -21,6 +21,10 @@ public:
 	void imdraw(fsm* sm);
 
 private:
+	// for pixel scaling without lines
+	sf::RenderTexture m_rt;
+	sf::Sprite m_map;
+
 	void draw(sf::RenderTarget&, sf::RenderStates) const;
 
 	level m_level;	 // the level we are editing

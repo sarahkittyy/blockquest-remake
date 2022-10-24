@@ -37,6 +37,9 @@ edit::edit(resource& r)
 	  m_stroke_active(false),
 	  m_stroke_map(r.tex("assets/tiles.png"), 32, 32, 16) {
 
+	m_rt.create(34 * 16, 32 * 16);
+	m_map.setTexture(m_rt.getTexture());
+
 	m_update_transforms();
 
 	m_level.map().set_editor_view(true);
@@ -49,7 +52,8 @@ edit::edit(resource& r)
 		m_border.set(33, i, tile::block);
 	}
 
-	m_update_mouse_tile();
+	if (!m_test_playing())
+		m_update_mouse_tile();
 }
 
 edit::~edit() {
@@ -66,29 +70,12 @@ void edit::m_update_transforms() {
 
 	float scale = m_level_scale();
 
-	m_border.setOrigin(m_border.total_size().x / 2.f, -24 / scale);
-	m_stroke_map.setOrigin(m_stroke_map.total_size().x / 2.f, -24 / scale);
-	m_level.setOrigin(m_level.map().total_size().x / 2.f, -24 / scale);
-	m_cursor.setOrigin(m_cursor.map().total_size().x / 2.f, -24 / scale);
+	m_map.setOrigin(m_rt.getSize().x / 2.f, -24 / scale);
+	m_map.setPosition(win_sz.x / 2.f, 0);
+	m_map.setScale(scale, scale);
 
-	m_border.setPosition(win_sz.x / 2.f, 0);
-	m_stroke_map.setPosition(win_sz.x / 2.f, 0);
-	m_level.setPosition(win_sz.x / 2.f, 0);
-	m_cursor.setPosition(win_sz.x / 2.f, 0);
-
-	m_border.setScale(scale, scale);
-	m_stroke_map.setScale(scale, scale);
-	m_level.setScale(scale, scale);
-	m_cursor.setScale(scale, scale);
-
-	debug::get().setPosition(m_level.getPosition() - m_level.getOrigin() * 2.f);
-	debug::get().setScale(m_level.getScale());
-
-	if (m_test_play_world) {
-		m_test_play_world->setOrigin(m_level.map().total_size().x / 2.f, m_level.map().total_size().y);
-		m_test_play_world->setPosition(r().window().getSize().x / 2.f, r().window().getSize().y);
-		m_test_play_world->setScale(scale, scale);
-	}
+	debug::get().setPosition(m_map.getPosition() - m_map.getOrigin() * 2.f);
+	debug::get().setScale(m_map.getScale());
 }
 
 void edit::process_event(sf::Event e) {
@@ -144,6 +131,18 @@ void edit::update(fsm* sm, sf::Time dt) {
 	if (m_test_playing()) {
 		m_test_play_world->update(dt);
 	}
+
+	// DRAW
+	m_rt.clear(sf::Color::Transparent);
+	m_rt.draw(m_border);
+	if (!m_test_playing()) {
+		m_rt.draw(m_level);
+		m_rt.draw(m_stroke_map);
+		m_rt.draw(m_cursor);
+	} else {
+		m_rt.draw(*m_test_play_world);
+	}
+	m_rt.display();
 }
 
 bool edit::m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& error) {
@@ -285,7 +284,10 @@ bool edit::m_flood_fill(sf::Vector2i pos, tile::tile_type type, tile::tile_type 
 }
 
 sf::Vector2i edit::m_update_mouse_tile() {
-	const sf::Vector2i mouse_tile = m_level.mouse_tile();
+	sf::Vector2f mouse_pos(sf::Mouse::getPosition(r().window()));
+	mouse_pos = m_map.getInverseTransform().transformPoint(mouse_pos);
+
+	const sf::Vector2i mouse_tile = m_level.mouse_tile(mouse_pos);
 	debug::get() << mouse_tile << "\n";
 	if (mouse_tile != m_old_mouse_tile) {
 		m_cursor.map().clear(m_old_mouse_tile.x, m_old_mouse_tile.y);
@@ -626,13 +628,6 @@ const char* edit::m_cursor_description(edit::cursor_type c) const {
 
 void edit::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	s.transform *= getTransform();
-	t.draw(m_border, s);
-	if (!m_test_playing()) {
-		t.draw(m_level, s);
-		t.draw(m_stroke_map, s);
-		t.draw(m_cursor, s);
-	} else {
-		t.draw(*m_test_play_world, s);
-	}
+	t.draw(m_map, s);
 }
 }

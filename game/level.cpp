@@ -15,10 +15,7 @@ bool level::valid() const {
 		   m_tmap.tile_count(tile::end) == 1;
 }
 
-sf::Vector2i level::mouse_tile() const {
-	sf::Vector2f mouse_pos(sf::Mouse::getPosition(m_r.window()));
-	mouse_pos = getInverseTransform().transformPoint(mouse_pos);
-
+sf::Vector2i level::mouse_tile(sf::Vector2f mouse_pos) const {
 	return sf::Vector2i(
 		mouse_pos.x / m_tmap.tile_size(),
 		mouse_pos.y / m_tmap.tile_size());

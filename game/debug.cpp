@@ -1,6 +1,7 @@
 #include "debug.hpp"
 
 #include <algorithm>
+#include <cstring>
 
 #include "imgui.h"
 #include "tilemap.hpp"
@@ -17,14 +18,24 @@ debug& debug::log() {
 	return d;
 }
 
-void debug::imdraw() {
+void debug::imdraw(sf::Time dt) {
 	if (ndebug()) return;
+	if (m_last_dt == sf::Time::Zero) {
+		m_last_dt = dt;
+	} else {
+		if (m_last_dt_reset_clock.getElapsedTime() > sf::milliseconds(250)) {
+			m_last_dt_reset_clock.restart();
+			m_last_dt = dt;
+		}
+	}
 	if (m_demo_open)
 		ImGui::ShowDemoWindow(&m_demo_open);
 	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
 	ImGui::SetNextWindowPos(ImVec2(1500, 0), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(420, 800), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Debug Info", &m_open, flags);
+	char title[100];
+	std::snprintf(title, 100, "Debug Tools - %06.2f FPS###Debug", 1.f / m_last_dt.asSeconds());
+	ImGui::Begin(title, &m_open, flags);
 
 	ImGui::Checkbox("Toggle debug draw", &m_draw_debug);
 	ImGui::Checkbox("Show demo window", &m_demo_open);

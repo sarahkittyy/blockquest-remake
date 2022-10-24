@@ -75,7 +75,7 @@ int app::run() {
 
 		// imgui rendering
 		m_fsm.imdraw();
-		debug::get().imdraw();
+		debug::get().imdraw(dt);
 		ImGui::EndFrame();
 
 		m_window.clear(m_fsm.bg());

@@ -16,7 +16,7 @@ public:
 	bool valid() const;	  // checks if this level is valid, i.e. has a start and end point
 
 	// fetches the tile the mouse is hovering over
-	sf::Vector2i mouse_tile() const;
+	sf::Vector2i mouse_tile(sf::Vector2f mouse_pos) const;
 
 private:
 	void draw(sf::RenderTarget&, sf::RenderStates) const;	// for rendering
