@@ -133,7 +133,7 @@ void edit::update(fsm* sm, sf::Time dt) {
 	}
 
 	// DRAW
-	m_rt.clear(sf::Color::Transparent);
+	m_rt.clear(bg());
 	m_rt.draw(m_border);
 	if (!m_test_playing()) {
 		m_rt.draw(m_level);
