@@ -677,9 +677,35 @@ bool world::m_player_is_squeezed() {
 								m_test_touching_any(dir::down, solid);
 	bool touching_up_dynamic   = m_moving_platform_handle[int(dir::up)] && m_moving_platform_handle[int(dir::up)]->vel().y > 0;
 	bool touching_down_dynamic = m_moving_platform_handle[int(dir::down)] && m_moving_platform_handle[int(dir::down)]->vel().y < 0;
-	return (touching_up_static && touching_down_dynamic)	  //
-		   || (touching_up_dynamic && touching_down_static)	  //
-		   || (touching_up_dynamic && touching_down_dynamic);
+	// i'm doing all these individual checks to make sure the gap is small enough to be pressed,
+	// as right now if a stopped stops a moving tile 1 block before collision, squishes still occur
+	if (touching_up_static && touching_down_dynamic) {
+		sf::FloatRect dynamic_aabb = m_moving_platform_handle[int(dir::down)]->get_aabb();
+		for (auto& tile : m_touching[int(dir::up)]) {
+			if (!tile.solid()) continue;
+			debug::log() << tile.y() + 1 - dynamic_aabb.top << "\n";
+			if (std::abs(tile.y() + 1 - dynamic_aabb.top) < 0.9f) {
+				return true;
+			}
+		}
+	}
+	if (touching_up_dynamic && touching_down_static) {
+		sf::FloatRect dynamic_aabb = m_moving_platform_handle[int(dir::up)]->get_aabb();
+		for (auto& tile : m_touching[int(dir::down)]) {
+			if (!tile.solid()) continue;
+			if (std::abs(tile.y() - (dynamic_aabb.top + dynamic_aabb.height)) < 0.9f) {
+				return true;
+			}
+		}
+	}
+	if (touching_up_dynamic && touching_down_dynamic) {
+		sf::FloatRect dynamic_up_aabb	= m_moving_platform_handle[int(dir::up)]->get_aabb();
+		sf::FloatRect dynamic_down_aabb = m_moving_platform_handle[int(dir::down)]->get_aabb();
+		if (std::abs((dynamic_up_aabb.top + dynamic_up_aabb.height) - dynamic_down_aabb.top) < 0.9f) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void world::draw(sf::RenderTarget& t, sf::RenderStates s) const {
