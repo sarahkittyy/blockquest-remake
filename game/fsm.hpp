@@ -28,6 +28,7 @@ protected:
 
 	// fetch the app resource manager
 	resource& r();
+	const resource& r() const;
 
 private:
 	resource& m_r;

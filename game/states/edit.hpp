@@ -32,7 +32,7 @@ private:
 
 	std::array<std::pair<ImGui::Gif, const char*>, 5> m_rules_gifs;	  // the 5 gifs of the rules
 
-	const float m_level_scale;	 // scale of the level in the editor
+	float m_level_size;	  // x/y pixel size of the level
 
 	enum cursor_type {
 		PENCIL = 0,
@@ -66,6 +66,9 @@ private:
 	void m_toggle_test_play();
 
 	std::string m_last_debug_msg;
+
+	void m_update_transforms();	  // update the transforms based on m_level_size
+	float m_level_scale() const;
 
 	// gui stuff
 	void m_menu_bar(fsm* sm);

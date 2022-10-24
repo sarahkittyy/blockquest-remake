@@ -28,6 +28,10 @@ resource& state::r() {
 	return m_r;
 }
 
+const resource& state::r() const {
+	return m_r;
+}
+
 // fsm methods //
 
 fsm::fsm(resource& r)

@@ -11,7 +11,7 @@
 #include "states/main.hpp"
 
 app::app(int argc, char** argv)
-	: m_window(sf::VideoMode(1920, 1080), "BlockQuest Remake"),
+	: m_window(sf::VideoMode(1920, 1048), "BlockQuest Remake"),
 	  m_r(m_window),
 	  m_fsm(m_r) {
 	if (!ImGui::SFML::Init(m_window))
@@ -54,14 +54,18 @@ int app::run() {
 	while (m_window.isOpen()) {
 		while (m_window.pollEvent(evt)) {
 			ImGui::SFML::ProcessEvent(evt);
-			m_fsm.process_event(evt);
 			switch (evt.type) {
 			default:
 				break;
 			case sf::Event::Closed:
 				m_window.close();
 				break;
+			case sf::Event::Resized:
+				sf::FloatRect visibleArea(0, 0, evt.size.width, evt.size.height);
+				m_window.setView(sf::View(visibleArea));
+				break;
 			}
+			m_fsm.process_event(evt);
 		}
 		// updates
 		sf::Time dt = delta_clock.restart();

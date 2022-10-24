@@ -754,7 +754,8 @@ bool world::m_just_jumped() const {
 }
 
 bool world::m_player_oob() const {
-	return m_xp < -1 || m_xp > m_level.map().size().x || m_yp < -1 || m_yp > m_level.map().size().y;
+	bool fell_through_bottom = !m_flip_gravity ? m_yp > m_level.map().size().y : m_yp < -1;
+	return m_xp < -1 || m_xp > m_level.map().size().x || fell_through_bottom;
 }
 
 bool world::m_against_ladder(dir d) const {

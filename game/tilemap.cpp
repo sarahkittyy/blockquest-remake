@@ -190,7 +190,9 @@ void tilemap::layer_over(tilemap& target, bool override) const {
 }
 
 tile tilemap::m_oob_tile(int x, int y) const {
-	if (y >= m_ys) {
+	if (x < 0 || x >= m_xs) {
+		return tile(tile::block, x, y);
+	} else if (y >= m_ys || y < 0) {
 		return tile(tile::empty, x, y);
 	} else {
 		return tile(tile::block, x, y);

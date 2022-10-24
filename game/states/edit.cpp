@@ -17,7 +17,7 @@ edit::edit(resource& r)
 	: state(r),
 	  m_level(r),
 	  m_cursor(r),
-	  m_border(r.tex("assets/tiles.png"), 34, 33, 16),
+	  m_border(r.tex("assets/tiles.png"), 34, 32, 16),
 	  m_listening_key(),
 	  m_rules_gifs({ std::make_pair(ImGui::Gif(r.tex("assets/gifs/run.png"), 33, { 240, 240 }, 20),
 									"Use left & right to run"),
@@ -29,7 +29,7 @@ edit::edit(resource& r)
 									"Left + Right to wallkick"),
 					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/climb.png"), 25, { 240, 240 }, 20),
 									"Up & Down to climb") }),
-	  m_level_scale(2.f),
+	  m_level_size(1024),
 	  m_cursor_type(PENCIL),
 	  m_tiles(r.tex("assets/tiles.png")),
 	  m_tools(r.tex("assets/gui/tools.png")),
@@ -37,35 +37,16 @@ edit::edit(resource& r)
 	  m_stroke_active(false),
 	  m_stroke_map(r.tex("assets/tiles.png"), 32, 32, 16) {
 
-	sf::Vector2f win_sz(r.window().getSize());
-
-	m_border.setOrigin(m_border.total_size().x / 2.f, m_border.total_size().y);
-	m_stroke_map.setOrigin(m_stroke_map.total_size().x / 2.f, m_stroke_map.total_size().y);
-	m_level.setOrigin(m_level.map().total_size().x / 2.f, m_level.map().total_size().y);
-	m_cursor.setOrigin(m_cursor.map().total_size().x / 2.f, m_cursor.map().total_size().y);
-
-	m_border.setScale(m_level_scale, m_level_scale);
-	m_stroke_map.setScale(m_level_scale, m_level_scale);
-	m_level.setScale(m_level_scale, m_level_scale);
-	m_cursor.setScale(m_level_scale, m_level_scale);
-
-	m_border.setPosition(win_sz.x / 2.f, win_sz.y);
-	m_stroke_map.setPosition(win_sz.x / 2.f, win_sz.y);
-	m_level.setPosition(win_sz.x / 2.f, win_sz.y);
-	m_cursor.setPosition(win_sz.x / 2.f, win_sz.y);
+	m_update_transforms();
 
 	m_level.map().set_editor_view(true);
 	m_cursor.map().set_editor_view(true);
 	m_border.set_editor_view(true);
 	m_stroke_map.set_editor_view(true);
 
-	debug::get().setPosition(m_level.getPosition() - m_level.getOrigin() * 2.f);
-	debug::get().setScale(m_level.getScale());
-
-	for (int i = 0; i < 33; ++i) {
+	for (int i = 0; i < 32; ++i) {
 		m_border.set(0, i, tile::block);
 		m_border.set(33, i, tile::block);
-		m_border.set(i, 0, tile::block);
 	}
 
 	m_update_mouse_tile();
@@ -74,6 +55,40 @@ edit::edit(resource& r)
 edit::~edit() {
 	debug::get().setScale(1.f, 1.f);
 	debug::get().setPosition(0, 0);
+}
+
+float edit::m_level_scale() const {
+	return m_level_size / m_level.map().total_size().y;
+}
+
+void edit::m_update_transforms() {
+	sf::Vector2f win_sz(r().window().getSize());
+
+	float scale = m_level_scale();
+
+	m_border.setOrigin(m_border.total_size().x / 2.f, -24 / scale);
+	m_stroke_map.setOrigin(m_stroke_map.total_size().x / 2.f, -24 / scale);
+	m_level.setOrigin(m_level.map().total_size().x / 2.f, -24 / scale);
+	m_cursor.setOrigin(m_cursor.map().total_size().x / 2.f, -24 / scale);
+
+	m_border.setPosition(win_sz.x / 2.f, 0);
+	m_stroke_map.setPosition(win_sz.x / 2.f, 0);
+	m_level.setPosition(win_sz.x / 2.f, 0);
+	m_cursor.setPosition(win_sz.x / 2.f, 0);
+
+	m_border.setScale(scale, scale);
+	m_stroke_map.setScale(scale, scale);
+	m_level.setScale(scale, scale);
+	m_cursor.setScale(scale, scale);
+
+	debug::get().setPosition(m_level.getPosition() - m_level.getOrigin() * 2.f);
+	debug::get().setScale(m_level.getScale());
+
+	if (m_test_play_world) {
+		m_test_play_world->setOrigin(m_level.map().total_size().x / 2.f, m_level.map().total_size().y);
+		m_test_play_world->setPosition(r().window().getSize().x / 2.f, r().window().getSize().y);
+		m_test_play_world->setScale(scale, scale);
+	}
 }
 
 void edit::process_event(sf::Event e) {
@@ -86,6 +101,10 @@ void edit::process_event(sf::Event e) {
 			settings::get().set_key(*m_listening_key, e.key.code);
 			m_listening_key = {};
 		}
+		break;
+	case sf::Event::Resized:
+		m_level_size = std::min(e.size.width - 2 * int(m_level.map().tile_size() * m_level_scale()), e.size.height - 24);
+		m_update_transforms();
 		break;
 	}
 }
@@ -583,9 +602,7 @@ void edit::m_toggle_test_play() {
 		m_level.map().set_editor_view(false);
 		m_last_debug_msg = "";
 		m_test_play_world.reset(new world(r(), m_level));
-		m_test_play_world->setOrigin(m_level.map().total_size().x / 2.f, m_level.map().total_size().y);
-		m_test_play_world->setPosition(r().window().getSize().x / 2.f, r().window().getSize().y);
-		m_test_play_world->setScale(m_level_scale, m_level_scale);
+		m_update_transforms();
 	} else {
 		m_test_play_world.reset();
 		m_level.map().set_editor_view(true);
