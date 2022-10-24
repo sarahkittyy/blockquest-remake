@@ -70,6 +70,13 @@ void edit::m_update_transforms() {
 
 	float scale = m_level_scale();
 
+	m_level.setPosition(16, 0);
+	m_cursor.setPosition(16, 0);
+	m_stroke_map.setPosition(16, 0);
+	if (m_test_play_world) {
+		m_test_play_world->setPosition(16, 0);
+	}
+
 	m_map.setOrigin(m_rt.getSize().x / 2.f, -24 / scale);
 	m_map.setPosition(win_sz.x / 2.f, 0);
 	m_map.setScale(scale, scale);
@@ -286,6 +293,7 @@ bool edit::m_flood_fill(sf::Vector2i pos, tile::tile_type type, tile::tile_type 
 sf::Vector2i edit::m_update_mouse_tile() {
 	sf::Vector2f mouse_pos(sf::Mouse::getPosition(r().window()));
 	mouse_pos = m_map.getInverseTransform().transformPoint(mouse_pos);
+	mouse_pos = m_level.getInverseTransform().transformPoint(mouse_pos);
 
 	const sf::Vector2i mouse_tile = m_level.mouse_tile(mouse_pos);
 	debug::get() << mouse_tile << "\n";
