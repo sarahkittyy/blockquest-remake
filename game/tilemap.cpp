@@ -40,7 +40,7 @@ void tilemap::m_set_quad(int i, tile t) {
 	int x = i % m_xs;
 	int y = i / m_xs;
 
-	if (t == tile::empty) {
+	if (t == tile::empty || t.editor_only()) {
 		sf::Vertex air;
 		m_va[i * 4]			   = air;
 		m_va[i * 4 + 1]		   = air;
@@ -50,8 +50,8 @@ void tilemap::m_set_quad(int i, tile t) {
 		m_va_editor[i * 4 + 1] = air;
 		m_va_editor[i * 4 + 2] = air;
 		m_va_editor[i * 4 + 3] = air;
-		return;
 	}
+	if (t == tile::empty) return;
 
 	int tx = int(t) % (m_tex.getSize().x / m_ts);
 	int ty = int(t) / (m_tex.getSize().x / m_ts);
