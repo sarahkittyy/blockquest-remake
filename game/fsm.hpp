@@ -18,6 +18,7 @@ public:
 
 	virtual void update(fsm* sm, sf::Time dt);
 	virtual void imdraw(fsm* sm);
+	virtual void process_event(sf::Event e);
 
 	// override to change the window's background color
 	virtual sf::Color bg() const;
@@ -40,6 +41,9 @@ public:
 
 	// update the current state
 	void update(sf::Time dt);
+
+	// process sfml events
+	void process_event(sf::Event e);
 
 	// can be used in the middle of state->update() to switch states
 	template <typename State, typename... Args>

@@ -54,6 +54,7 @@ int app::run() {
 	while (m_window.isOpen()) {
 		while (m_window.pollEvent(evt)) {
 			ImGui::SFML::ProcessEvent(evt);
+			m_fsm.process_event(evt);
 			switch (evt.type) {
 			default:
 				break;

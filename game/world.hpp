@@ -13,6 +13,7 @@
 #include "particles.hpp"
 #include "player.hpp"
 #include "resource.hpp"
+#include "settings.hpp"
 #include "tilemap.hpp"
 
 // takes in a level and renders it, as well as handles input and logic and physics and all things game-y :3
@@ -84,13 +85,6 @@ private:
 	float m_yp = 0;	  // player y pos
 	float m_xv = 0;	  // player x vel
 	float m_yv = 0;	  // player y vel
-
-	sf::Keyboard::Key m_key_left  = sf::Keyboard::Left;
-	sf::Keyboard::Key m_key_right = sf::Keyboard::Right;
-	sf::Keyboard::Key m_key_jump  = sf::Keyboard::Space;
-	sf::Keyboard::Key m_key_dash  = sf::Keyboard::Down;
-	sf::Keyboard::Key m_key_up	  = sf::Keyboard::Up;
-	sf::Keyboard::Key m_key_down  = sf::Keyboard::Down;
 
 	// were these keys hit this frame?
 	bool m_left_this_frame	= false;

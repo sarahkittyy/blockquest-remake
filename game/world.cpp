@@ -109,14 +109,12 @@ http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platforme
 */
 
 void world::update(sf::Time dt) {
-	auto keyed		   = sf::Keyboard::isKeyPressed;
-	using Key		   = sf::Keyboard;
-	bool left_keyed	   = keyed(m_key_left);
-	bool right_keyed   = keyed(m_key_right);
-	bool dash_keyed	   = keyed(m_key_dash);
-	bool jump_keyed	   = keyed(m_key_jump);
-	bool up_keyed	   = keyed(m_key_up);
-	bool down_keyed	   = keyed(m_key_down);
+	bool left_keyed	   = settings::get().key_down(key::LEFT);
+	bool right_keyed   = settings::get().key_down(key::RIGHT);
+	bool dash_keyed	   = settings::get().key_down(key::DASH);
+	bool jump_keyed	   = settings::get().key_down(key::JUMP);
+	bool up_keyed	   = settings::get().key_down(key::UP);
+	bool down_keyed	   = settings::get().key_down(key::DOWN);
 	m_left_this_frame  = left_keyed;
 	m_right_this_frame = right_keyed;
 	m_dash_this_frame  = dash_keyed;
@@ -189,7 +187,7 @@ void world::update(sf::Time dt) {
 	debug::get() << "climbing = " << m_climbing << "\n";
 	debug::get() << "won = " << won() << "\n";
 
-	float air_control_factor	  = grounded ? 1 : (m_dashing && keyed(m_key_dash) ? phys.dash_air_control : phys.air_control);
+	float air_control_factor	  = grounded ? 1 : (m_dashing && dash_keyed ? phys.dash_air_control : phys.air_control);
 	float ground_control_factor	  = m_dashing && grounded ? 0 : 1;
 	float wallkick_control_factor = m_is_wallkick_locked() ? 0 : 1;
 	bool on_ice					  = m_on_ice();	  // since this is expensive
@@ -627,9 +625,7 @@ void world::m_update_animation() {
 		m_player.set_animation("dash");
 	} else if (std::abs(m_xv) > 0.3f) {
 		if (m_on_ice()) {
-			if (sf::Keyboard::isKeyPressed(m_key_left) ||
-				sf::Keyboard::isKeyPressed(m_key_right) ||
-				sf::Keyboard::isKeyPressed(m_key_dash)) {
+			if (m_left_this_frame || m_right_this_frame || m_dash_this_frame) {
 				m_player.set_animation("walk");
 			} else {
 				m_player.set_animation("stand");

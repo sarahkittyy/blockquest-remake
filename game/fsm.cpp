@@ -17,6 +17,9 @@ void state::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 void state::imdraw(fsm* sm) {
 }
 
+void state::process_event(sf::Event e) {
+}
+
 sf::Color state::bg() const {
 	return sf::Color(0xC8AD7FFF);
 }
@@ -47,6 +50,11 @@ void fsm::update(sf::Time dt) {
 		m_saved_state = nullptr;
 	}
 	m_state->update(this, dt);
+}
+
+void fsm::process_event(sf::Event e) {
+	if (m_state)
+		m_state->process_event(e);
 }
 
 void fsm::draw(sf::RenderTarget& t, sf::RenderStates s) const {

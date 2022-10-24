@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "../fsm.hpp"
 #include "../level.hpp"
 #include "../world.hpp"
@@ -15,7 +17,7 @@ public:
 	~edit();
 
 	void update(fsm* sm, sf::Time dt);
-
+	void process_event(sf::Event e);
 	void imdraw(fsm* sm);
 
 private:
@@ -25,6 +27,8 @@ private:
 
 	level m_cursor;		// the level that just renders the cursor
 	tilemap m_border;	// a completely static map used to render a border of blocks
+
+	std::optional<key> m_listening_key;	  // what key are we currently listening for in the controls panel
 
 	std::array<std::pair<ImGui::Gif, const char*>, 5> m_rules_gifs;	  // the 5 gifs of the rules
 

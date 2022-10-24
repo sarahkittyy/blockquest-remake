@@ -18,6 +18,7 @@ edit::edit(resource& r)
 	  m_level(r),
 	  m_cursor(r),
 	  m_border(r.tex("assets/tiles.png"), 34, 33, 16),
+	  m_listening_key(),
 	  m_rules_gifs({ std::make_pair(ImGui::Gif(r.tex("assets/gifs/run.png"), 33, { 240, 240 }, 20),
 									"Use left & right to run"),
 					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/jump.png"), 19, { 240, 240 }, 20),
@@ -73,6 +74,20 @@ edit::edit(resource& r)
 edit::~edit() {
 	debug::get().setScale(1.f, 1.f);
 	debug::get().setPosition(0, 0);
+}
+
+void edit::process_event(sf::Event e) {
+	switch (e.type) {
+	default:
+		break;
+	case sf::Event::KeyPressed:
+		if (m_listening_key) {
+			// check if it's already bound
+			settings::get().set_key(*m_listening_key, e.key.code);
+			m_listening_key = {};
+		}
+		break;
+	}
 }
 
 void edit::update(fsm* sm, sf::Time dt) {
@@ -264,6 +279,32 @@ sf::Vector2i edit::m_update_mouse_tile() {
 }
 
 void edit::m_menu_bar(fsm* sm) {
+	// settings
+	if (ImGui::MenuItem("Settings")) {
+		ImGui::OpenPopup("Settings###Settings");
+	}
+	if (ImGui::BeginPopupModal("Settings###Settings")) {
+		ImGui::BeginTable("###Buttons", 2);
+		for (key k = key::LEFT; k <= key::DOWN; k = key(int(k) + 1)) {
+			ImGui::PushID(int(k));
+			ImGui::TableNextColumn();
+			ImGui::Text("%s", key_name(k));
+			ImGui::TableNextColumn();
+			const char* button_name = m_listening_key && *m_listening_key == k ? "Press any key..." : key_name(settings::get().get_key(k));
+			if (ImGui::Button(button_name)) {
+				m_listening_key = k;
+			}
+			ImGui::TableNextRow();
+			ImGui::PopID();
+		}
+		ImGui::EndTable();
+		// close button
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Done")) {
+			m_listening_key = {};
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
 	// rules
 	if (ImGui::MenuItem("Rules")) {
 		ImGui::OpenPopup("Rules###Rules");
