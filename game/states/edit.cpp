@@ -82,6 +82,7 @@ void edit::m_update_transforms() {
 	m_map.setScale(scale, scale);
 
 	debug::get().setPosition(m_map.getPosition() - m_map.getOrigin() * 2.f);
+	debug::get().move(16 * scale, 0);
 	debug::get().setScale(m_map.getScale());
 }
 

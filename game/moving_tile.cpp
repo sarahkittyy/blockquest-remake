@@ -92,19 +92,27 @@ void moving_tile_manager::update(sf::Time dt) {
 					(util::same_sign(t2.vel().x, t.vel().x) && util::neither_zero(t.vel().x, t2.vel().x)) ||   //
 					(util::same_sign(t2.vel().y, t.vel().y) && util::neither_zero(t.vel().y, t2.vel().y))	   //
 				) { continue; }
-				sf::FloatRect tile_aabb = t2.get_ghost_aabb();
-				if (aabb.intersects(tile_aabb)) {
+				sf::FloatRect tile_ghost_aabb = t2.get_ghost_aabb();
+				sf::FloatRect tile_aabb		  = t2.get_aabb();
+				if (aabb.intersects(tile_ghost_aabb)) {
 					if (std::abs(new_xv) > 0.01f) {
 						new_xp = new_xp > tile_aabb.left
 									 ? tile_aabb.left + 1.f	   // hitting right side of block
 									 : tile_aabb.left - 1.f;   // hitting left side of block
 						new_xv = -new_xv;
+						if (t2.m_yv == 0) {
+							t2.m_xv = -t2.m_xv;
+						}
 					} else if (std::abs(new_yv) > 0.01f) {
 						new_yp = new_yp > tile_aabb.top
 									 ? tile_aabb.top + 1.f	  // hitting bottom of block
 									 : tile_aabb.top - 1.f;	  // hitting top of block
 						new_yv = -new_yv;
+						if (t2.m_xv == 0) {
+							t2.m_yv = -t2.m_yv;
+						}
 					}
+					break;
 				}
 			}
 		}
