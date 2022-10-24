@@ -2,11 +2,11 @@
 
 This is a work-in-progress remake of [BlockQuest](http://www.blockquest.net/).
 
-![Run](assets/gui/gifs/run.gif)
-![Jump](assets/gui/gifs/jump.gif)
-![Dash](assets/gui/gifs/dash.gif)
-![Climb](assets/gui/gifs/climb.gif)
-![Wallkick](assets/gui/gifs/wallkick.gif)
+![Run](gifs/run.gif)
+![Jump](gifs/jump.gif)
+![Dash](gifs/dash.gif)
+![Climb](gifs/climb.gif)
+![Wallkick](gifs/wallkick.gif)
 
 ##### I plan to implement:
 - A replication of the original blockquest engine.
