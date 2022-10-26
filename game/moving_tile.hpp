@@ -57,6 +57,8 @@ public:
 	sf::FloatRect get_aabb(float x, float y) const;			// retrieves the bounding box of the tile
 	sf::FloatRect get_ghost_aabb() const;					// retrieves the bounding box of the tile for inter-tile collisions
 	sf::FloatRect get_ghost_aabb(float x, float y) const;	// retrieves the bounding box of the tile for inter-tile collisions
+	sf::FloatRect get_ghost_aabb_x() const;					// retrieves the bounding box of the tile for inter-tile collisions
+	sf::FloatRect get_ghost_aabb_y() const;					// retrieves the bounding box of the tile for inter-tile collisions
 
 	static sf::Vector2f size();	  // retrieves the width and height of the aabb
 	sf::Vector2f vel() const;	  // retrieve the current velocity

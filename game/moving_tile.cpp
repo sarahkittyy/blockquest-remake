@@ -72,7 +72,6 @@ void moving_tile_manager::update(sf::Time dt) {
 		});
 		if (m_handle_contact(solid_contacts)) {
 			auto [pos, tile] = *solid_contacts.begin();
-			debug::log() << "contacted " << pos << "\n";
 			if (std::abs(new_xv) > 0.01f) {
 				new_xp = new_xp > pos.x
 							 ? pos.x + 1	// hitting right side of block
@@ -93,7 +92,7 @@ void moving_tile_manager::update(sf::Time dt) {
 					(util::same_sign(t2.vel().x, t.vel().x) && util::neither_zero(t.vel().x, t2.vel().x)) ||   //
 					(util::same_sign(t2.vel().y, t.vel().y) && util::neither_zero(t.vel().y, t2.vel().y))	   //
 				) { continue; }
-				sf::FloatRect tile_ghost_aabb = t2.get_ghost_aabb();
+				sf::FloatRect tile_ghost_aabb = std::abs(new_xv) > 0.01f ? t2.get_ghost_aabb_x() : t2.get_ghost_aabb_y();
 				sf::FloatRect tile_aabb		  = t2.get_aabb();
 				sf::Vector2f sz				  = moving_tile::size();
 				if (aabb.intersects(tile_ghost_aabb)) {
@@ -114,6 +113,7 @@ void moving_tile_manager::update(sf::Time dt) {
 							t2.m_yv = -t2.m_yv;
 						}
 					}
+					break;
 				}
 			}
 		}
@@ -192,7 +192,7 @@ sf::FloatRect moving_tile::get_ghost_aabb(float x, float y) const {
 	// ghost AABB will be normal sized on the axis parallel to motion, and
 	// shrunk on the perpendicular axis
 	// as perpendicular moving platforms should never interact?
-	sf::FloatRect aabb = get_aabb();
+	sf::FloatRect aabb = get_aabb(x, y);
 	if (m_xv == 0) {
 		aabb.left += 0.05f;
 		aabb.width -= 0.1f;
@@ -200,6 +200,26 @@ sf::FloatRect moving_tile::get_ghost_aabb(float x, float y) const {
 		aabb.top += 0.05f;
 		aabb.height -= 0.1f;
 	}
+	return aabb;
+}
+
+sf::FloatRect moving_tile::get_ghost_aabb_y() const {
+	// ghost AABB will be normal sized on the axis parallel to motion, and
+	// shrunk on the perpendicular axis
+	// as perpendicular moving platforms should never interact?
+	sf::FloatRect aabb = get_aabb();
+	aabb.left += 0.05f;
+	aabb.width -= 0.1f;
+	return aabb;
+}
+
+sf::FloatRect moving_tile::get_ghost_aabb_x() const {
+	// ghost AABB will be normal sized on the axis parallel to motion, and
+	// shrunk on the perpendicular axis
+	// as perpendicular moving platforms should never interact?
+	sf::FloatRect aabb = get_aabb();
+	aabb.top += 0.05f;
+	aabb.height -= 0.1f;
 	return aabb;
 }
 

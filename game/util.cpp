@@ -34,7 +34,7 @@ bool same_sign(float a, float b) {
 }
 
 bool neither_zero(float a, float b) {
-	return a != 0 && b != 0;
+	return std::abs(a) < 0.001f && std::abs(b) < 0.001f;
 }
 
 float deg2rad(float d) {
