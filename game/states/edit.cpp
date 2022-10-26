@@ -37,6 +37,7 @@ edit::edit(resource& r)
 	  m_stroke_active(false),
 	  m_pencil_active(false),
 	  m_stroke_map(r.tex("assets/tiles.png"), 32, 32, 16),
+	  m_old_mouse_tile(-1, -1),
 	  m_last_placed(-1, -1) {
 
 	m_rt.create(34 * 16, 32 * 16);
@@ -184,8 +185,6 @@ void edit::update(fsm* sm, sf::Time dt) {
 		m_rt.draw(*m_test_play_world);
 	}
 	m_rt.display();
-
-	m_old_mouse_tile = mouse_tile;
 }
 
 std::vector<tilemap::diff> edit::m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& error) {
@@ -346,6 +345,7 @@ sf::Vector2i edit::m_update_mouse_tile() {
 	if (mouse_tile != m_old_mouse_tile) {
 		m_last_placed = { -1, -1 };
 		m_cursor.map().clear(m_old_mouse_tile.x, m_old_mouse_tile.y);
+		m_old_mouse_tile = mouse_tile;
 		if (m_cursor.map().in_bounds(mouse_tile)) {
 			m_cursor.map().set(mouse_tile.x, mouse_tile.y, tile::cursor);
 		}
