@@ -53,6 +53,7 @@ std::vector<std::pair<sf::Vector2f, moving_tile>> moving_tile_manager::intersect
 
 void moving_tile_manager::update(sf::Time dt) {
 	// for every tile...
+	sf::Vector2f sz = moving_tile::size();
 	for (int i = 0; i < m_tiles.size(); ++i) {
 		moving_tile& t = m_tiles[i];
 		// intended next position
@@ -74,13 +75,13 @@ void moving_tile_manager::update(sf::Time dt) {
 			debug::log() << "contacted " << pos << "\n";
 			if (std::abs(new_xv) > 0.01f) {
 				new_xp = new_xp > pos.x
-							 ? pos.x + 1.f	  // hitting right side of block
-							 : pos.x - 1.f;	  // hitting left side of block
+							 ? pos.x + 1	// hitting right side of block
+							 : pos.x - 1;	// hitting left side of block
 				new_xv = -new_xv;
 			} else if (std::abs(new_yv) > 0.01f) {
 				new_yp = new_yp > pos.y
-							 ? pos.y + 1.f	  // hitting bottom of block
-							 : pos.y - 1.f;	  // hitting top of block
+							 ? pos.y + 1	// hitting bottom of block
+							 : pos.y - 1;	// hitting top of block
 				new_yv = -new_yv;
 			}
 		} else {
@@ -94,25 +95,25 @@ void moving_tile_manager::update(sf::Time dt) {
 				) { continue; }
 				sf::FloatRect tile_ghost_aabb = t2.get_ghost_aabb();
 				sf::FloatRect tile_aabb		  = t2.get_aabb();
+				sf::Vector2f sz				  = moving_tile::size();
 				if (aabb.intersects(tile_ghost_aabb)) {
 					if (std::abs(new_xv) > 0.01f) {
 						new_xp = new_xp > tile_aabb.left
-									 ? tile_aabb.left + 1.f	   // hitting right side of block
-									 : tile_aabb.left - 1.f;   // hitting left side of block
+									 ? tile_aabb.left + 1	 // hitting right side of block
+									 : tile_aabb.left - 1;	 // hitting left side of block
 						new_xv = -new_xv;
 						if (t2.m_yv == 0) {
 							t2.m_xv = -t2.m_xv;
 						}
 					} else if (std::abs(new_yv) > 0.01f) {
 						new_yp = new_yp > tile_aabb.top
-									 ? tile_aabb.top + 1.f	  // hitting bottom of block
-									 : tile_aabb.top - 1.f;	  // hitting top of block
+									 ? tile_aabb.top + 1	// hitting bottom of block
+									 : tile_aabb.top - 1;	// hitting top of block
 						new_yv = -new_yv;
 						if (t2.m_xv == 0) {
 							t2.m_yv = -t2.m_yv;
 						}
 					}
-					break;
 				}
 			}
 		}
@@ -158,7 +159,7 @@ void moving_tile::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	t.draw(m_spr, s);
 }
 
-sf::Vector2f moving_tile::size() const {
+sf::Vector2f moving_tile::size() {
 	return { 1.f, 1.f };
 }
 
@@ -191,8 +192,7 @@ sf::FloatRect moving_tile::get_ghost_aabb(float x, float y) const {
 	// ghost AABB will be normal sized on the axis parallel to motion, and
 	// shrunk on the perpendicular axis
 	// as perpendicular moving platforms should never interact?
-	sf::Vector2f sz = size();
-	sf::FloatRect aabb(x + (1 - sz.x) / 2.f, y + (1 - sz.y) / 2.f, sz.x, sz.y);
+	sf::FloatRect aabb = get_aabb();
 	if (m_xv == 0) {
 		aabb.left += 0.05f;
 		aabb.width -= 0.1f;
