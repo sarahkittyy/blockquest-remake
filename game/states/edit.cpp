@@ -35,6 +35,7 @@ edit::edit(resource& r)
 	  m_tools(r.tex("assets/gui/tools.png")),
 	  m_stroke_start(-1, -1),
 	  m_stroke_active(false),
+	  m_pencil_active(false),
 	  m_stroke_map(r.tex("assets/tiles.png"), 32, 32, 16),
 	  m_last_placed(-1, -1) {
 
@@ -120,9 +121,13 @@ void edit::update(fsm* sm, sf::Time dt) {
 		// set the tile
 		switch (m_cursor_type) {
 		case PENCIL: {
+			if (!m_pencil_active) {
+				m_pencil_active = true;
+				m_pencil_undo_queue.clear();
+			}
 			auto diff = m_set_tile(mouse_tile, m_selected_tile, m_last_debug_msg);
 			if (diff && m_last_placed != mouse_tile && !diff->same()) {
-				m_undo_queue.push_back({ *diff });
+				m_pencil_undo_queue.push_back(*diff);
 			}
 			break;
 		}
@@ -153,6 +158,11 @@ void edit::update(fsm* sm, sf::Time dt) {
 				m_undo_queue.push_back(diffs);
 			}
 			m_stroke_map.clear();
+		}
+		if (m_pencil_active) {
+			m_pencil_active = false;
+			m_undo_queue.push_back(m_pencil_undo_queue);
+			m_pencil_undo_queue.clear();
 		}
 	}
 

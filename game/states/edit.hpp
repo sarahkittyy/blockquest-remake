@@ -59,6 +59,10 @@ private:
 	// recursively flood fills the map
 	std::vector<tilemap::diff> m_flood_fill(sf::Vector2i pos, tile::tile_type type, tile::tile_type replacing, std::string& error);
 
+	// for undoing entire pencil strokes at once
+	std::vector<tilemap::diff> m_pencil_undo_queue;
+	bool m_pencil_active;
+
 	// draw straight lines
 	std::vector<tilemap::diff> m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& error);
 	sf::Vector2i m_stroke_start;
