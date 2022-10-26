@@ -137,8 +137,8 @@ std::optional<tilemap::diff> tilemap::set(int x, int y, tile t) {
 	tilemap::diff d;
 	d.x		 = x;
 	d.y		 = y;
-	d.before = m_tiles[x + y * m_xs].type;
-	d.after	 = t.type;
+	d.before = m_tiles[x + y * m_xs];
+	d.after	 = t;
 
 	t.m_x				  = x;
 	t.m_y				  = y;
@@ -206,7 +206,8 @@ std::vector<tilemap::diff> tilemap::clear() {
 void tilemap::undo(diff d) {
 	int x = d.x;
 	int y = d.y;
-	tile before(d.before, x, y);
+	tile before(d.before.type, x, y);
+	before.props = d.before.props;
 	set(x, y, before);
 }
 

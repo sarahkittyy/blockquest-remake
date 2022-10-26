@@ -83,10 +83,10 @@ public:
 	struct diff {
 		int x;
 		int y;
-		tile::tile_type before;
-		tile::tile_type after;
+		tile before;
+		tile after;
 		inline constexpr bool same() const {
-			return before == after;
+			return before.type == after.type && before.props.moving == after.props.moving;
 		}
 	};
 
