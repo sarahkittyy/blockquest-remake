@@ -102,6 +102,7 @@ public:
 	std::vector<diff> clear();												  // clear the entire map
 
 	void undo(diff d);	 // undoes a change
+	void redo(diff d);	 // reapplies a change
 
 	std::vector<diff> layer_over(tilemap& target, bool override = true) const;	 // pastes all non-empty tiles from this map to the target map
 	void copy_to(tilemap& target) const;										 // copy this map over to the target one

@@ -112,6 +112,9 @@ void edit::update(fsm* sm, sf::Time dt) {
 	if (m_undo_queue.size() > UNDO_MAX) {
 		m_undo_queue.pop_front();
 	}
+	if (m_redo_queue.size() > UNDO_MAX) {
+		m_redo_queue.pop_front();
+	}
 
 	// if we're not on gui, and on the map, and ready to place a tile
 	if (!ImGui::GetIO().WantCaptureMouse &&
@@ -622,8 +625,20 @@ void edit::m_block_picker(fsm* sm) {
 	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Undo")) {
 		std::vector<tilemap::diff> diffs = m_undo_queue.back();
 		m_undo_queue.pop_back();
+		m_redo_queue.push_back(diffs);
 		for (auto& diff : diffs) {
 			m_level.map().undo(diff);
+		}
+	}
+	ImGui::EndDisabled();
+	ImGui::SameLine();
+	ImGui::BeginDisabled(m_redo_queue.empty());
+	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/forward.png"), "Redo")) {
+		std::vector<tilemap::diff> diffs = m_redo_queue.back();
+		m_redo_queue.pop_back();
+		m_undo_queue.push_back(diffs);
+		for (auto& diff : diffs) {
+			m_level.map().redo(diff);
 		}
 	}
 	ImGui::EndDisabled();

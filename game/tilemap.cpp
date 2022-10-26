@@ -204,11 +204,11 @@ std::vector<tilemap::diff> tilemap::clear() {
 }
 
 void tilemap::undo(diff d) {
-	int x = d.x;
-	int y = d.y;
-	tile before(d.before.type, x, y);
-	before.props = d.before.props;
-	set(x, y, before);
+	set(d.x, d.y, d.before);
+}
+
+void tilemap::redo(diff d) {
+	set(d.x, d.y, d.after);
 }
 
 std::vector<tilemap::diff> tilemap::layer_over(tilemap& target, bool override) const {
