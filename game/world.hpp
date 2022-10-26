@@ -25,6 +25,7 @@ public:
 	void update(sf::Time dt);
 
 	bool won() const;
+	bool lost() const;
 
 private:
 	void draw(sf::RenderTarget&, sf::RenderStates) const;	// sfml draw fn
@@ -44,7 +45,10 @@ private:
 	// messages shown on victory
 	sf::Sprite m_game_clear;
 	sf::Sprite m_space_to_retry;
-	float m_victory_alpha;
+	float m_end_alpha;
+
+	// messages shown on defeat
+	sf::Sprite m_game_over;
 
 	// PLAYER DATA //
 

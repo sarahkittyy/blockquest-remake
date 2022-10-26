@@ -29,8 +29,12 @@ world::world(resource& r, level l)
 	m_game_clear.setOrigin(m_game_clear.getLocalBounds().width / 2.f, m_game_clear.getLocalBounds().height);
 	m_space_to_retry.setOrigin(m_space_to_retry.getLocalBounds().width / 2.f, 0);
 
+	m_game_over.setTexture(r.tex("assets/gui/defeat.png"));
+	m_game_over.setOrigin(m_game_over.getLocalBounds().width / 2.f, m_game_over.getLocalBounds().height);
+
 	m_game_clear.setPosition(m_tmap.total_size() / 2.f);
 	m_space_to_retry.setPosition(m_tmap.total_size() / 2.f);
+	m_game_over.setPosition(m_tmap.total_size() / 2.f);
 
 	m_dash_sfx_thread = std::jthread([this](std::stop_token stoken) {
 		using namespace std::chrono_literals;
@@ -98,6 +102,10 @@ bool world::won() const {
 	return m_touched_goal;
 }
 
+bool world::lost() const {
+	return m_dead;
+}
+
 /*
 http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platformers/
 - Decompose movement into X and Y axes, step one at a time. If you’re planning on implementing slopes afterwards, step X first, then Y. Otherwise, the order shouldn’t matter much. Then, for each axis:
@@ -124,22 +132,29 @@ void world::update(sf::Time dt) {
 
 	m_pmgr.update(dt);
 
-	// deaths are handled here to deal with dying mid-logic
-	if (m_dead) {
-		m_dead = false;
-		m_restart_world();
-	}
-
 	// update the player's animations
 	m_player.update();
 
 	if (won()) {
 		sf::Color opacity = m_space_to_retry.getColor();
-		m_victory_alpha += 255.f * dt.asSeconds();
-		m_victory_alpha = std::min(255.f, m_victory_alpha);
-		opacity.a		= m_victory_alpha;
+		m_end_alpha += 255.f * dt.asSeconds();
+		m_end_alpha = std::min(255.f, m_end_alpha);
+		opacity.a	= m_end_alpha;
 		m_space_to_retry.setColor(opacity);
 		m_game_clear.setColor(opacity);
+		if (m_just_jumped()) {
+			m_restart_world();
+		} else {
+			m_jump_last_frame = jump_keyed;
+			return;
+		}
+	} else if (lost()) {
+		sf::Color opacity = m_space_to_retry.getColor();
+		m_end_alpha += 255.f * dt.asSeconds();
+		m_end_alpha = std::min(255.f, m_end_alpha);
+		opacity.a	= m_end_alpha;
+		m_space_to_retry.setColor(opacity);
+		m_game_over.setColor(opacity);
 		if (m_just_jumped()) {
 			m_restart_world();
 		} else {
@@ -712,21 +727,25 @@ void world::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	s.transform *= getTransform();
 	t.draw(m_tmap, s);
 	t.draw(m_mt_mgr, s);
-	if (!won())
+	if (!won() && !lost())
 		t.draw(m_player, s);
 	t.draw(m_pmgr, s);
 	if (won()) {
 		t.draw(m_game_clear, s);
+		t.draw(m_space_to_retry, s);
+	} else if (lost()) {
+		t.draw(m_game_over, s);
 		t.draw(m_space_to_retry, s);
 	}
 }
 
 void world::m_player_win() {
 	if (m_touched_goal) return;
-	m_touched_goal	= true;
-	m_victory_alpha = 0;
-	m_dashing		= false;
+	m_touched_goal = true;
+	m_end_alpha	   = 0;
+	m_dashing	   = false;
 	m_space_to_retry.setColor(sf::Color(255, 255, 255, 0));
+	m_game_over.setColor(sf::Color(255, 255, 255, 0));
 	m_game_clear.setColor(sf::Color(255, 255, 255, 0));
 	m_r.play_sound("victory");
 	auto& sp		= m_pmgr.spawn<particles::victory>(m_r);
@@ -752,6 +771,11 @@ void world::m_player_die() {
 				 << "\n";
 	m_dead = true;
 	m_r.play_sound("gameover");
+	m_end_alpha = 0;
+	m_dashing	= false;
+	m_space_to_retry.setColor(sf::Color(255, 255, 255, 0));
+	m_game_over.setColor(sf::Color(255, 255, 255, 0));
+	m_game_clear.setColor(sf::Color(255, 255, 255, 0));
 	auto& dp = m_pmgr.spawn<particles::death>(m_r);
 	dp.setPosition(m_xp, m_yp);
 	dp.setScale(0.5f, 0.5f);
