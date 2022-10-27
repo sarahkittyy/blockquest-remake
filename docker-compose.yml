@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: development
+      POSTGRES_PASSWORD: supersecretpassword
+      POSTGRES_DB: bq-r
+    container_name: postgres
+    ports:
+      - "5432:5432"

@@ -23,7 +23,7 @@ set(CMAKE_CXX_STANDARD 20)
 file(GLOB_RECURSE sources "game/*.cpp")
 file(GLOB imgui_sources "lib/imgui/*.cpp")
 
-set(includes game/ lib/imgui/)
+set(includes game/ lib/imgui/ lib/http)
 set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL)
 set(flags)
 

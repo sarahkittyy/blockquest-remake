@@ -4,3 +4,6 @@ compile_commands.json
 misc/
 imgui.ini
 *:Zone.Identifier
+node_modules
+.env
+.npm

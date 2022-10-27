@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "strict": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "noImplicitAny": false,
+    "outDir": "build/api",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "module": "commonjs",
+    "target": "es2020",
+    "typeRoots": [
+      "backend/types/",
+      "node_modules/@types"
+    ],
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["backend/*"],
+      "@controllers/*": ["backend/controllers/*"],
+      "@db/*": ["backend/db/*"],
+      "@util/*": ["backend/util/*"]
+    }
+  },
+  "include": [
+    "backend/"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
