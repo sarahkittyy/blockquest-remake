@@ -7,7 +7,7 @@
 #include "../level.hpp"
 #include "../world.hpp"
 
-#include "../gui/gif.hpp"
+#include "../gui/menu_bar.hpp"
 
 namespace states {
 
@@ -26,6 +26,8 @@ private:
 	sf::RenderTexture m_rt;
 	sf::Sprite m_map;
 
+	ImGui::AppMenuBar m_menu_bar;
+
 	void draw(sf::RenderTarget&, sf::RenderStates) const;
 
 	level m_level;										   // the level we are editing
@@ -35,10 +37,6 @@ private:
 
 	level m_cursor;		// the level that just renders the cursor
 	tilemap m_border;	// a completely static map used to render a border of blocks
-
-	std::optional<key> m_listening_key;	  // what key are we currently listening for in the controls panel
-
-	std::array<std::pair<ImGui::Gif, const char*>, 5> m_rules_gifs;	  // the 5 gifs of the rules
 
 	float m_level_size;	  // x/y pixel size of the level
 
@@ -78,13 +76,11 @@ private:
 	std::unique_ptr<world> m_test_play_world;
 	void m_toggle_test_play();
 
-	std::string m_last_debug_msg;
+	std::string m_info_msg;
 
 	void m_update_transforms();	  // update the transforms based on m_level_size
 	float m_level_scale() const;
 
-	// gui stuff
-	void m_menu_bar(fsm* sm);
 	void m_controls(fsm* sm);
 	void m_block_picker(fsm* sm);
 };

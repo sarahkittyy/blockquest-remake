@@ -4,6 +4,8 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
+#include "gui/menu_bar.hpp"
+
 #include <cstring>
 #include <stdexcept>
 
@@ -15,20 +17,10 @@ namespace states {
 
 edit::edit(resource& r)
 	: state(r),
+	  m_menu_bar(r),
 	  m_level(r),
 	  m_cursor(r),
 	  m_border(r.tex("assets/tiles.png"), 34, 32, 16),
-	  m_listening_key(),
-	  m_rules_gifs({ std::make_pair(ImGui::Gif(r.tex("assets/gifs/run.png"), 33, { 240, 240 }, 20),
-									"Use left & right to run"),
-					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/jump.png"), 19, { 240, 240 }, 20),
-									"Space to jump"),
-					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/dash.png"), 19, { 240, 240 }, 20),
-									"Down to dash"),
-					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/wallkick.png"), 37, { 240, 240 }, 20),
-									"Left + Right to wallkick"),
-					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/climb.png"), 25, { 240, 240 }, 20),
-									"Up & Down to climb") }),
 	  m_level_size(1024),
 	  m_cursor_type(PENCIL),
 	  m_tiles(r.tex("assets/tiles.png")),
@@ -90,15 +82,9 @@ void edit::m_update_transforms() {
 }
 
 void edit::process_event(sf::Event e) {
+	m_menu_bar.process_event(e);
 	switch (e.type) {
 	default:
-		break;
-	case sf::Event::KeyPressed:
-		if (m_listening_key) {
-			// check if it's already bound
-			settings::get().set_key(*m_listening_key, e.key.code);
-			m_listening_key = {};
-		}
 		break;
 	case sf::Event::Resized:
 		m_level_size = std::min(e.size.width - 2 * int(m_level.map().tile_size() * m_level_scale()), e.size.height - 24);
@@ -129,14 +115,14 @@ void edit::update(fsm* sm, sf::Time dt) {
 				m_pencil_active = true;
 				m_pencil_undo_queue.clear();
 			}
-			auto diff = m_set_tile(mouse_tile, m_selected_tile, m_last_debug_msg);
+			auto diff = m_set_tile(mouse_tile, m_selected_tile, m_info_msg);
 			if (diff && m_last_placed != mouse_tile && !diff->same()) {
 				m_pencil_undo_queue.push_back(*diff);
 			}
 			break;
 		}
 		case FLOOD: {
-			auto diffs = m_flood_fill(mouse_tile, m_selected_tile, m_level.map().get(mouse_tile.x, mouse_tile.y).type, m_last_debug_msg);
+			auto diffs = m_flood_fill(mouse_tile, m_selected_tile, m_level.map().get(mouse_tile.x, mouse_tile.y).type, m_info_msg);
 			if (!diffs.empty()) {
 				m_undo_queue.push_back(diffs);
 			}
@@ -144,12 +130,12 @@ void edit::update(fsm* sm, sf::Time dt) {
 		}
 		case STROKE:
 			if (m_selected_tile == tile::begin || m_selected_tile == tile::end) {
-				auto diff = m_set_tile(mouse_tile, m_selected_tile, m_last_debug_msg);
+				auto diff = m_set_tile(mouse_tile, m_selected_tile, m_info_msg);
 				if (diff && m_last_placed != mouse_tile && !diff->same()) {
 					m_undo_queue.push_back({ *diff });
 				}
 			} else
-				m_stroke_fill(mouse_tile, m_selected_tile, m_last_debug_msg);
+				m_stroke_fill(mouse_tile, m_selected_tile, m_info_msg);
 			break;
 		}
 		m_last_placed = mouse_tile;
@@ -353,128 +339,6 @@ sf::Vector2i edit::m_update_mouse_tile() {
 	return mouse_tile;
 }
 
-void edit::m_menu_bar(fsm* sm) {
-	// settings
-	if (ImGui::MenuItem("Settings")) {
-		ImGui::OpenPopup("Settings###Settings");
-	}
-	if (ImGui::BeginPopupModal("Settings###Settings")) {
-		ImGui::BeginTable("###Buttons", 2);
-		for (key k = key::LEFT; k <= key::DOWN; k = key(int(k) + 1)) {
-			ImGui::PushID(int(k));
-			ImGui::TableNextColumn();
-			ImGui::Text("%s", key_name(k));
-			ImGui::TableNextColumn();
-			const char* button_name = m_listening_key && *m_listening_key == k ? "Press any key..." : key_name(settings::get().get_key(k));
-			if (ImGui::Button(button_name)) {
-				m_listening_key = k;
-			}
-			ImGui::TableNextRow();
-			ImGui::PopID();
-		}
-		ImGui::EndTable();
-		// close button
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Done")) {
-			m_listening_key = {};
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::EndPopup();
-	}
-	// rules
-	if (ImGui::MenuItem("Rules")) {
-		ImGui::OpenPopup("Rules###Rules");
-	}
-	if (ImGui::BeginPopup("Rules###Rules")) {
-		ImGui::BeginTable("###Rules", 2);
-		ImGui::TableNextColumn();
-		ImRect uvs;
-
-		uvs = m_level.map().calc_uvs(tile::begin);
-		ImGui::Text("Start here");
-		ImGui::TableNextColumn();
-		ImGui::Image(
-			reinterpret_cast<ImTextureID>(m_tiles.getNativeHandle()),
-			ImVec2(64, 64),
-			uvs.Min, uvs.Max);
-		ImGui::TableNextRow();
-
-		uvs = m_level.map().calc_uvs(tile::end);
-		ImGui::TableNextColumn();
-		ImGui::Text("Try to reach the goal");
-		ImGui::TableNextColumn();
-		ImGui::Image(
-			reinterpret_cast<ImTextureID>(m_tiles.getNativeHandle()),
-			ImVec2(64, 64),
-			uvs.Min, uvs.Max);
-		ImGui::TableNextRow();
-
-		uvs = m_level.map().calc_uvs(tile::spike);
-		ImGui::TableNextColumn();
-		ImGui::Text("Avoid spikes");
-		ImGui::TableNextColumn();
-		ImGui::Image(
-			reinterpret_cast<ImTextureID>(m_tiles.getNativeHandle()),
-			ImVec2(64, 64),
-			uvs.Min, uvs.Max);
-		ImGui::TableNextRow();
-
-		uvs = m_level.map().calc_uvs(tile::gravity);
-		ImGui::TableNextColumn();
-		ImGui::Text("Flip gravity");
-		ImGui::TableNextColumn();
-		ImGui::Image(
-			reinterpret_cast<ImTextureID>(m_tiles.getNativeHandle()),
-			ImVec2(64, 64),
-			uvs.Min, uvs.Max);
-		ImGui::TableNextRow();
-
-		uvs = m_level.map().calc_uvs(tile::ladder);
-		ImGui::TableNextColumn();
-		ImGui::Text("Climb up ladders");
-		ImGui::TableNextColumn();
-		ImGui::Image(
-			reinterpret_cast<ImTextureID>(m_tiles.getNativeHandle()),
-			ImVec2(64, 64),
-			uvs.Min, uvs.Max);
-		ImGui::TableNextRow();
-
-		uvs = m_level.map().calc_uvs(tile::ice);
-		ImGui::TableNextColumn();
-		ImGui::Text("Watch your step");
-		ImGui::TableNextColumn();
-		ImGui::Image(
-			reinterpret_cast<ImTextureID>(m_tiles.getNativeHandle()),
-			ImVec2(64, 64),
-			uvs.Min, uvs.Max);
-		ImGui::TableNextRow();
-
-		ImGui::EndTable();
-		ImGui::EndPopup();
-	}
-	// controls
-	if (ImGui::MenuItem("Controls")) {
-		ImGui::OpenPopup("Controls###Controls");
-	}
-	if (ImGui::BeginPopup("Controls###Controls")) {
-		ImGui::BeginTable("###Gifs", 5);
-		for (auto& [gif, desc] : m_rules_gifs) {
-			ImGui::TableNextColumn();
-			gif.update();
-			gif.draw({ 240, 240 });
-			ImGui::Text("%s", desc);
-		}
-		ImGui::EndTable();
-		ImGui::EndPopup();
-	}
-	// debug msg
-	if (m_last_debug_msg.length() != 0) {
-		ImGui::TextColored(sf::Color(255, 120, 120, 255), "[!] %s", m_last_debug_msg.c_str());
-		if (ImGui::MenuItem("OK")) {
-			m_last_debug_msg = "";
-		}
-	}
-}
-
 void edit::m_controls(fsm* sm) {
 	ImTextureID icon  = !m_test_playing() ? r().imtex("assets/gui/play.png") : r().imtex("assets/gui/stop.png");
 	std::string label = !m_test_playing() ? "Test Play" : "Edit";
@@ -653,9 +517,7 @@ void edit::imdraw(fsm* sm) {
 	flags |= ImGuiWindowFlags_AlwaysAutoResize;
 
 	// menu bar
-	ImGui::BeginMainMenuBar();
-	m_menu_bar(sm);
-	ImGui::EndMainMenuBar();
+	m_menu_bar.imdraw(m_info_msg);
 
 	// controls
 	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
@@ -673,11 +535,11 @@ void edit::imdraw(fsm* sm) {
 void edit::m_toggle_test_play() {
 	if (!m_test_playing()) {
 		if (!m_level.valid()) {
-			m_last_debug_msg = "Cannot start without a valid start & end position";
+			m_info_msg = "Cannot start without a valid start & end position";
 			return;
 		}
 		m_level.map().set_editor_view(false);
-		m_last_debug_msg = "";
+		m_info_msg = "";
 		m_test_play_world.reset(new world(r(), m_level));
 		m_update_transforms();
 	} else {

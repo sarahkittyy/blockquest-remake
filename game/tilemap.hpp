@@ -109,7 +109,8 @@ public:
 
 	bool in_bounds(sf::Vector2i pos) const;	  // is the given tile pos in bounds
 
-	ImRect calc_uvs(tile::tile_type type) const;   // calculates the uv coordinates of a tile for imgui purposes
+	ImRect calc_uvs(tile::tile_type type) const;										  // calculates the uv coordinates of a tile for imgui purposes
+	static ImRect calc_uvs(tile::tile_type type, sf::Texture& tex, int tile_size = 16);	  // calculates the uv coordinates of a tile for imgui purposes
 
 	// all tiles that intersect the given aabb
 	std::vector<std::pair<sf::Vector2f, tile>> intersects(sf::FloatRect aabb) const;

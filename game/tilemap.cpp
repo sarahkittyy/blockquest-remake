@@ -255,12 +255,11 @@ tile tilemap::m_oob_tile(int x, int y) const {
 bool tilemap::in_bounds(sf::Vector2i pos) const {
 	return pos.x >= 0 && pos.x < m_xs && pos.y >= 0 && pos.y < m_ys;
 }
-
-ImRect tilemap::calc_uvs(tile::tile_type type) const {
+ImRect tilemap::calc_uvs(tile::tile_type type, sf::Texture& tex, int tile_size) {
 	// size of the tiles texture in tiles
 	sf::Vector2i tex_sz(
-		m_tex.getSize().x / tile_size(),
-		m_tex.getSize().y / tile_size());
+		tex.getSize().x / tile_size,
+		tex.getSize().y / tile_size);
 	// size of a tile in uv coords (0-1)
 	sf::Vector2f tsz(
 		1.f / tex_sz.x,
@@ -269,6 +268,10 @@ ImRect tilemap::calc_uvs(tile::tile_type type) const {
 	int y = type / tex_sz.x;
 	sf::Vector2f uv0(x * tsz.x, y * tsz.y);
 	return ImRect(uv0, uv0 + tsz);
+}
+
+ImRect tilemap::calc_uvs(tile::tile_type type) const {
+	return tilemap::calc_uvs(type, m_tex, m_ts);
 }
 
 sf::Vector2i tilemap::size() const {
