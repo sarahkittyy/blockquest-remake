@@ -1,5 +1,7 @@
 #include "settings.hpp"
 
+#include <cstdlib>
+
 settings::settings()
 	: m_keys({
 		  { key::LEFT, sf::Keyboard::Left },
@@ -12,11 +14,15 @@ settings::settings()
 }
 
 std::string settings::server_url() const {
+	if (const char* env_p = std::getenv("SERVER_URL")) {
+		return std::string(env_p);
+	} else {
 #ifdef SERVER_URL
-	return SERVER_URL;
+		return SERVER_URL;
 #else
-	return "https://bq-r.sushicat.rocks";
+		return "https://bq-r.sushicat.rocks";
 #endif
+	}
 }
 
 settings& settings::get() {

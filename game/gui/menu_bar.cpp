@@ -56,8 +56,8 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 
 	// Authentication
 	if (auth::get().authed() && !m_auth_unresolved()) {
-		ImGui::Image(m_r.imtex("assets/gui/play.png"), ImVec2(16, 16));
-		ImGui::Text("%s", auth::get().username().c_str());
+		float cpos = ImGui::GetCursorPosY();
+		ImGui::TextColored(sf::Color(228, 189, 255), "| Welcome, %s! |", auth::get().username().c_str());
 		if (ImGui::MenuItem("Logout")) {
 			auth::get().logout();
 		}
