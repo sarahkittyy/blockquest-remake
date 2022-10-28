@@ -7,7 +7,6 @@
 
 #include "httplib.h"
 #include "json.hpp"
-#include "jwt-cpp/traits/nlohmann-json/traits.h"
 
 // singleton class that manages the authentication state of the user
 class auth {

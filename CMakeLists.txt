@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.18)
 project(bq-r)
 include(FetchContent)
 include(ExternalProject)
@@ -25,10 +25,8 @@ set(CMAKE_CXX_STANDARD 20)
 file(GLOB_RECURSE sources "game/*.cpp")
 file(GLOB imgui_sources "lib/imgui/*.cpp")
 
-add_subdirectory(lib/jwt-cpp)
-
-set(includes game/ lib/imgui/ lib/http lib/nlohmann lib/ lib/jwt-cpp/include ${OPENSSL_INCLUDE_DIR})
-set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL jwt-cpp::jwt-cpp OpenSSL::SSL OpenSSL::Crypto)
+set(includes game/ lib/imgui/ lib/http lib/nlohmann lib/ ${OPENSSL_INCLUDE_DIR})
+set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL OpenSSL::SSL OpenSSL::Crypto)
 set(flags -DCPPHTTPLIB_OPENSSL_SUPPORT)
 
 if(NOT CMAKE_BUILD_TYPE MATCHES Debug)
@@ -47,7 +45,10 @@ endif()
 
 target_compile_options(bq-r PUBLIC ${flags})
 target_include_directories(bq-r PUBLIC ${includes})
-target_link_libraries(bq-r ${libs})
+target_link_libraries(bq-r PRIVATE ${libs})
+if (WIN32)
+	target_link_libraries(bq-r PRIVATE OpenSSL::applink)
+endif()
 
 if(WIN32)
 	add_custom_command(TARGET bq-r POST_BUILD
