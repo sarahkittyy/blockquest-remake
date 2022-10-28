@@ -24,8 +24,7 @@ jobs:
       with:
         submodules: recursive
     - run: |
-        curl.exe --output openssl.msi "https://slproweb.com/download/Win64OpenSSL-3_0_5.msi"
-        msiexec /i openssl.msi /quiet /qn /norestart /li
+        choco install openssl
       shell: cmd
 
     - name: Configure CMake
