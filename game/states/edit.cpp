@@ -96,7 +96,7 @@ void edit::process_event(sf::Event e) {
 void edit::update(fsm* sm, sf::Time dt) {
 	sf::Vector2i mouse_tile = m_update_mouse_tile();
 
-	debug::get() << auth::get().username() << auth::get().tier() << "\n";
+	debug::get() << auth::get().username() << " (" << auth::get().tier() << ")\n";
 
 	if (m_undo_queue.size() > UNDO_MAX) {
 		m_undo_queue.pop_front();
