@@ -24,20 +24,13 @@ jobs:
       with:
         submodules: recursive
 
-    - uses: actions/checkout@v3
-      with:
-        repository: 'viaduck/openssl-cmake'
-        path: 'openssl-cmake'
     - run: |
-        cmake -B build/ -DCMAKE_BUILD_TYPE=Release -DMSYS=ON -DBUILD_OPENSSL=ON -DOPENSSL_BRANCH=openssl-3.0.5 -DOPENSSL_BUILD_VERSION=3.0.5
-        cmake --build ${{github.workspace}}/openssl-cmake/build --config ${{env.BUILD_TYPE}}
-        cmake --install ${{github.workspace}}/openssl-cmake/install --config ${{env.BUILD_TYPE}}
-      working-directory: ${{github.workspace}}/openssl-cmake
+        c:\vcpkg\vcpkg install --recurse openssl-windows --triplet x64-windows
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -DOPENSSL_ROOT_DIR=${{github.workspace}}/openssl-cmake/install -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
     - name: Build
       # Build your program with the given configuration
