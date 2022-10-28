@@ -7,3 +7,4 @@ imgui.ini
 node_modules
 .env
 .npm
+start-authed.sh

@@ -32,6 +32,15 @@ app::app(int argc, char** argv)
 
 	configure_imgui_style();
 
+	m_fsm.swap_state<states::edit>();
+
+	if (const char* name = std::getenv("BQR_USERNAME")) {
+		if (const char* pass = std::getenv("BQR_PASSWORD")) {
+			auth::get().login(std::string(name), std::string(pass));
+		}
+	}
+
+#ifndef NDEBUG
 	if (argc > 1) {
 		std::string mode = argv[1];
 		if (mode == "main") {
@@ -43,9 +52,8 @@ app::app(int argc, char** argv)
 		} else {
 			m_fsm.swap_state<states::edit>();
 		}
-	} else {
-		m_fsm.swap_state<states::edit>();
 	}
+#endif
 }
 
 int app::run() {

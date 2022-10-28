@@ -35,6 +35,10 @@ edit::edit(resource& r)
 	m_rt.create(34 * 16, 32 * 16);
 	m_map.setTexture(m_rt.getTexture());
 
+	std::memset(m_title_buffer, 0, 50);
+	std::memset(m_description_buffer, 0, 50);
+	std::memset(m_id_buffer, 0, 10);
+
 	m_update_transforms();
 
 	m_level.map().set_editor_view(true);
@@ -341,7 +345,51 @@ sf::Vector2i edit::m_update_mouse_tile() {
 	return mouse_tile;
 }
 
-void edit::m_controls(fsm* sm) {
+void edit::imdraw(fsm* sm) {
+	// clang-format off
+	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
+	flags |= ImGuiWindowFlags_NoResize;
+	flags |= ImGuiWindowFlags_NoSavedSettings;
+	flags |= ImGuiWindowFlags_AlwaysAutoResize;
+
+	// menu bar
+	m_menu_bar.imdraw(m_info_msg);
+
+	// controls
+	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
+	ImGui::Begin("Controls", nullptr, flags);
+	m_gui_controls(sm);
+	ImGui::End();
+
+	// block picker
+	ImGui::SetNextWindowPos(ImVec2(100, 500), ImGuiCond_FirstUseEver);
+	ImGui::Begin("Blocks", nullptr, flags);
+	m_gui_block_picker(sm);
+	ImGui::End();
+
+	if (m_level.has_metadata()) {
+		ImGui::SetNextWindowPos(ImVec2(100, 800), ImGuiCond_FirstUseEver);
+		ImGui::Begin("Level Info");
+		m_gui_level_info(sm);
+		ImGui::End();
+	}
+
+}
+
+bool edit::m_is_current_level_ours() const {
+	if (!m_level.has_metadata()) return true;
+	if (!auth::get().authed()) return false;
+	if (m_level.get_metadata().author != auth::get().username()) return false;
+	return true;
+}
+
+void edit::m_gui_level_info(fsm* sm) {
+	ImGui::Text("-= Details =-");
+	level::metadata md = m_level.get_metadata();
+	ImGui::TextWrapped("Author: %s\nTitle: %s\nDescription: %s\n", md.author.c_str(), md.title.c_str(), md.description.c_str());
+}
+
+void edit::m_gui_controls(fsm* sm) {
 	ImTextureID icon  = !m_test_playing() ? r().imtex("assets/gui/play.png") : r().imtex("assets/gui/stop.png");
 	std::string label = !m_test_playing() ? "Test Play" : "Edit";
 	if (ImGui::ImageButtonWithText(icon, label.c_str())) {
@@ -358,13 +406,120 @@ void edit::m_controls(fsm* sm) {
 	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/erase.png"), "Clear")) {
 		ImGui::OpenPopup("Clear###Confirm");
 	}
+	ImGui::BeginDisabled(!m_is_current_level_ours() || !m_level.valid());
+	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/upload.png"), "Upload")) {
+		ImGui::OpenPopup("Upload###Upload");
+	}
+	ImGui::EndDisabled();
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+		if (!m_level.valid()) {
+			ImGui::SetTooltip("Cannot upload an invalid level.");
+		} else if (!m_is_current_level_ours()) {
+			ImGui::SetTooltip("Cannot re-upload someone else's level. Clear first to make your own level for posting.");
+		}
+	}
+	ImGui::SameLine();
+	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/download.png"), "Download")) {
+		ImGui::OpenPopup("Download###Download");
+	}
+	// upload popup //
+	bool dummy_open = true;
+	ImGuiWindowFlags modal_flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
+	if (ImGui::BeginPopup("Download###Download")) {
+		if (m_download_status && !m_download_status->success) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
+			ImGui::TextWrapped("%s", m_download_status->error->c_str());
+			ImGui::PopStyleColor();
+		}
+		if (ImGui::InputText("Id###DownloadId", m_id_buffer, 10, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal)) {
+			if (!m_download_future.valid())
+				m_download_future = api::get().download_level(m_id_buffer);
+		}
+		ImGui::BeginDisabled(m_download_future.valid());
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/download.png"), "Download")) {
+			if (!m_download_future.valid())
+				m_download_future = api::get().download_level(m_id_buffer);
+		}
+		ImGui::EndDisabled();
+		if (m_download_future.valid() && util::ready(m_download_future)) {
+			m_download_status = m_download_future.get();
+		}
+		if (m_download_status) {
+			api::response res = *m_download_status;
+			if (res.success) {
+				m_download_status.reset();
+				m_level.load_from_api(*res.level);
+				if (m_is_current_level_ours()) {
+					std::strncpy(m_title_buffer, m_level.get_metadata().title.c_str(), 50);
+					std::strncpy(m_description_buffer, m_level.get_metadata().description.c_str(), 256);
+				}
+				std::memset(m_id_buffer, 0, 10);
+				ImGui::CloseCurrentPopup();
+			}
+		}
+
+		ImGui::EndPopup();
+	}
+	bool upload_modal_open = m_level.valid();
+	if (ImGui::BeginPopupModal("Upload###Upload", &upload_modal_open, modal_flags)) {
+		if (m_upload_status && !m_upload_status->success && m_upload_status->error) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
+			ImGui::TextWrapped("%s", m_upload_status->error->c_str());
+			ImGui::PopStyleColor();
+		}
+		if (ImGui::InputText("Title", m_title_buffer, 50, ImGuiInputTextFlags_EnterReturnsTrue)) {
+			ImGui::SetKeyboardFocusHere(0);
+		}
+		if (ImGui::InputText("Description", m_description_buffer, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+			if (!m_upload_future.valid())
+				m_upload_future = api::get().upload_level(m_level, m_title_buffer, m_description_buffer);
+		}
+		ImGui::BeginDisabled(m_upload_future.valid());
+		const char* upload_label = m_upload_future.valid() ? "Uploading...###UploadForReal" : "Upload###UploadForReal";
+		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/upload.png"), upload_label)) {
+			if (!m_upload_future.valid())
+				m_upload_future = api::get().upload_level(m_level, m_title_buffer, m_description_buffer);
+		}
+		ImGui::EndDisabled();
+		if (m_upload_future.valid() && util::ready(m_upload_future)) {
+			m_upload_status = m_upload_future.get();
+		}
+		if (m_upload_status) {
+			api::response res = *m_upload_status;
+			if (res.success) {
+				m_upload_status.reset();
+				m_level.load_from_api(*res.level);
+				std::strncpy(m_title_buffer, m_level.get_metadata().title.c_str(), 50);
+				std::strncpy(m_description_buffer, m_level.get_metadata().description.c_str(), 256);
+				ImGui::CloseCurrentPopup();
+			} else if (res.code == 409) {
+				ImGui::OpenPopup("Upload###ConfirmUpload");
+			}
+			if (ImGui::BeginPopup("Upload###ConfirmUpload")) {
+				ImGui::TextWrapped("A level named %s already exists, do you want to overwrite it?", m_title_buffer);
+				if (ImGui::ImageButtonWithText(r().imtex("assets/gui/yes.png"), "Yes###OverrideYes")) {
+					m_upload_status.reset();
+					m_upload_future = api::get().upload_level(m_level, m_title_buffer, m_description_buffer, true);
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::SameLine();
+				if (ImGui::ImageButtonWithText(r().imtex("assets/gui/no.png"), "No###OverrideNo")) {
+					m_upload_status.reset();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
+		}
+		ImGui::EndPopup();
+	}
+		
 	if (ImGui::BeginPopup("Clear###Confirm")) {
 		ImGui::Text("Are you sure you want to erase the whole level?");
 		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/yes.png"), "Yes")) {
 			r().play_sound("gameover");
 			if (m_test_playing())
 				m_toggle_test_play();
-			m_level.map().clear();
+			m_level.clear();
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
@@ -408,7 +563,7 @@ void edit::m_controls(fsm* sm) {
 	}
 }
 
-void edit::m_block_picker(fsm* sm) {
+void edit::m_gui_block_picker(fsm* sm) {
 	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
 	flags |= ImGuiWindowFlags_NoResize;
 	flags |= ImGuiWindowFlags_AlwaysAutoResize;
@@ -510,28 +665,6 @@ void edit::m_block_picker(fsm* sm) {
 	ImGui::EndDisabled();
 
 	ImGui::EndChildFrame();
-}
-
-void edit::imdraw(fsm* sm) {
-	// clang-format off
-	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
-	flags |= ImGuiWindowFlags_NoResize;
-	flags |= ImGuiWindowFlags_AlwaysAutoResize;
-
-	// menu bar
-	m_menu_bar.imdraw(m_info_msg);
-
-	// controls
-	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Controls", nullptr);
-	m_controls(sm);
-	ImGui::End();
-
-	// block picker
-	ImGui::SetNextWindowPos(ImVec2(100, 500), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Blocks", nullptr, flags);
-	m_block_picker(sm);
-	ImGui::End();
 }
 
 void edit::m_toggle_test_play() {

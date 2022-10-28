@@ -14,7 +14,7 @@ auth& auth::get() {
 }
 
 bool auth::authed() const {
-	return m_jwt.has_value();
+	return m_jwt.has_value() && time(nullptr) < m_jwt->exp;
 }
 
 std::string auth::username() const {
@@ -25,12 +25,15 @@ int auth::tier() const {
 	return m_jwt ? m_jwt->tier : -1;
 }
 
+auth::jwt auth::get_jwt() {
+	return *m_jwt;
+}
+
 std::future<auth::response> auth::signup(std::string email, std::string username, std::string password) {
 	// clang-format off
 	using namespace std::chrono_literals;
 	return std::async([this, email, username, password]() -> auth::response {
 		try {
-			std::string server_url = settings::get().server_url();
 			nlohmann::json body;
 			body["name"] = username;
 			body["email"] = email;

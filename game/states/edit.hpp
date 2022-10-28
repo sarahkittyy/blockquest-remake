@@ -7,6 +7,8 @@
 #include "../level.hpp"
 #include "../world.hpp"
 
+#include "../api.hpp"
+
 #include "../gui/menu_bar.hpp"
 
 namespace states {
@@ -49,6 +51,21 @@ private:
 
 	char m_import_buffer[8192];
 
+	// buffers for level uploading
+	char m_title_buffer[50];
+	char m_description_buffer[256];
+	char m_id_buffer[10];
+
+	// future & status of level upload
+	std::future<api::response> m_upload_future;
+	std::optional<api::response> m_upload_status;
+
+	std::future<api::response> m_download_future;
+	std::optional<api::response> m_download_status;
+
+	// can we upload the level currently on display
+	bool m_is_current_level_ours() const;
+
 	sf::Texture& m_tiles;	// texture of all tiles
 	sf::Texture& m_tools;	// texture of tools
 	tile::tile_type m_selected_tile = tile::begin;
@@ -81,8 +98,9 @@ private:
 	void m_update_transforms();	  // update the transforms based on m_level_size
 	float m_level_scale() const;
 
-	void m_controls(fsm* sm);
-	void m_block_picker(fsm* sm);
+	void m_gui_controls(fsm* sm);
+	void m_gui_block_picker(fsm* sm);
+	void m_gui_level_info(fsm* sm);
 };
 
 }

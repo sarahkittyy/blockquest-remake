@@ -19,14 +19,16 @@ model User {
   password  String
   levels    Level[]
   confirmed Boolean     @default(false)
-	tier			Int					@default(0)
+  tier		Int			@default(0)
 }
 
 model Level {
-  id        Int         @id @default(autoincrement())
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  code      String      @db.Text
-  author    User        @relation(fields: [authorId], references: id)
-  authorId  Int
+  id			Int         @id @default(autoincrement())
+  createdAt		DateTime    @default(now())
+  updatedAt		DateTime    @updatedAt
+  code			String      @db.Text
+  author		User        @relation(fields: [authorId], references: id)
+  authorId		Int
+  name			String		@db.VarChar(50) @unique
+  description	String?		@db.Text
 }

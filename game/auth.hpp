@@ -35,6 +35,8 @@ public:
 	std::string username() const;	// the current authed username
 	int tier() const;				// the user's tier that we're logged in as
 
+	jwt get_jwt();
+
 private:
 	auth();
 	auth(const auth& other) = delete;
