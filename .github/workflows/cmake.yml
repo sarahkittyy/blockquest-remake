@@ -32,8 +32,8 @@ jobs:
 
     - run: |
         perl Configure VC-WIN64A
-        nmake
-        namek install
+        make
+        make install
       working-directory: ${{github.workspace}}/openssl
 
     - name: Configure CMake
