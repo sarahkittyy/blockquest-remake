@@ -4,6 +4,11 @@ import jwt from 'jsonwebtoken';
 
 import log from '@/log';
 
+export interface IAuthToken {
+	username: string;
+	tier: number;
+}
+
 export async function saltAndHash(password: string): Promise<string | undefined> {
 	try {
 		const salt = await bcrypt.genSalt(10);
@@ -18,11 +23,12 @@ export function validatePassword(given: string, saved: string): boolean {
 	return bcrypt.compareSync(given, saved);
 }
 
-export function generateJwt(username: string): string {
+export function generateJwt(username: string, tier: number): string {
 	const secret = process.env.SECRET ?? 'NOTSECRET';
 	return jwt.sign(
 		{
 			username,
+			tier,
 		},
 		secret,
 		{
@@ -31,21 +37,26 @@ export function generateJwt(username: string): string {
 	);
 }
 
-export function getUsername(token: string | undefined): string | undefined {
+export function decodeToken(token: string): IAuthToken | undefined {
 	if (!token) return undefined;
 	try {
 		const decoded = jwt.verify(token, process.env.SECRET ?? 'NOTSECRET');
-		return (decoded as any).username;
+		return decoded as IAuthToken;
 	} catch (e) {
 		return undefined;
 	}
 }
 
-export async function requireAuth(req: Request, res: Response, next: NextFunction) {
-	const username = getUsername(req.body?.jwt);
-	if (!username) {
-		return res.status(401).send({ error: 'Not logged in' });
-	}
-	res.locals.name = username;
-	next();
+export function requireAuth(tier = 0) {
+	return async (req: Request, res: Response, next: NextFunction) => {
+		const token: IAuthToken | undefined = decodeToken(req.body?.jwt);
+		if (!token) {
+			return res.status(401).send({ error: 'Not logged in' });
+		}
+		if (token.tier < tier) {
+			return res.status(401).send({ error: 'Insufficient permissions' });
+		}
+		res.locals.token = token;
+		next();
+	};
 }

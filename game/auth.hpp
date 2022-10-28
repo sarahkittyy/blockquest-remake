@@ -7,7 +7,7 @@
 
 #include "httplib.h"
 #include "json.hpp"
-#include "jwt-cpp/jwt.h"
+#include "jwt-cpp/traits/nlohmann-json/traits.h"
 
 // singleton class that manages the authentication state of the user
 class auth {
@@ -25,12 +25,16 @@ public:
 	struct jwt {
 		std::time_t exp;
 		std::string username;
+		int tier;
 		std::string raw;
 	};
 
 	std::future<response> signup(std::string email, std::string username, std::string password);
 	std::future<response> login(std::string email_or_username, std::string password);
 	void logout();
+
+	std::string username() const;	// the current authed username
+	int tier() const;				// the user's tier that we're logged in as
 
 private:
 	auth();

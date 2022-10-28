@@ -14,8 +14,8 @@ app.use(express.urlencoded({ extended: true }));
 app.post('/signup', Auth.CreateAccount);
 app.post('/login', Auth.Login);
 
-app.get('/me', [requireAuth], (req: Request, res: Response) => {
-	return res.send(res.locals.name);
+app.get('/me', requireAuth(0), (req: Request, res: Response) => {
+	return res.send(res.locals.token);
 });
 
 const port = process.env.PORT ?? '3000';

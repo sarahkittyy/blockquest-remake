@@ -19,6 +19,7 @@ model User {
   password  String
   levels    Level[]
   confirmed Boolean     @default(false)
+	tier			Int					@default(0)
 }
 
 model Level {

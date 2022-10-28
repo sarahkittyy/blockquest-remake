@@ -23,6 +23,7 @@ All assets in `assets/` are ripped straight from the original BlockQuest SWF ava
 ## Dependencies
 
 - C++20
+- OpenSSL
 
 ## Building
 

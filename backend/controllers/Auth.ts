@@ -67,7 +67,7 @@ export default class Auth {
 			});
 		}
 		return res.status(200).send({
-			jwt: generateJwt(user.name),
+			jwt: generateJwt(user.name, user.tier),
 		});
 	}
 
@@ -79,7 +79,7 @@ export default class Auth {
 		} else {
 			name = req.body.username;
 		}
-		if (!name) return res.status(400).send({ error: 'No username / email specified' });
+		if (!name && !email) return res.status(400).send({ error: 'No username / email specified' });
 		const password: string | undefined = req.body.password;
 		if (!password) return res.status(400).send({ error: 'No password specified' });
 
@@ -96,7 +96,7 @@ export default class Auth {
 			return res.status(401).send({ error: 'Invalid password' });
 		}
 		return res.status(200).send({
-			jwt: generateJwt(user.name),
+			jwt: generateJwt(user.name, user.tier),
 		});
 	}
 }

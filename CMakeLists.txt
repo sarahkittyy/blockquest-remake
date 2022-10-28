@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(bq-r)
 include(FetchContent)
+include(ExternalProject)
 
 # libs
 set(SFML_VERSION "2.5.1")
@@ -16,6 +17,7 @@ if(NOT sfml_POPULATED)
 endif()
 
 find_package(OpenGL REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 # not libs
 set(CMAKE_CXX_STANDARD 20)
@@ -25,9 +27,9 @@ file(GLOB imgui_sources "lib/imgui/*.cpp")
 
 add_subdirectory(lib/jwt-cpp)
 
-set(includes game/ lib/imgui/ lib/http lib/nlohmann lib/jwt-cpp/include)
-set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL jwt-cpp::jwt-cpp)
-set(flags)
+set(includes game/ lib/imgui/ lib/http lib/nlohmann lib/jwt-cpp/include ${OPENSSL_INCLUDE_DIR})
+set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL jwt-cpp::jwt-cpp OpenSSL::SSL OpenSSL::Crypto)
+set(flags -DCPPHTTPLIB_OPENSSL_SUPPORT)
 
 if(NOT CMAKE_BUILD_TYPE MATCHES Debug)
 	list(APPEND flags -DNDEBUG -DSERVER_URL="https://bq-r.sushicat.rocks")
@@ -56,6 +58,9 @@ if(WIN32)
 		$<TARGET_FILE:sfml-network>
 		$<TARGET_FILE:sfml-system>
 		$<TARGET_FILE:sfml-main>
+		$<TARGET_FILE:jwt-cpp::jwt-cpp>
+		$<TARGET_FILE:OpenSSL::SSL>
+		$<TARGET_FILE:OpenSSL::Crypto>
 		$<TARGET_FILE_DIR:bq-r>
 	)
 	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

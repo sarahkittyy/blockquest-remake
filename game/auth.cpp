@@ -15,6 +15,14 @@ bool auth::authed() const {
 	return m_jwt.has_value();
 }
 
+std::string auth::username() const {
+	return m_jwt ? m_jwt->username : "Not logged in";
+}
+
+int auth::tier() const {
+	return m_jwt ? m_jwt->tier : -1;
+}
+
 std::future<auth::response> auth::signup(std::string email, std::string username, std::string password) {
 	// clang-format off
 	using namespace std::chrono_literals;

@@ -56,6 +56,8 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 
 	// Authentication
 	if (auth::get().authed() && !m_auth_unresolved()) {
+		ImGui::Image(m_r.imtex("assets/gui/play.png"), ImVec2(16, 16));
+		ImGui::Text("%s", auth::get().username().c_str());
 		if (ImGui::MenuItem("Logout")) {
 			auth::get().logout();
 		}
@@ -281,8 +283,6 @@ void AppMenuBar::m_close_auth_popup() {
 	std::memset(m_username, 0, 50);
 	std::memset(m_password, 0, 50);
 	std::memset(m_email, 0, 150);
-
-	debug::log() << "closed :3\n";
 
 	ImGui::CloseCurrentPopup();
 }
