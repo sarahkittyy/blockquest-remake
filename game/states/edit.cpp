@@ -37,7 +37,7 @@ edit::edit(resource& r)
 
 	std::memset(m_title_buffer, 0, 50);
 	std::memset(m_description_buffer, 0, 50);
-	std::memset(m_id_buffer, 0, 10);
+	m_id = 0;
 
 	m_update_transforms();
 
@@ -413,7 +413,7 @@ void edit::m_gui_controls(fsm* sm) {
 	ImGui::EndDisabled();
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
 		if (!m_level.valid()) {
-			ImGui::SetTooltip("Cannot upload an invalid level.");
+			ImGui::SetTooltip("Cannot upload a level without a start & end point.");
 		} else if (!m_is_current_level_ours()) {
 			ImGui::SetTooltip("Cannot re-upload someone else's level. Clear first to make your own level for posting.");
 		}
@@ -431,14 +431,11 @@ void edit::m_gui_controls(fsm* sm) {
 			ImGui::TextWrapped("%s", m_download_status->error->c_str());
 			ImGui::PopStyleColor();
 		}
-		if (ImGui::InputText("Id###DownloadId", m_id_buffer, 10, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal)) {
-			if (!m_download_future.valid())
-				m_download_future = api::get().download_level(m_id_buffer);
-		}
+		ImGui::InputScalar("Level ID###DownloadId", ImGuiDataType_S32, &m_id);
 		ImGui::BeginDisabled(m_download_future.valid());
 		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/download.png"), "Download")) {
 			if (!m_download_future.valid())
-				m_download_future = api::get().download_level(m_id_buffer);
+				m_download_future = api::get().download_level(m_id);
 		}
 		ImGui::EndDisabled();
 		if (m_download_future.valid() && util::ready(m_download_future)) {
@@ -453,7 +450,6 @@ void edit::m_gui_controls(fsm* sm) {
 					std::strncpy(m_title_buffer, m_level.get_metadata().title.c_str(), 50);
 					std::strncpy(m_description_buffer, m_level.get_metadata().description.c_str(), 256);
 				}
-				std::memset(m_id_buffer, 0, 10);
 				ImGui::CloseCurrentPopup();
 			}
 		}
@@ -495,7 +491,7 @@ void edit::m_gui_controls(fsm* sm) {
 			} else if (res.code == 409) {
 				ImGui::OpenPopup("Upload###ConfirmUpload");
 			}
-			if (ImGui::BeginPopup("Upload###ConfirmUpload")) {
+			if (ImGui::BeginPopupModal("Confirm###ConfirmUpload", nullptr, modal_flags)) {
 				ImGui::TextWrapped("A level named %s already exists, do you want to overwrite it?", m_title_buffer);
 				if (ImGui::ImageButtonWithText(r().imtex("assets/gui/yes.png"), "Yes###OverrideYes")) {
 					m_upload_status.reset();

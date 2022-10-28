@@ -14,11 +14,10 @@ api &api::get() {
 	return instance;
 }
 
-std::future<api::response> api::download_level(const char *id) {
+std::future<api::response> api::download_level(int id) {
 	return std::async([this, id]() -> api::response {
 		try {
-			int idnumber	 = std::stoi(std::string(id));
-			std::string path = "/level/" + std::to_string(idnumber);
+			std::string path = "/level/" + std::to_string(id);
 			if (auto res = m_cli.Get(path)) {
 				nlohmann::json result = nlohmann::json::parse(res->body);
 				if (res->status == 200) {

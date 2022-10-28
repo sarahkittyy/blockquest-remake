@@ -32,7 +32,7 @@ public:
 	};
 
 	std::future<response> upload_level(::level l, const char* title, const char* description, bool override = false);
-	std::future<response> download_level(const char* id);
+	std::future<response> download_level(int id);
 
 private:
 	api();

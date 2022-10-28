@@ -54,7 +54,7 @@ private:
 	// buffers for level uploading
 	char m_title_buffer[50];
 	char m_description_buffer[256];
-	char m_id_buffer[10];
+	int m_id;
 
 	// future & status of level upload
 	std::future<api::response> m_upload_future;
