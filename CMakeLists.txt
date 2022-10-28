@@ -27,7 +27,7 @@ file(GLOB imgui_sources "lib/imgui/*.cpp")
 
 add_subdirectory(lib/jwt-cpp)
 
-set(includes game/ lib/imgui/ lib/http lib/nlohmann lib/jwt-cpp/include ${OPENSSL_INCLUDE_DIR})
+set(includes game/ lib/imgui/ lib/http lib/nlohmann lib/ lib/jwt-cpp/include ${OPENSSL_INCLUDE_DIR})
 set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL jwt-cpp::jwt-cpp OpenSSL::SSL OpenSSL::Crypto)
 set(flags -DCPPHTTPLIB_OPENSSL_SUPPORT)
 
@@ -58,7 +58,6 @@ if(WIN32)
 		$<TARGET_FILE:sfml-network>
 		$<TARGET_FILE:sfml-system>
 		$<TARGET_FILE:sfml-main>
-		$<TARGET_FILE:jwt-cpp::jwt-cpp>
 		$<TARGET_FILE:OpenSSL::SSL>
 		$<TARGET_FILE:OpenSSL::Crypto>
 		$<TARGET_FILE_DIR:bq-r>
