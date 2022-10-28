@@ -18,6 +18,10 @@ app.get('/me', requireAuth(0), (req: Request, res: Response) => {
 	return res.send(res.locals.token);
 });
 
+app.use('*', (req: Request, res: Response) => {
+	return res.status(404).send(`blockquest-remake api endpoint ${req.baseUrl} not found`);
+});
+
 const port = process.env.PORT ?? '3000';
 app.listen(parseInt(port), () => {
 	log.info(`Listening on port ${port}`);
