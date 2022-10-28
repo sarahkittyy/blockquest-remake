@@ -7,7 +7,18 @@ import { generateJwt, saltAndHash, validatePassword } from '@util/passwords';
 
 export default class Auth {
 	static async CreateAccount(req: Request, res: Response) {
-		const { email, name, password } = req.body;
+		let { email, name, password } = req.body;
+
+		if (email == null) return res.status(400).send({ error: 'No email provided' });
+		if (name == null) return res.status(400).send({ error: 'No username provided' });
+		if (password == null) return res.status(400).send({ error: 'No password provided' });
+
+		if (!validator.isEmail(email)) return res.status(400).send({ error: 'Invalid email address' });
+		email = validator.normalizeEmail(email);
+		if (!validator.isLength(name, { min: 2, max: 30 }))
+			return res.status(400).send({ error: 'Username too short / too long.' });
+		if (!validator.isLength(password, { min: 8 }))
+			return res.status(400).send({ error: 'Password must be at least 8 characters long' });
 
 		// check for existing user
 		const existingUser = await prisma.user.findFirst({
@@ -64,11 +75,13 @@ export default class Auth {
 		let email: string | undefined = undefined;
 		let name: string | undefined = undefined;
 		if (validator.isEmail(req.body.username)) {
-			email = req.body.username;
+			email = validator.normalizeEmail(req.body.username) as string;
 		} else {
 			name = req.body.username;
 		}
-		const password: string = req.body.password;
+		if (!name) return res.status(400).send({ error: 'No username / email specified' });
+		const password: string | undefined = req.body.password;
+		if (!password) return res.status(400).send({ error: 'No password specified' });
 
 		const user = await prisma.user.findFirst({
 			where: {

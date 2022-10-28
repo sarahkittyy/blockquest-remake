@@ -1,6 +1,8 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <chrono>
+#include <future>
 #include <vector>
 
 #ifndef M_PI
@@ -61,5 +63,17 @@ struct vector_hash {
 float deg2rad(float d);
 
 float rad2deg(float r);
+
+template <typename T>
+bool ready(std::shared_future<T>& future) {
+	using namespace std::chrono_literals;
+	return future.wait_for(-10ms) == std::future_status::ready;
+}
+
+template <typename T>
+bool ready(std::future<T>& future) {
+	using namespace std::chrono_literals;
+	return future.wait_for(-10ms) == std::future_status::ready;
+}
 
 }

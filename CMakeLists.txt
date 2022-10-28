@@ -23,12 +23,16 @@ set(CMAKE_CXX_STANDARD 20)
 file(GLOB_RECURSE sources "game/*.cpp")
 file(GLOB imgui_sources "lib/imgui/*.cpp")
 
-set(includes game/ lib/imgui/ lib/http)
-set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL)
+add_subdirectory(lib/jwt-cpp)
+
+set(includes game/ lib/imgui/ lib/http lib/nlohmann lib/jwt-cpp/include)
+set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL jwt-cpp::jwt-cpp)
 set(flags)
 
 if(NOT CMAKE_BUILD_TYPE MATCHES Debug)
-	list(APPEND flags -DNDEBUG)
+	list(APPEND flags -DNDEBUG -DSERVER_URL="https://bq-r.sushicat.rocks")
+else()
+	list(APPEND flags -DSERVER_URL="http://localhost:3000")
 endif()
 
 if(WIN32)

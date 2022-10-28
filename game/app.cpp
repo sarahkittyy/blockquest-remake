@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "auth.hpp"
 #include "debug.hpp"
 
 #include "states/debug.hpp"

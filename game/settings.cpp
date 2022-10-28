@@ -11,6 +11,14 @@ settings::settings()
 	  }) {
 }
 
+std::string settings::server_url() const {
+#ifdef SERVER_URL
+	return SERVER_URL;
+#else
+	return "https://bq-r.sushicat.rocks";
+#endif
+}
+
 settings& settings::get() {
 	static settings instance;
 	return instance;

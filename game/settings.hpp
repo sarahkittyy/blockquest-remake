@@ -27,7 +27,7 @@ public:
 	std::optional<key> get_key(sf::Keyboard::Key k) const;
 	bool key_down(key k) const;
 
-
+	std::string server_url() const;
 
 private:
 	settings();
