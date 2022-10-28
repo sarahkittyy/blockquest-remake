@@ -549,6 +549,9 @@ void edit::m_gui_controls(fsm* sm) {
 		ImGui::SameLine();
 		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/create.png"), "Load")) {
 			m_level.map().load(std::string(m_import_buffer));
+			m_level.clear_metadata();
+			std::memset(m_title_buffer, 0, 50);
+			std::memset(m_description_buffer, 0, 256);
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();

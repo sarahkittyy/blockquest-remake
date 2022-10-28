@@ -34,6 +34,7 @@ public:
 	bool has_metadata() const;
 	metadata& get_metadata();
 	const metadata& get_metadata() const;
+	void clear_metadata();
 
 	// load from api data
 	void load_from_api(api::level data);

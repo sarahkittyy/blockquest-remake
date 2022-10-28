@@ -53,6 +53,10 @@ const level::metadata& level::get_metadata() const {
 	return *m_metadata;
 }
 
+void level::clear_metadata() {
+	m_metadata.reset();
+}
+
 level::metadata::metadata(int id, std::string author, std::string title, std::string description)
 	: id(id),
 	  author(author),
