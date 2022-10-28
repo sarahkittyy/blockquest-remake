@@ -17,6 +17,8 @@ if(NOT sfml_POPULATED)
 endif()
 
 find_package(OpenGL REQUIRED)
+
+set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
 
 # not libs
@@ -59,8 +61,6 @@ if(WIN32)
 		$<TARGET_FILE:sfml-network>
 		$<TARGET_FILE:sfml-system>
 		$<TARGET_FILE:sfml-main>
-		$<TARGET_FILE:OpenSSL::SSL>
-		$<TARGET_FILE:OpenSSL::Crypto>
 		$<TARGET_FILE_DIR:bq-r>
 	)
 	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
