@@ -7,6 +7,7 @@
 #include "gui/menu_bar.hpp"
 
 #include <cstring>
+#include <ctime>
 #include <stdexcept>
 
 #include "../debug.hpp"
@@ -384,9 +385,20 @@ bool edit::m_is_current_level_ours() const {
 }
 
 void edit::m_gui_level_info(fsm* sm) {
-	ImGui::Text("-= Details =-");
 	level::metadata md = m_level.get_metadata();
-	ImGui::TextWrapped("Author: %s\nTitle: %s\nDescription: %s\n", md.author.c_str(), md.title.c_str(), md.description.c_str());
+	ImGui::Text("-= Details (ID %d) =-", md.id);
+	ImGui::TextWrapped("Title: %s", md.title.c_str());
+	ImGui::TextWrapped("Author: %s", md.author.c_str());
+	char created_at_fmt[100];
+	char updated_at_fmt[100];
+	tm* created_at_local = std::localtime(&md.createdAt);
+	tm* updated_at_local = std::localtime(&md.updatedAt);
+	std::strftime(created_at_fmt, 100, "%D %r", created_at_local);
+	std::strftime(updated_at_fmt, 100, "%D %r", updated_at_local);
+	ImGui::TextWrapped("Created: %s", created_at_fmt);
+	ImGui::TextWrapped("Last Updated: %s", updated_at_fmt);
+	ImGui::Separator();
+	ImGui::TextWrapped("Description: %s", md.description.c_str());
 }
 
 void edit::m_gui_controls(fsm* sm) {
@@ -422,7 +434,7 @@ void edit::m_gui_controls(fsm* sm) {
 	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/download.png"), "Download")) {
 		ImGui::OpenPopup("Download###Download");
 	}
-	// upload popup //
+	///////////////// DOWNLOAD LOGIC ////////////////////////
 	bool dummy_open = true;
 	ImGuiWindowFlags modal_flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
 	if (ImGui::BeginPopup("Download###Download")) {
@@ -456,6 +468,7 @@ void edit::m_gui_controls(fsm* sm) {
 
 		ImGui::EndPopup();
 	}
+	///////////////// UPLOAD LOGIC ////////////////////////
 	bool upload_modal_open = m_level.valid();
 	if (ImGui::BeginPopupModal("Upload###Upload", &upload_modal_open, modal_flags)) {
 		if (m_upload_status && !m_upload_status->success && m_upload_status->error) {
@@ -508,6 +521,7 @@ void edit::m_gui_controls(fsm* sm) {
 		}
 		ImGui::EndPopup();
 	}
+	///////////////// UPLOAD LOGIC END ////////////////////////
 		
 	if (ImGui::BeginPopup("Clear###Confirm")) {
 		ImGui::Text("Are you sure you want to erase the whole level?");
