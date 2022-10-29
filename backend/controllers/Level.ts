@@ -215,7 +215,7 @@ export default class Level {
 				description: level.description ?? '',
 				createdAt: level.createdAt.getTime() / 1000,
 				updatedAt: level.updatedAt.getTime() / 1000,
-				downloads: level.downloads,
+				downloads: level.downloads + 1,
 			} as ISearchLevel,
 		});
 	}
