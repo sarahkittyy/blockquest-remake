@@ -3,8 +3,6 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 
-#include "resource.hpp"
-
 class particle_system;
 
 /// particle data type

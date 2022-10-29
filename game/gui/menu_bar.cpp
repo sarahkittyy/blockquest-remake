@@ -5,23 +5,23 @@
 
 #include "debug.hpp"
 #include "imgui.h"
+#include "resource.hpp"
 #include "tilemap.hpp"
 #include "util.hpp"
 
 namespace ImGui {
 
-AppMenuBar::AppMenuBar(resource& r)
-	: m_r(r),
-	  m_listening_key(),
-	  m_rules_gifs({ std::make_pair(ImGui::Gif(r.tex("assets/gifs/run.png"), 33, { 240, 240 }, 20),
+AppMenuBar::AppMenuBar()
+	: m_listening_key(),
+	  m_rules_gifs({ std::make_pair(ImGui::Gif(resource::get().tex("assets/gifs/run.png"), 33, { 240, 240 }, 20),
 									"Use left & right to run"),
-					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/jump.png"), 19, { 240, 240 }, 20),
+					 std::make_pair(ImGui::Gif(resource::get().tex("assets/gifs/jump.png"), 19, { 240, 240 }, 20),
 									"Space to jump"),
-					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/dash.png"), 19, { 240, 240 }, 20),
+					 std::make_pair(ImGui::Gif(resource::get().tex("assets/gifs/dash.png"), 19, { 240, 240 }, 20),
 									"Down to dash"),
-					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/wallkick.png"), 37, { 240, 240 }, 20),
+					 std::make_pair(ImGui::Gif(resource::get().tex("assets/gifs/wallkick.png"), 37, { 240, 240 }, 20),
 									"Left + Right to wallkick"),
-					 std::make_pair(ImGui::Gif(r.tex("assets/gifs/climb.png"), 25, { 240, 240 }, 20),
+					 std::make_pair(ImGui::Gif(resource::get().tex("assets/gifs/climb.png"), 25, { 240, 240 }, 20),
 									"Up & Down to climb") }) {
 	std::memset(m_username, 0, 50);
 	std::memset(m_password, 0, 50);
@@ -43,8 +43,8 @@ void AppMenuBar::process_event(sf::Event e) {
 }
 
 void AppMenuBar::imdraw(std::string& info_msg) {
-	const ImTextureID tiles = m_r.imtex("assets/tiles.png");
-	sf::Texture& tiles_tex	= m_r.tex("assets/tiles.png");
+	const ImTextureID tiles = resource::get().imtex("assets/tiles.png");
+	sf::Texture& tiles_tex	= resource::get().tex("assets/tiles.png");
 
 	const int tile_size = 16;
 
@@ -56,7 +56,7 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 
 	// Authentication
 	if (auth::get().authed() && !m_auth_unresolved()) {
-		ImGui::Image(m_r.imtex("assets/gui/large_play.png"), ImVec2(26, 26));
+		ImGui::Image(resource::get().imtex("assets/gui/large_play.png"), ImVec2(26, 26));
 		ImGui::TextColored(sf::Color(228, 189, 255), "Welcome, %s!", auth::get().username().c_str());
 		if (ImGui::MenuItem("Logout")) {
 			auth::get().logout();
@@ -167,7 +167,7 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 		}
 		ImGui::EndTable();
 		// close button
-		if (ImGui::ImageButtonWithText(m_r.imtex("assets/gui/back.png"), "Done")) {
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/back.png"), "Done")) {
 			m_listening_key = {};
 			ImGui::CloseCurrentPopup();
 		}
@@ -286,5 +286,4 @@ void AppMenuBar::m_close_auth_popup() {
 
 	ImGui::CloseCurrentPopup();
 }
-
 }

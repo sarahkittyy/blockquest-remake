@@ -1,7 +1,6 @@
 #include "fsm.hpp"
 
-state::state(resource& r)
-	: m_r(r) {
+state::state() {
 }
 
 state::~state() {
@@ -24,20 +23,11 @@ sf::Color state::bg() const {
 	return sf::Color(0xC8AD7FFF);
 }
 
-resource& state::r() {
-	return m_r;
-}
-
-const resource& state::r() const {
-	return m_r;
-}
-
 // fsm methods //
 
-fsm::fsm(resource& r)
-	: m_state(new state(r)),
-	  m_saved_state(nullptr),
-	  m_r(r) {
+fsm::fsm()
+	: m_state(new state()),
+	  m_saved_state(nullptr) {
 }
 
 

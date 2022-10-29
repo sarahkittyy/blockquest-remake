@@ -14,22 +14,24 @@
 #include "../gui/editor_tile_button.hpp"
 #include "../gui/image_text_button.hpp"
 
+#include "./search.hpp"
+#include "states/levels.hpp"
+
 namespace states {
 
-edit::edit(resource& r)
-	: state(r),
-	  m_menu_bar(r),
-	  m_level(r),
-	  m_cursor(r),
-	  m_border(r.tex("assets/tiles.png"), 34, 32, 16),
+edit::edit()
+	: m_menu_bar(),
+	  m_level(),
+	  m_cursor(),
+	  m_border(resource::get().tex("assets/tiles.png"), 34, 32, 16),
 	  m_level_size(1024),
 	  m_cursor_type(PENCIL),
-	  m_tiles(r.tex("assets/tiles.png")),
-	  m_tools(r.tex("assets/gui/tools.png")),
+	  m_tiles(resource::get().tex("assets/tiles.png")),
+	  m_tools(resource::get().tex("assets/gui/tools.png")),
 	  m_stroke_start(-1, -1),
 	  m_stroke_active(false),
 	  m_pencil_active(false),
-	  m_stroke_map(r.tex("assets/tiles.png"), 32, 32, 16),
+	  m_stroke_map(resource::get().tex("assets/tiles.png"), 32, 32, 16),
 	  m_old_mouse_tile(-1, -1),
 	  m_last_placed(-1, -1) {
 
@@ -66,7 +68,7 @@ float edit::m_level_scale() const {
 }
 
 void edit::m_update_transforms() {
-	sf::Vector2f win_sz(r().window().getSize());
+	sf::Vector2f win_sz(resource::get().window().getSize());
 
 	float scale = m_level_scale();
 
@@ -329,7 +331,7 @@ std::vector<tilemap::diff> edit::m_flood_fill(sf::Vector2i pos, tile::tile_type 
 }
 
 sf::Vector2i edit::m_update_mouse_tile() {
-	sf::Vector2f mouse_pos(sf::Mouse::getPosition(r().window()));
+	sf::Vector2f mouse_pos(sf::Mouse::getPosition(resource::get().window()));
 	mouse_pos = m_map.getInverseTransform().transformPoint(mouse_pos);
 	mouse_pos = m_level.getInverseTransform().transformPoint(mouse_pos);
 
@@ -357,19 +359,25 @@ void edit::imdraw(fsm* sm) {
 	m_menu_bar.imdraw(m_info_msg);
 
 	// controls
-	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_Once);
 	ImGui::Begin("Controls", nullptr, flags);
 	m_gui_controls(sm);
 	ImGui::End();
 
 	// block picker
-	ImGui::SetNextWindowPos(ImVec2(100, 500), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(100, 500), ImGuiCond_Once);
 	ImGui::Begin("Blocks", nullptr, flags);
 	m_gui_block_picker(sm);
 	ImGui::End();
 
+	ImGui::SetNextWindowPos(ImVec2(1550, 50), ImGuiCond_Once);
+	ImGui::Begin("Menu", nullptr, flags);
+	m_gui_menu(sm);
+	ImGui::End();
+
 	if (m_level.has_metadata()) {
-		ImGui::SetNextWindowPos(ImVec2(100, 800), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(1550, 500), ImGuiCond_Once);
+		ImGui::SetNextWindowSize(ImVec2(300, 500), ImGuiCond_Once);
 		ImGui::Begin("Level Info");
 		m_gui_level_info(sm);
 		ImGui::End();
@@ -408,6 +416,15 @@ void edit::m_clear_level() {
 	m_id = 0;
 }
 
+void edit::m_gui_menu(fsm* sm) {
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/search.png"), "Search###Search")) {
+		return sm->swap_state<states::search>();
+	}
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/folder.png"), "Levels###Levels")) {
+		return sm->swap_state<states::levels>();
+	}
+}
+
 void edit::m_gui_level_info(fsm* sm) {
 	level::metadata md = m_level.get_metadata();
 	ImGui::Text("-= Details (ID %d) =-", md.id);
@@ -426,24 +443,24 @@ void edit::m_gui_level_info(fsm* sm) {
 }
 
 void edit::m_gui_controls(fsm* sm) {
-	ImTextureID icon  = !m_test_playing() ? r().imtex("assets/gui/play.png") : r().imtex("assets/gui/stop.png");
+	ImTextureID icon  = !m_test_playing() ? resource::get().imtex("assets/gui/play.png") : resource::get().imtex("assets/gui/stop.png");
 	std::string label = !m_test_playing() ? "Test Play" : "Edit";
 	if (ImGui::ImageButtonWithText(icon, label.c_str())) {
 		m_toggle_test_play();
 	}
-	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/export.png"), "Export")) {
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/export.png"), "Export")) {
 		ImGui::OpenPopup("Export###Export");
 	}
 	ImGui::SameLine();
-	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/import.png"), "Import")) {
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/import.png"), "Import")) {
 		std::memset(m_import_buffer, 0, 8192);
 		ImGui::OpenPopup("Import###Import");
 	}
-	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/erase.png"), "Clear")) {
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/erase.png"), "Clear")) {
 		ImGui::OpenPopup("Clear###Confirm");
 	}
 	ImGui::BeginDisabled(!m_is_current_level_ours() || !m_level.valid());
-	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/upload.png"), "Upload")) {
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/upload.png"), "Upload")) {
 		ImGui::OpenPopup("Upload###Upload");
 	}
 	ImGui::EndDisabled();
@@ -455,7 +472,7 @@ void edit::m_gui_controls(fsm* sm) {
 		}
 	}
 	ImGui::SameLine();
-	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/download.png"), "Download")) {
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/download.png"), "Download")) {
 		ImGui::OpenPopup("Download###Download");
 	}
 	///////////////// DOWNLOAD LOGIC ////////////////////////
@@ -469,7 +486,7 @@ void edit::m_gui_controls(fsm* sm) {
 		}
 		ImGui::InputScalar("Level ID###DownloadId", ImGuiDataType_S32, &m_id);
 		ImGui::BeginDisabled(m_download_future.valid());
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/download.png"), "Download")) {
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/download.png"), "Download")) {
 			if (!m_download_future.valid())
 				m_download_future = api::get().download_level(m_id);
 		}
@@ -504,7 +521,7 @@ void edit::m_gui_controls(fsm* sm) {
 		}
 		ImGui::BeginDisabled(m_upload_future.valid());
 		const char* upload_label = m_upload_future.valid() ? "Uploading...###UploadForReal" : "Upload###UploadForReal";
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/upload.png"), upload_label)) {
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/upload.png"), upload_label)) {
 			if (!m_upload_future.valid())
 				m_upload_future = api::get().upload_level(m_level, m_title_buffer, m_description_buffer);
 		}
@@ -522,13 +539,13 @@ void edit::m_gui_controls(fsm* sm) {
 			}
 			if (ImGui::BeginPopupModal("Confirm###ConfirmUpload", nullptr, modal_flags)) {
 				ImGui::TextWrapped("A level named %s already exists, do you want to overwrite it?", m_title_buffer);
-				if (ImGui::ImageButtonWithText(r().imtex("assets/gui/yes.png"), "Yes###OverrideYes")) {
+				if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/yes.png"), "Yes###OverrideYes")) {
 					m_upload_status.reset();
 					m_upload_future = api::get().upload_level(m_level, m_title_buffer, m_description_buffer, true);
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::SameLine();
-				if (ImGui::ImageButtonWithText(r().imtex("assets/gui/no.png"), "No###OverrideNo")) {
+				if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/no.png"), "No###OverrideNo")) {
 					m_upload_status.reset();
 					ImGui::CloseCurrentPopup();
 				}
@@ -541,15 +558,15 @@ void edit::m_gui_controls(fsm* sm) {
 		
 	if (ImGui::BeginPopup("Clear###Confirm")) {
 		ImGui::Text("Are you sure you want to erase the whole level?");
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/yes.png"), "Yes")) {
-			r().play_sound("gameover");
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/yes.png"), "Yes")) {
+			resource::get().play_sound("gameover");
 			if (m_test_playing())
 				m_toggle_test_play();
 			m_clear_level();
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/no.png"), "No")) {
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/no.png"), "No")) {
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
@@ -561,29 +578,29 @@ void edit::m_gui_controls(fsm* sm) {
 		ImGui::TextWrapped("%s", saved.c_str());
 		ImGui::EndChildFrame();
 		ImGui::Text("Save this code or send it to a friend!");
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/copy.png"), "Copy")) {
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/copy.png"), "Copy")) {
 			ImGui::SetClipboardText(saved.c_str());
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Done")) {
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/back.png"), "Done")) {
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
 	}
 	if (ImGui::BeginPopupModal("Import###Import")) {
 		ImGui::InputText("Import Level Code", m_import_buffer, 8192);
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/paste.png"), "Paste")) {
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/paste.png"), "Paste")) {
 			std::strcpy(m_import_buffer, ImGui::GetClipboardText());
 		}
 		ImGui::SameLine();
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/create.png"), "Load")) {
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/create.png"), "Load")) {
 			m_clear_level();
 			m_level.map().load(std::string(m_import_buffer));
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
-		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Cancel")) {
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/back.png"), "Cancel")) {
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
@@ -670,7 +687,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 	}
 	ImGui::TextWrapped("%s", m_cursor_description(m_cursor_type));
 	ImGui::BeginDisabled(m_undo_queue.empty());
-	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/back.png"), "Undo")) {
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/back.png"), "Undo")) {
 		std::vector<tilemap::diff> diffs = m_undo_queue.back();
 		m_undo_queue.pop_back();
 		m_redo_queue.push_back(diffs);
@@ -681,7 +698,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 	ImGui::EndDisabled();
 	ImGui::SameLine();
 	ImGui::BeginDisabled(m_redo_queue.empty());
-	if (ImGui::ImageButtonWithText(r().imtex("assets/gui/forward.png"), "Redo")) {
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/forward.png"), "Redo")) {
 		std::vector<tilemap::diff> diffs = m_redo_queue.back();
 		m_redo_queue.pop_back();
 		m_undo_queue.push_back(diffs);
@@ -702,7 +719,7 @@ void edit::m_toggle_test_play() {
 		}
 		m_level.map().set_editor_view(false);
 		m_info_msg = "";
-		m_test_play_world.reset(new world(r(), m_level));
+		m_test_play_world.reset(new world(m_level));
 		m_update_transforms();
 	} else {
 		m_test_play_world.reset();

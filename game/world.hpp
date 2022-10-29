@@ -19,7 +19,7 @@
 // takes in a level and renders it, as well as handles input and logic and physics and all things game-y :3
 class world : public sf::Drawable, public sf::Transformable {
 public:
-	world(resource& r, level l);
+	world(level l);
 	~world();
 
 	void update(sf::Time dt);
@@ -33,7 +33,6 @@ private:
 	void m_init_world();	  // sets up tilemaps, the character, the game, and the b2d physics
 	void m_restart_world();	  // puts the player at the start, resets moving obstacles
 
-	resource& m_r;	  // resource mgr
 	tilemap m_tmap;	  // tilemap of all static, unmoving tiles.kk, ty
 
 	particle_manager m_pmgr;   // particle manager class

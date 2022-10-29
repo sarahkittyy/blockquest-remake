@@ -16,7 +16,7 @@ namespace states {
 // level editor
 class edit : public state {
 public:
-	edit(resource& r);
+	edit();
 	~edit();
 
 	void update(fsm* sm, sf::Time dt);
@@ -105,6 +105,7 @@ private:
 	void m_gui_controls(fsm* sm);
 	void m_gui_block_picker(fsm* sm);
 	void m_gui_level_info(fsm* sm);
+	void m_gui_menu(fsm* sm);
 };
 
 }

@@ -1,20 +1,20 @@
 #include "moving_tile.hpp"
 
 #include "debug.hpp"
+#include "resource.hpp"
 
 #include <algorithm>
 
 ////////////////////// MANAGER METHODS //////////////////////////////
 
-moving_tile_manager::moving_tile_manager(resource& r, tilemap& t)
-	: m_tmap(t),
-	  m_r(r) {
+moving_tile_manager::moving_tile_manager(tilemap& t)
+	: m_tmap(t) {
 	// initialize all moving tiles
 	for (int y = 0; y < t.size().y; ++y) {
 		for (int x = 0; x < t.size().x; ++x) {
 			tile tl = t.get(x, y);
 			if (tl.props.moving != 0) {
-				m_tiles.push_back(moving_tile(x, y, t, r));
+				m_tiles.push_back(moving_tile(x, y, t));
 			}
 		}
 	}
@@ -138,17 +138,16 @@ void moving_tile_manager::restart() {
 
 ////////////////////// MOVING TILE METHODS //////////////////////////////
 
-moving_tile::moving_tile(int x, int y, tilemap& m, resource& r)
+moving_tile::moving_tile(int x, int y, tilemap& m)
 	: m_t(),
-	  m_tmap(m),
-	  m_r(r) {
+	  m_tmap(m) {
 	m_t = m_tmap.get(x, y);
 	m_tmap.clear(x, y);
 	m_start_dir = dir(m_t.props.moving - 1);
 	m_start_x	= x;
 	m_start_y	= y;
 	// set the sprite texture & texture rect
-	m_spr.setTexture(m_r.tex("assets/tiles.png"));
+	m_spr.setTexture(resource::get().tex("assets/tiles.png"));
 	m_spr.setTextureRect(m_tmap.calculate_texture_rect(m_t));
 
 	m_restart();

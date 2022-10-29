@@ -2,7 +2,6 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "resource.hpp"
 #include "tilemap.hpp"
 
 #include "api.hpp"
@@ -10,7 +9,7 @@
 // a level's data, with the ability to render previews
 class level : public sf::Drawable, public sf::Transformable {
 public:
-	level(resource& r, int xs = 32, int ys = 32);
+	level(int xs = 32, int ys = 32);
 
 	struct metadata {
 		metadata(int id, std::string author, std::string title, std::string description);
@@ -44,7 +43,6 @@ public:
 private:
 	void draw(sf::RenderTarget&, sf::RenderStates) const;	// for rendering
 
-	resource& m_r;	  // resource mgr
 	tilemap m_tmap;	  // associated tilemap
 
 	std::optional<metadata> m_metadata;	  // optional level metadata

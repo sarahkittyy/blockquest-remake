@@ -1,9 +1,11 @@
 #include "gravity.hpp"
 
+#include "resource.hpp"
+
 namespace particles {
 
-gravity::gravity(resource& r, bool upside_down)
-	: particle_system(r.tex("assets/particles/gravity.png")) {
+gravity::gravity(bool upside_down)
+	: particle_system(resource::get().tex("assets/particles/gravity.png")) {
 	float sign = upside_down ? -1 : 1;
 	emit({
 		.lifetime = sf::milliseconds(300),

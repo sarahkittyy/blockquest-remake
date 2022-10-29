@@ -3,6 +3,8 @@
 #include "debug.hpp"
 #include "util.hpp"
 
+#include "resource.hpp"
+
 #include <cmath>
 
 particle_system::particle_system(sf::Texture& t)

@@ -4,10 +4,10 @@
 
 namespace states {
 
-class main : public state {
+class search : public state {
 public:
-	main(resource& r);
-	~main();
+	search();
+	~search();
 
 	void update(fsm* sm, sf::Time dt);
 
@@ -19,7 +19,6 @@ private:
 	// some textures
 	sf::Texture& m_logo_new;
 	sf::Texture& m_play;
-	sf::Texture& m_create;
 };
 
 }

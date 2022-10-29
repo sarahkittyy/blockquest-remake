@@ -2,10 +2,12 @@
 
 #include "../util.hpp"
 
+#include "../resource.hpp"
+
 namespace particles {
 
-victory::victory(resource& r)
-	: particle_system(r.tex("assets/particles/death.png")) {
+victory::victory()
+	: particle_system(resource::get().tex("assets/particles/death.png")) {
 	const int ct	= 30;
 	const int dur	= 1000;
 	const int delay = dur / ct;

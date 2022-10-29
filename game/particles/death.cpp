@@ -3,10 +3,12 @@
 #include <cmath>
 #include "../util.hpp"
 
+#include "resource.hpp"
+
 namespace particles {
 
-death::death(resource& r)
-	: particle_system(r.tex("assets/particles/death.png")) {
+death::death()
+	: particle_system(resource::get().tex("assets/particles/death.png")) {
 	float v		= 5.f;
 	int dur		= 500;
 	float loops = 8;

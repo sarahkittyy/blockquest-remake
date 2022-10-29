@@ -9,12 +9,13 @@
 #include "particles/smoke.hpp"
 #include "particles/victory.hpp"
 
-world::world(resource& r, level l)
-	: m_r(r),
-	  m_tmap(l.map()),
-	  m_mt_mgr(m_r, m_tmap),
+#include "resource.hpp"
+
+world::world(level l)
+	: m_tmap(l.map()),
+	  m_mt_mgr(m_tmap),
 	  m_level(l),
-	  m_player(r.tex("assets/player.png")),
+	  m_player(resource::get().tex("assets/player.png")),
 	  m_start_x(0),
 	  m_start_y(0),
 	  m_flip_gravity(false),
@@ -24,12 +25,12 @@ world::world(resource& r, level l)
 	m_init_world();
 	m_pmgr.setScale(l.map().tile_size(), l.map().tile_size());
 
-	m_game_clear.setTexture(r.tex("assets/gui/victory.png"));
-	m_space_to_retry.setTexture(r.tex("assets/gui/retry.png"));
+	m_game_clear.setTexture(resource::get().tex("assets/gui/victory.png"));
+	m_space_to_retry.setTexture(resource::get().tex("assets/gui/retry.png"));
 	m_game_clear.setOrigin(m_game_clear.getLocalBounds().width / 2.f, m_game_clear.getLocalBounds().height);
 	m_space_to_retry.setOrigin(m_space_to_retry.getLocalBounds().width / 2.f, 0);
 
-	m_game_over.setTexture(r.tex("assets/gui/defeat.png"));
+	m_game_over.setTexture(resource::get().tex("assets/gui/defeat.png"));
 	m_game_over.setOrigin(m_game_over.getLocalBounds().width / 2.f, m_game_over.getLocalBounds().height);
 
 	m_game_clear.setPosition(m_tmap.total_size() / 2.f);
@@ -38,11 +39,11 @@ world::world(resource& r, level l)
 
 	m_dash_sfx_thread = std::jthread([this](std::stop_token stoken) {
 		using namespace std::chrono_literals;
-		sf::Sound s(m_r.sound_buffer("dash"));
+		sf::Sound s(resource::get().sound_buffer("dash"));
 		while (!stoken.stop_requested()) {
 			if (m_dashing && m_player_grounded() && std::abs(m_xv) > phys.xv_max) {
 				s.play();
-				auto& sp		= m_pmgr.spawn<particles::smoke>(m_r);
+				auto& sp		= m_pmgr.spawn<particles::smoke>();
 				float grav_sign = m_flip_gravity ? -1 : 1;
 				sp.setPosition(m_xp, m_yp + 0.2f * grav_sign);
 				sp.setScale(m_dash_dir == dir::right ? -1 : 1, grav_sign);
@@ -306,7 +307,7 @@ void world::update(sf::Time dt) {
 			// so that we can't jump twice :)
 			m_time_airborne = sf::seconds(999);
 			m_jumping		= true;
-			m_r.play_sound("jump");
+			resource::get().play_sound("jump");
 			// to prevent sticking
 			m_yp -= 0.01f * gravity_sign;
 		} else if (m_climbing && !m_jump_last_frame && m_can_player_wallkick(mirror(m_climbing_facing), false)) {
@@ -457,7 +458,7 @@ void world::update(sf::Time dt) {
 	// handle gravity blocks
 	if (m_test_touching_any(m_flip_gravity ? dir::up : dir::down, [](tile t) { return t == tile::gravity; })) {
 		// gravity particles
-		auto& gp = m_pmgr.spawn<particles::gravity>(m_r, m_flip_gravity);
+		auto& gp = m_pmgr.spawn<particles::gravity>(m_flip_gravity);
 		for (auto& tile : m_touching[m_flip_gravity ? dir::up : dir::down]) {
 			if (tile == tile::gravity) {
 				gp.setPosition(tile.x() + 0.5f, tile.y() + (m_flip_gravity ? 1 : 0));
@@ -465,7 +466,7 @@ void world::update(sf::Time dt) {
 			}
 		}
 
-		m_r.play_sound("gravityflip");
+		resource::get().play_sound("gravityflip");
 		m_flip_gravity = !m_flip_gravity;
 		m_dashing	   = false;
 		m_player.setScale(m_player.getScale().x, m_flip_gravity ? -1 : 1);
@@ -509,10 +510,10 @@ void world::m_player_wallkick(dir d) {
 	m_xv			= phys.wallkick_xv * xv_sign;
 	m_yv			= -phys.wallkick_yv * grav_sign;
 	m_xp += ((1 - m_player_size().x) / 2.f) * xv_sign;
-	auto& sp = m_pmgr.spawn<particles::smoke>(m_r);
+	auto& sp = m_pmgr.spawn<particles::smoke>();
 	sp.setPosition(m_xp - 0.35f * xv_sign, m_yp);
 	sp.setScale(xv_sign, sp.getScale().y);
-	m_r.play_sound("wallkick");
+	resource::get().play_sound("wallkick");
 	m_player.setScale(-xv_sign, m_player.getScale().y);
 	m_since_wallkick = sf::Time::Zero;
 }
@@ -747,8 +748,8 @@ void world::m_player_win() {
 	m_space_to_retry.setColor(sf::Color(255, 255, 255, 0));
 	m_game_over.setColor(sf::Color(255, 255, 255, 0));
 	m_game_clear.setColor(sf::Color(255, 255, 255, 0));
-	m_r.play_sound("victory");
-	auto& sp		= m_pmgr.spawn<particles::victory>(m_r);
+	resource::get().play_sound("victory");
+	auto& sp		= m_pmgr.spawn<particles::victory>();
 	float grav_sign = m_flip_gravity ? -1 : 1;
 	sp.setPosition(m_xp, m_yp + 0.2f * grav_sign);
 }
@@ -770,13 +771,13 @@ void world::m_player_die() {
 				 << !!m_moving_platform_handle[3]
 				 << "\n";
 	m_dead = true;
-	m_r.play_sound("gameover");
+	resource::get().play_sound("gameover");
 	m_end_alpha = 0;
 	m_dashing	= false;
 	m_space_to_retry.setColor(sf::Color(255, 255, 255, 0));
 	m_game_over.setColor(sf::Color(255, 255, 255, 0));
 	m_game_clear.setColor(sf::Color(255, 255, 255, 0));
-	auto& dp = m_pmgr.spawn<particles::death>(m_r);
+	auto& dp = m_pmgr.spawn<particles::death>();
 	dp.setPosition(m_xp, m_yp);
 	dp.setScale(0.5f, 0.5f);
 }

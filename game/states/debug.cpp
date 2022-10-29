@@ -6,9 +6,8 @@
 
 namespace states {
 
-debug::debug(resource& r)
-	: state(r) {
-	level l(r);
+debug::debug() {
+	level l;
 	for (int i = 0; i < 32; ++i) {
 		l.map().set(i, 31, tile::block);
 		l.map().set(i, 0, tile::ice);
@@ -62,7 +61,7 @@ debug::debug(resource& r)
 	std::string out = l.map().save();
 	l.map().load(out);
 
-	m_w = std::make_unique<world>(r, l);
+	m_w = std::make_unique<world>(l);
 	m_w->setScale(2.0f, 2.0f);
 	::debug::get().setScale(2.0f, 2.0f);
 }

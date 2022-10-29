@@ -3,7 +3,6 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 
-#include "resource.hpp"
 #include "tilemap.hpp"
 #include "util.hpp"
 
@@ -12,7 +11,7 @@ class moving_tile;
 // manages all moving tiles, including collision between eachother
 class moving_tile_manager : public sf::Drawable, public sf::Transformable {
 public:
-	moving_tile_manager(resource& r, tilemap& t);
+	moving_tile_manager(tilemap& t);
 
 	void update(sf::Time dt);
 
@@ -29,7 +28,6 @@ private:
 	std::vector<moving_tile> m_tiles;	// all moving tiles
 
 	tilemap& m_tmap;
-	resource& m_r;
 
 	// returns true if the contact is valid and the direction should reverse
 	bool m_handle_contact(std::vector<std::pair<sf::Vector2f, tile>> contacts);
@@ -48,7 +46,7 @@ public:
 	 *
 	 * @remarks removes the tile from the tilemap on construction
 	 */
-	moving_tile(int x, int y, tilemap& m, resource& r);
+	moving_tile(int x, int y, tilemap& m);
 
 	// retrieve the internal tile instance
 	operator tile() const;
@@ -78,7 +76,6 @@ private:
 
 	tile m_t;
 	tilemap& m_tmap;
-	resource& m_r;
 
 	const struct physics {
 		float vel = 2.f;

@@ -8,9 +8,10 @@
 
 namespace states {
 
+/* for testing physics */
 class debug : public state {
 public:
-	debug(resource& r);
+	debug();
 	~debug();
 
 	void update(fsm* sm, sf::Time dt);

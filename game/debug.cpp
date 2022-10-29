@@ -31,8 +31,9 @@ void debug::imdraw(sf::Time dt) {
 	if (m_demo_open)
 		ImGui::ShowDemoWindow(&m_demo_open);
 	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
-	ImGui::SetNextWindowPos(ImVec2(1500, 0), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(ImVec2(420, 800), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(1500, 1000), ImGuiCond_Once);
+	ImGui::SetNextWindowSize(ImVec2(420, 800), ImGuiCond_Once);
+	ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
 	char title[100];
 	std::snprintf(title, 100, "Debug Tools - %06.2f FPS###Debug", 1.f / m_last_dt.asSeconds());
 	ImGui::Begin(title, &m_open, flags);

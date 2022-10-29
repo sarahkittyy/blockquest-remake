@@ -1,8 +1,9 @@
 #include "level.hpp"
 
-level::level(resource& r, int xs, int ys)
-	: m_r(r),
-	  m_tmap(m_r.tex("assets/tiles.png"), xs, ys, 16) {
+#include "resource.hpp"
+
+level::level(int xs, int ys)
+	: m_tmap(resource::get().tex("assets/tiles.png"), xs, ys, 16) {
 }
 
 void level::draw(sf::RenderTarget& t, sf::RenderStates s) const {

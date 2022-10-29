@@ -1,10 +1,12 @@
 #include "smoke.hpp"
 #include <SFML/System/Time.hpp>
 
+#include "../resource.hpp"
+
 namespace particles {
 
-smoke::smoke(resource& r)
-	: particle_system(r.tex("assets/particles/smoke.png")) {
+smoke::smoke()
+	: particle_system(resource::get().tex("assets/particles/smoke.png")) {
 	int dur_ms = 250;
 	emit({
 		.lifetime = sf::milliseconds(dur_ms),

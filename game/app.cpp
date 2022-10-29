@@ -10,25 +10,11 @@
 
 #include "states/debug.hpp"
 #include "states/edit.hpp"
-#include "states/main.hpp"
+#include "states/search.hpp"
 
-app::app(int argc, char** argv)
-	: m_window(sf::VideoMode(1920, 1048), "BlockQuest Remake"),
-	  m_r(m_window),
-	  m_fsm(m_r) {
-	if (!ImGui::SFML::Init(m_window))
+app::app(int argc, char** argv) {
+	if (!ImGui::SFML::Init(resource::get().window()))
 		throw "Could not initialize ImGui";
-
-	sf::Image icon;
-	icon.loadFromFile("assets/gui/play.png");
-	m_window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
-
-	m_r.load_sound("jump", "assets/sound/jump.flac");
-	m_r.load_sound("dash", "assets/sound/dash.flac");
-	m_r.load_sound("gameover", "assets/sound/gameover.flac");
-	m_r.load_sound("gravityflip", "assets/sound/gravityflip.flac");
-	m_r.load_sound("wallkick", "assets/sound/wallkick.flac");
-	m_r.load_sound("victory", "assets/sound/victory.flac");
 
 	configure_imgui_style();
 
@@ -43,8 +29,8 @@ app::app(int argc, char** argv)
 #ifndef NDEBUG
 	if (argc > 1) {
 		std::string mode = argv[1];
-		if (mode == "main") {
-			m_fsm.swap_state<states::main>();
+		if (mode == "search") {
+			m_fsm.swap_state<states::search>();
 		} else if (mode == "debug") {
 			m_fsm.swap_state<states::debug>();
 		} else if (mode == "edit") {
@@ -60,26 +46,28 @@ int app::run() {
 	sf::Clock delta_clock;	 // clock for measuring time deltas between frames
 	sf::Event evt;
 
+	sf::RenderWindow& win = resource::get().window();
+
 	// app loop
-	while (m_window.isOpen()) {
-		while (m_window.pollEvent(evt)) {
+	while (win.isOpen()) {
+		while (win.pollEvent(evt)) {
 			ImGui::SFML::ProcessEvent(evt);
 			switch (evt.type) {
 			default:
 				break;
 			case sf::Event::Closed:
-				m_window.close();
+				win.close();
 				break;
 			case sf::Event::Resized:
 				sf::FloatRect visibleArea(0, 0, evt.size.width, evt.size.height);
-				m_window.setView(sf::View(visibleArea));
+				win.setView(sf::View(visibleArea));
 				break;
 			}
 			m_fsm.process_event(evt);
 		}
 		// updates
 		sf::Time dt = delta_clock.restart();
-		ImGui::SFML::Update(m_window, dt);
+		ImGui::SFML::Update(win, dt);
 		debug::get().flush();
 		m_fsm.update(dt);
 
@@ -88,17 +76,17 @@ int app::run() {
 		debug::get().imdraw(dt);
 		ImGui::EndFrame();
 
-		m_window.clear(m_fsm.bg());
+		win.clear(m_fsm.bg());
 
 		// draw
-		m_window.draw(m_fsm);
-		m_window.draw(debug::get());
+		win.draw(m_fsm);
+		win.draw(debug::get());
 
-		ImGui::SFML::Render(m_window);
-		m_window.display();
+		ImGui::SFML::Render(win);
+		win.display();
 	}
 
-	ImGui::SFML::Shutdown(m_window);
+	ImGui::SFML::Shutdown(win);
 
 	return 0;
 }

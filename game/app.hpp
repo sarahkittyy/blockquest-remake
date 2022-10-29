@@ -18,7 +18,5 @@ public:
 	void configure_imgui_style();
 
 private:
-	sf::RenderWindow m_window;	 // app window
-	resource m_r;				 // app resource mgr
-	fsm m_fsm;					 // app state machine
+	fsm m_fsm;	 // app state machine
 };

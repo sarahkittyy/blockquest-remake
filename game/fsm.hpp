@@ -5,15 +5,13 @@
 #include <memory>
 #include <utility>
 
-#include "resource.hpp"
-
 class fsm;
 
 /// a state the app can be in. is updated every frame, with a draw function
 /// derive this to create states
 class state : public sf::Drawable, public sf::Transformable {
 public:
-	state(resource& r);
+	state();
 	virtual ~state();
 
 	virtual void update(fsm* sm, sf::Time dt);
@@ -25,19 +23,12 @@ public:
 
 protected:
 	virtual void draw(sf::RenderTarget&, sf::RenderStates) const;
-
-	// fetch the app resource manager
-	resource& r();
-	const resource& r() const;
-
-private:
-	resource& m_r;
 };
 
 /// manages the current state of the application
 class fsm : public sf::Drawable, public sf::Transformable {
 public:
-	fsm(resource& r);
+	fsm();
 	~fsm();
 
 	// update the current state
@@ -52,7 +43,7 @@ public:
 		if (m_saved_state != nullptr) {
 			delete m_saved_state;
 		}
-		m_saved_state = new State(m_r, args...);
+		m_saved_state = new State(args...);
 	}
 
 	// called when it's time to render imgui
@@ -66,6 +57,4 @@ private:
 
 	std::unique_ptr<state> m_state;
 	state* m_saved_state;
-
-	resource& m_r;	 // app resource mgr
 };

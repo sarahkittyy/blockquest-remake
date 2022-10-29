@@ -9,7 +9,6 @@
 #include <optional>
 
 #include "gif.hpp"
-#include "resource.hpp"
 
 #include "auth.hpp"
 #include "settings.hpp"
@@ -18,14 +17,12 @@ namespace ImGui {
 
 class AppMenuBar {
 public:
-	AppMenuBar(resource& r);
+	AppMenuBar();
 
 	void imdraw(std::string& info_msg);
 	void process_event(sf::Event e);
 
 private:
-	resource& m_r;	 // app resource mgr
-
 	std::optional<key> m_listening_key;	  // key to listen to for changing controls
 
 	std::array<std::pair<ImGui::Gif, const char*>, 5> m_rules_gifs;	  // the 5 gifs of the rules
