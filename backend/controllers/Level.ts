@@ -4,10 +4,24 @@ import validator from 'validator';
 import * as tools from '@util/tools';
 
 import { prisma } from '@db/index';
-import { Prisma } from '@prisma/client';
+import { Level as LevelModel, Prisma } from '@prisma/client';
 import log from '@/log';
 
-import { IsBoolean, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+	IsBoolean,
+	IsIn,
+	IsInt,
+	IsNumber,
+	IsOptional,
+	IsString,
+	Max,
+	Min,
+	validate,
+	validateOrReject,
+} from 'class-validator';
+
+const SortableFields = ['id', 'createdAt', 'updatedAt', 'name'] as const;
+const SortDirections = ['asc', 'desc'] as const;
 
 /* options for searching through levels */
 export class ISearchOptions {
@@ -25,24 +39,60 @@ export class ISearchOptions {
 	query?: string;
 
 	@IsBoolean({ message: 'Malformed matchTitle boolean' })
-	matchTitle: boolean;
+	matchTitle!: boolean;
 
 	@IsBoolean({ message: 'Malformed matchDescription boolean' })
-	matchDescription: boolean;
+	matchDescription!: boolean;
 
-	@IsOptional()
-	@IsBoolean
-	sortBy?: 'string
+	@IsIn(SortableFields)
+	sortBy!: typeof SortableFields[number];
+
+	@IsIn(SortDirections)
+	order!: typeof SortDirections[number];
+}
+
+export interface ISearchLevel {
+	id: number;
+	code: string;
+	author: string;
+	title: string;
+	description: string;
+	createdAt: number;
+	updatedAt: number;
+	downloads: number;
 }
 
 /* what is returned from the search endpoint */
 export interface ISearchResponse {
-	levels: Prisma.LevelSelect;
+	levels: ISearchLevel[];
 	cursor: number;
 }
 
 /* level controller */
 export default class Level {
+	static async downloadPing(req: Request, res: Response) {
+		let id: string | number | undefined = req.params.id;
+		if (id) {
+			id = parseInt(id);
+			if (!isNaN(id)) {
+				log.info(`Level ID ${id} download pinged`);
+				await prisma.level
+					.update({
+						where: {
+							id,
+						},
+						data: {
+							downloads: {
+								increment: 1,
+							},
+						},
+					})
+					.catch((err) => undefined);
+			}
+		}
+
+		return res.status(200).send('ok');
+	}
 	/**
 	 * search through all levels
 	 *
@@ -51,19 +101,72 @@ export default class Level {
 	 * @param {ISearchOptions} req.body
 	 */
 	static async search(req: Request, res: Response) {
-		let opts: ISearchOptions;
+		let opts: ISearchOptions = new ISearchOptions();
 		try {
-			opts = JSON.parse(req.body);
+			opts.cursor = req.body.cursor ?? 0;
+			opts.limit = req.body.limit ?? 10;
+			opts.query = req.body.query ?? '';
+			opts.matchTitle = req.body.matchTitle ?? true;
+			opts.matchDescription = req.body.matchDescription ?? true;
+			opts.sortBy = req.body.sortBy ?? 'id';
+			opts.order = req.body.order ?? 'asc';
+			const errors = await validate(opts);
+			if (errors?.length > 0) {
+				return res.status(400).send({
+					error: Object.entries(errors[0].constraints ?? [[0, 'Malformed Request Body']])[0][1],
+				});
+			}
 		} catch (e) {
 			return res.status(400).send({ error: 'Malformed Request Body' });
 		}
+		// fetch keywords from query
+		const keywords = opts.query?.split(' ')?.map((s) => s.trim());
 
-		if (isNaN(opts.cursor)) return res.status(400).send({ error: 'Malformed cursor' });
-		opts.limit = parseInt(req.body.limit) ?? '10';
-		if (isNaN(opts.limit)) return res.status(400).send({ error: 'Malformed limit' });
-		opts.keywords = req.body.keywords?.split(' ');
-		opts.matchTitle = req.body.matchTitle ?? true;
-		opts.matchDescription = req.body.matchDescription ?? true;
+		const titleKeywordOr = opts.matchTitle
+			? keywords?.map((word) => ({ title: { contains: word } }))
+			: [];
+		const descriptionKeywordOr = opts.matchDescription
+			? keywords?.map((word) => ({ description: { contains: word } }))
+			: [];
+
+		const levels = await prisma.level.findMany({
+			take: opts.limit,
+			...(opts.cursor && {
+				skip: opts.cursor < 1 ? 0 : 1,
+				cursor: {
+					id: opts.cursor,
+				},
+			}),
+			where: {
+				OR: [...(titleKeywordOr ?? []), ...(descriptionKeywordOr ?? [])],
+			},
+			orderBy: {
+				[opts.sortBy]: opts.order,
+			},
+			include: {
+				author: true,
+			},
+		});
+
+		const lastLevel = levels?.[levels.length - 1];
+
+		const ret: ISearchResponse = {
+			levels: levels.map(
+				(lvl): ISearchLevel => ({
+					id: lvl.id,
+					code: lvl.code,
+					author: lvl.author.name,
+					title: lvl.title,
+					description: lvl.description ?? '',
+					createdAt: lvl.createdAt.getTime() / 1000,
+					updatedAt: lvl.updatedAt.getTime() / 1000,
+					downloads: lvl.downloads,
+				})
+			),
+			cursor: lastLevel?.id ?? 0,
+		};
+
+		return res.status(200).send(ret);
 	}
 
 	/**
@@ -80,7 +183,7 @@ export default class Level {
 		}
 		const idNumber = parseInt(id);
 		if (isNaN(idNumber)) {
-			return res.status(400).send({ error: `Id ${id} is not valid` });
+			return res.status(400).send({ error: `Id "${id}" is not valid` });
 		}
 
 		const level = await prisma.level.findUnique({
@@ -89,18 +192,31 @@ export default class Level {
 		});
 
 		if (!level) {
-			return res.status(404).send({ error: `Level id ${id} not found` });
+			return res.status(404).send({ error: `Level id "${id}" not found` });
 		}
+		prisma.level
+			.update({
+				where: {
+					id: level.id,
+				},
+				data: {
+					downloads: {
+						increment: 1,
+					},
+				},
+			})
+			.catch((err) => undefined);
 		return res.status(200).send({
 			level: {
 				id: level.id,
 				author: level.author.name,
 				code: level.code,
-				title: level.name,
-				description: level.description,
+				title: level.title,
+				description: level.description ?? '',
 				createdAt: level.createdAt.getTime() / 1000,
 				updatedAt: level.updatedAt.getTime() / 1000,
-			},
+				downloads: level.downloads,
+			} as ISearchLevel,
 		});
 	}
 
@@ -146,7 +262,7 @@ export default class Level {
 			});
 		}
 
-		const existingLevel = await prisma.level.findFirst({ where: { name: title } });
+		const existingLevel = await prisma.level.findFirst({ where: { title } });
 		if (existingLevel) {
 			if (user.id !== existingLevel.authorId) {
 				return res
@@ -159,7 +275,7 @@ export default class Level {
 			const updatedLevel = await prisma.level.update({
 				where: { id: existingLevel.id },
 				data: {
-					name: title,
+					title,
 					description,
 					code,
 				},
@@ -168,18 +284,19 @@ export default class Level {
 			if (!updatedLevel)
 				return res.status(500).send({ error: 'Internal server error (NO_OVERWRITE_LEVEL)' });
 			log.info(
-				`Level ${updatedLevel.name}#${updatedLevel.id} updated by user ${updatedLevel.author.name} (${updatedLevel.author.email})`
+				`Level ${updatedLevel.title}#${updatedLevel.id} updated by user ${updatedLevel.author.name} (${updatedLevel.author.email})`
 			);
 			return res.status(200).send({
 				level: {
 					id: updatedLevel.id,
 					author: updatedLevel.author.name,
 					code: updatedLevel.code,
-					title: updatedLevel.name,
-					description: updatedLevel.description,
+					title: updatedLevel.title,
+					description: updatedLevel.description ?? '',
 					createdAt: updatedLevel.createdAt.getTime() / 1000,
 					updatedAt: updatedLevel.updatedAt.getTime() / 1000,
-				},
+					downloads: updatedLevel.downloads,
+				} as ISearchLevel,
 			});
 		}
 
@@ -187,7 +304,7 @@ export default class Level {
 			data: {
 				code,
 				author: { connect: { id: user.id } },
-				name: title,
+				title,
 				description,
 			},
 			include: { author: true },
@@ -198,7 +315,7 @@ export default class Level {
 		}
 
 		log.info(
-			`Level ${newLevel.name}#${newLevel.id} uploaded by user ${newLevel.author.name} (${newLevel.author.email})`
+			`Level ${newLevel.title}#${newLevel.id} uploaded by user ${newLevel.author.name} (${newLevel.author.email})`
 		);
 
 		return res.status(200).send({
@@ -206,11 +323,12 @@ export default class Level {
 				id: newLevel.id,
 				author: newLevel.author.name,
 				code: newLevel.code,
-				title: newLevel.name,
-				description: newLevel.description,
+				title: newLevel.title,
+				description: newLevel.description ?? '',
 				createdAt: newLevel.createdAt.getTime() / 1000,
 				updatedAt: newLevel.updatedAt.getTime() / 1000,
-			},
+				downloads: newLevel.downloads,
+			} as ISearchLevel,
 		});
 	}
 }

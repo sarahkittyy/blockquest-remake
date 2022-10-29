@@ -430,6 +430,7 @@ void edit::m_gui_level_info(fsm* sm) {
 	ImGui::Text("-= Details (ID %d) =-", md.id);
 	ImGui::TextWrapped("Title: %s", md.title.c_str());
 	ImGui::TextWrapped("Author: %s", md.author.c_str());
+	ImGui::TextWrapped("Downloads: %d", md.downloads);
 	char date_fmt[100];
 	tm* date_tm = std::localtime(&md.createdAt);
 	std::strftime(date_fmt, 100, "%D %r", date_tm);

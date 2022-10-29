@@ -1,6 +1,9 @@
 {
   "name": "bq-r-api",
   "version": "1.0.0",
+  "prisma": {
+    "seed": "ts-node -P tsconfig.json prisma/seed.ts"
+  },
   "description": "bq-r backend level api",
   "main": "build/api/index.js",
   "directories": {
@@ -29,6 +32,7 @@
   },
   "homepage": "https://github.com/sarahkittyy/blockquest-remake#readme",
   "dependencies": {
+    "@ngneat/falso": "^6.1.0",
     "@prisma/client": "^4.5.0",
     "@types/bcrypt": "^5.0.0",
     "@types/express": "^4.17.14",
@@ -42,6 +46,7 @@
     "module-alias": "^2.2.2",
     "pm2": "^5.2.2",
     "prisma": "^4.5.0",
+    "ts-node": "^10.9.1",
     "tsc-watch": "^5.0.3",
     "tslog": "^3.3.4",
     "typescript": "^4.8.4",

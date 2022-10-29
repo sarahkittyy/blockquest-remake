@@ -12,13 +12,14 @@ public:
 	level(int xs = 32, int ys = 32);
 
 	struct metadata {
-		metadata(int id, std::string author, std::string title, std::string description);
+		metadata(api::level data);
 		int id;
 		std::string author;
 		std::string title;
 		std::string description;
 		std::time_t createdAt;
 		std::time_t updatedAt;
+		int downloads;
 	};
 
 	tilemap& map();				  // get the map

@@ -23,9 +23,7 @@ sf::Vector2i level::mouse_tile(sf::Vector2f mouse_pos) const {
 }
 
 void level::load_from_api(api::level data) {
-	m_metadata			  = level::metadata(data.id, data.author, data.title, data.description);
-	m_metadata->createdAt = data.createdAt;
-	m_metadata->updatedAt = data.updatedAt;
+	m_metadata = level::metadata(data);
 	map().load(data.code);
 }
 
@@ -58,9 +56,12 @@ void level::clear_metadata() {
 	m_metadata.reset();
 }
 
-level::metadata::metadata(int id, std::string author, std::string title, std::string description)
-	: id(id),
-	  author(author),
-	  title(title),
-	  description(description) {
+level::metadata::metadata(api::level data)
+	: id(data.id),
+	  author(data.author),
+	  title(data.title),
+	  description(data.description),
+	  createdAt(data.createdAt),
+	  updatedAt(data.updatedAt),
+	  downloads(data.downloads) {
 }

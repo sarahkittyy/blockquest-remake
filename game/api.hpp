@@ -22,6 +22,7 @@ public:
 		std::string description;
 		std::time_t createdAt;
 		std::time_t updatedAt;
+		int downloads;
 	};
 
 	struct response {
@@ -33,6 +34,9 @@ public:
 
 	std::future<response> upload_level(::level l, const char* title, const char* description, bool override = false);
 	std::future<response> download_level(int id);
+
+	// sends a download ping to be run when we fetch a level
+	void ping_download(int id);
 
 private:
 	api();

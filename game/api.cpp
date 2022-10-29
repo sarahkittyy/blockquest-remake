@@ -14,6 +14,16 @@ api &api::get() {
 	return instance;
 }
 
+void api::ping_download(int id) {
+	std::thread([this, id]() -> void {
+		try {
+			std::string path = "/level/" + std::to_string(id) + "/ping-download";
+			m_cli.Get(path);
+		} catch (...) {
+		}
+	}).detach();
+}
+
 std::future<api::response> api::download_level(int id) {
 	return std::async([this, id]() -> api::response {
 		try {
@@ -30,6 +40,7 @@ std::future<api::response> api::download_level(int id) {
 						.description = level["description"],
 						.createdAt	 = level["createdAt"].get<std::time_t>(),
 						.updatedAt	 = level["updatedAt"].get<std::time_t>(),
+						.downloads	 = level["downloads"].get<int>()
 					};
 					return {
 						.success = true,
@@ -102,6 +113,7 @@ std::future<api::response> api::upload_level(::level l, const char *title, const
 						.description = level["description"],
 						.createdAt	 = level["createdAt"].get<std::time_t>(),
 						.updatedAt	 = level["updatedAt"].get<std::time_t>(),
+						.downloads	 = level["downloads"].get<int>()
 					};
 					return {
 						.success = true,

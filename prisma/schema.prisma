@@ -29,6 +29,7 @@ model Level {
   code			String      @db.Text
   author		User        @relation(fields: [authorId], references: id)
   authorId		Int
-  name			String		@db.VarChar(50) @unique
+  title			String		@db.VarChar(50) @unique
   description	String?		@db.Text
+	downloads			Int			@default(0)
 }
