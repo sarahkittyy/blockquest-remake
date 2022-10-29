@@ -37,7 +37,7 @@ const tilemap& level::map() const {
 }
 
 void level::clear() {
-	m_metadata = {};
+	m_metadata.reset();
 	map().clear();
 }
 

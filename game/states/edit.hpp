@@ -65,6 +65,10 @@ private:
 
 	// can we upload the level currently on display
 	bool m_is_current_level_ours() const;
+	// loads a level downloaded from the api into the editor
+	void m_load_api_level(api::level lvl);
+	// clear the current level
+	void m_clear_level();
 
 	sf::Texture& m_tiles;	// texture of all tiles
 	sf::Texture& m_tools;	// texture of tools

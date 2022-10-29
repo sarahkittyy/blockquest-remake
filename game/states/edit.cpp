@@ -384,6 +384,30 @@ bool edit::m_is_current_level_ours() const {
 	return true;
 }
 
+void edit::m_load_api_level(api::level lvl) {
+	m_upload_status.reset();
+	m_download_status.reset();
+	m_level.load_from_api(lvl);
+	level::metadata md = m_level.get_metadata();
+	if (m_is_current_level_ours()) {
+		std::strncpy(m_title_buffer, m_level.get_metadata().title.c_str(), 50);
+		std::strncpy(m_description_buffer, m_level.get_metadata().description.c_str(), 256);
+	} else {
+		std::memset(m_title_buffer, 0, 50);
+		std::memset(m_description_buffer, 0, 50);
+	}
+	m_id = md.id;
+}
+
+void edit::m_clear_level() {
+	m_upload_status.reset();
+	m_download_status.reset();
+	m_level.clear();
+	std::memset(m_title_buffer, 0, 50);
+	std::memset(m_description_buffer, 0, 50);
+	m_id = 0;
+}
+
 void edit::m_gui_level_info(fsm* sm) {
 	level::metadata md = m_level.get_metadata();
 	ImGui::Text("-= Details (ID %d) =-", md.id);
@@ -456,12 +480,7 @@ void edit::m_gui_controls(fsm* sm) {
 		if (m_download_status) {
 			api::response res = *m_download_status;
 			if (res.success) {
-				m_download_status.reset();
-				m_level.load_from_api(*res.level);
-				if (m_is_current_level_ours()) {
-					std::strncpy(m_title_buffer, m_level.get_metadata().title.c_str(), 50);
-					std::strncpy(m_description_buffer, m_level.get_metadata().description.c_str(), 256);
-				}
+				m_load_api_level(*res.level);
 				ImGui::CloseCurrentPopup();
 			}
 		}
@@ -496,10 +515,7 @@ void edit::m_gui_controls(fsm* sm) {
 		if (m_upload_status) {
 			api::response res = *m_upload_status;
 			if (res.success) {
-				m_upload_status.reset();
-				m_level.load_from_api(*res.level);
-				std::strncpy(m_title_buffer, m_level.get_metadata().title.c_str(), 50);
-				std::strncpy(m_description_buffer, m_level.get_metadata().description.c_str(), 256);
+				m_load_api_level(*res.level);
 				ImGui::CloseCurrentPopup();
 			} else if (res.code == 409) {
 				ImGui::OpenPopup("Upload###ConfirmUpload");
@@ -529,7 +545,7 @@ void edit::m_gui_controls(fsm* sm) {
 			r().play_sound("gameover");
 			if (m_test_playing())
 				m_toggle_test_play();
-			m_level.clear();
+			m_clear_level();
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
@@ -562,10 +578,8 @@ void edit::m_gui_controls(fsm* sm) {
 		}
 		ImGui::SameLine();
 		if (ImGui::ImageButtonWithText(r().imtex("assets/gui/create.png"), "Load")) {
+			m_clear_level();
 			m_level.map().load(std::string(m_import_buffer));
-			m_level.clear_metadata();
-			std::memset(m_title_buffer, 0, 50);
-			std::memset(m_description_buffer, 0, 256);
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
