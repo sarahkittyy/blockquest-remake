@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import validator from 'validator';
 
-import isValidLevel from '@util/isValidLevel';
-import * as auth from '@util/passwords';
+import * as tools from '@util/tools';
 
 import { prisma } from '@db/index';
 import log from '@/log';
@@ -43,11 +42,11 @@ export default class Level {
 	static async upload(req: Request, res: Response) {
 		const code: string | undefined = req.body.code;
 		const overwrite: boolean = req.params.confirm === 'confirm';
-		if (!code || !isValidLevel(code)) {
+		if (!code || !tools.isValidLevel(code)) {
 			return res.status(400).send({ error: 'Invalid level code.' });
 		}
 
-		const token: auth.IAuthToken | undefined = res.locals.token;
+		const token: tools.IAuthToken | undefined = res.locals.token;
 		if (!token) {
 			return res.status(401).send({ error: 'Unauthorized.' });
 		}

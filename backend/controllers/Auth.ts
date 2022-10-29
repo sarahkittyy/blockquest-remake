@@ -3,7 +3,7 @@ import validator from 'validator';
 
 import { prisma } from '@db/index';
 
-import { generateJwt, saltAndHash, validatePassword } from '@util/passwords';
+import { generateJwt, saltAndHash, validatePassword } from '@util/tools';
 
 export default class Auth {
 	static async CreateAccount(req: Request, res: Response) {

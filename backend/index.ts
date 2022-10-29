@@ -6,7 +6,7 @@ import log from '@/log';
 import Auth from '@controllers/Auth';
 import Level from '@controllers/Level';
 
-import { requireAuth } from '@util/passwords';
+import { requireAuth } from '@util/tools';
 
 const app = express();
 app.use(express.json());
