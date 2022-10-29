@@ -21,7 +21,8 @@ app.post('/signup', Auth.CreateAccount);
 app.post('/login', Auth.Login);
 
 app.post('/level/upload/:confirm?', requireAuth(0), Level.upload);
-app.get('/level/:id', Level.get);
+app.get('/level/:id', Level.getById);
+app.get('/level/search', Level.search);
 
 app.get('/me', requireAuth(0), (req: Request, res: Response) => {
 	return res.send(res.locals.token);

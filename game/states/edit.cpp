@@ -430,14 +430,13 @@ void edit::m_gui_level_info(fsm* sm) {
 	ImGui::Text("-= Details (ID %d) =-", md.id);
 	ImGui::TextWrapped("Title: %s", md.title.c_str());
 	ImGui::TextWrapped("Author: %s", md.author.c_str());
-	char created_at_fmt[100];
-	char updated_at_fmt[100];
-	tm* created_at_local = std::localtime(&md.createdAt);
-	tm* updated_at_local = std::localtime(&md.updatedAt);
-	std::strftime(created_at_fmt, 100, "%D %r", created_at_local);
-	std::strftime(updated_at_fmt, 100, "%D %r", updated_at_local);
-	ImGui::TextWrapped("Created: %s", created_at_fmt);
-	ImGui::TextWrapped("Last Updated: %s", updated_at_fmt);
+	char date_fmt[100];
+	tm* date_tm = std::localtime(&md.createdAt);
+	std::strftime(date_fmt, 100, "%D %r", date_tm);
+	ImGui::TextWrapped("Created: %s", date_fmt);
+	date_tm = std::localtime(&md.updatedAt);
+	std::strftime(date_fmt, 100, "%D %r", date_tm);
+	ImGui::TextWrapped("Last Updated: %s", date_fmt);
 	ImGui::Separator();
 	ImGui::TextWrapped("Description: %s", md.description.c_str());
 }

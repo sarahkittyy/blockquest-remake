@@ -4,11 +4,76 @@ import validator from 'validator';
 import * as tools from '@util/tools';
 
 import { prisma } from '@db/index';
+import { Prisma } from '@prisma/client';
 import log from '@/log';
+
+import { IsBoolean, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+
+/* options for searching through levels */
+export class ISearchOptions {
+	@IsOptional()
+	@IsNumber(undefined, { message: 'Malformed cursor' })
+	cursor?: number; // current level index to search past
+
+	@IsInt({ message: 'Malformed limit' })
+	@Min(1)
+	@Max(20)
+	limit!: number; // how many entries to fetch
+
+	@IsOptional()
+	@IsString()
+	query?: string;
+
+	@IsBoolean({ message: 'Malformed matchTitle boolean' })
+	matchTitle: boolean;
+
+	@IsBoolean({ message: 'Malformed matchDescription boolean' })
+	matchDescription: boolean;
+
+	@IsOptional()
+	@IsBoolean
+	sortBy?: 'string
+}
+
+/* what is returned from the search endpoint */
+export interface ISearchResponse {
+	levels: Prisma.LevelSelect;
+	cursor: number;
+}
 
 /* level controller */
 export default class Level {
-	static async get(req: Request, res: Response) {
+	/**
+	 * search through all levels
+	 *
+	 * @static
+	 * @async
+	 * @param {ISearchOptions} req.body
+	 */
+	static async search(req: Request, res: Response) {
+		let opts: ISearchOptions;
+		try {
+			opts = JSON.parse(req.body);
+		} catch (e) {
+			return res.status(400).send({ error: 'Malformed Request Body' });
+		}
+
+		if (isNaN(opts.cursor)) return res.status(400).send({ error: 'Malformed cursor' });
+		opts.limit = parseInt(req.body.limit) ?? '10';
+		if (isNaN(opts.limit)) return res.status(400).send({ error: 'Malformed limit' });
+		opts.keywords = req.body.keywords?.split(' ');
+		opts.matchTitle = req.body.matchTitle ?? true;
+		opts.matchDescription = req.body.matchDescription ?? true;
+	}
+
+	/**
+	 * fetch a level by its id
+	 *
+	 * @static
+	 * @async
+	 * @param {int} req.params.id
+	 */
+	static async getById(req: Request, res: Response) {
 		const id: string | undefined = req.params.id;
 		if (!id) {
 			return res.status(400).send({ error: 'No id specified' });
@@ -39,6 +104,16 @@ export default class Level {
 		});
 	}
 
+	/**
+	 * upload a level to the server
+	 *
+	 * @static
+	 * @async
+	 * @param {string} req.body.code
+	 * @param {string} req.params.confirm - for overwriting levels
+	 * @param {string} req.body.title
+	 * @param {string} req.body.description
+	 */
 	static async upload(req: Request, res: Response) {
 		const code: string | undefined = req.body.code;
 		const overwrite: boolean = req.params.confirm === 'confirm';
