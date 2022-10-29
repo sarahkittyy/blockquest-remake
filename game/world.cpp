@@ -83,7 +83,7 @@ void world::m_restart_world() {
 	m_player.setScale(1, 1);
 	m_mt_mgr.restart();
 	m_time_airborne	   = sf::seconds(999);
-	m_jumping		   = false;
+	m_jumping		   = true;
 	m_dashing		   = false;
 	m_since_wallkick   = sf::seconds(999);
 	m_left_last_frame  = false;
@@ -143,7 +143,7 @@ void world::update(sf::Time dt) {
 		m_space_to_retry.setColor(opacity);
 		m_game_clear.setColor(opacity);
 		if (m_just_jumped()) {
-			m_restart_world();
+			return m_restart_world();
 		} else {
 			m_jump_last_frame = jump_keyed;
 			return;
@@ -156,7 +156,7 @@ void world::update(sf::Time dt) {
 		m_space_to_retry.setColor(opacity);
 		m_game_over.setColor(opacity);
 		if (m_just_jumped()) {
-			m_restart_world();
+			return m_restart_world();
 		} else {
 			m_jump_last_frame = jump_keyed;
 			return;
