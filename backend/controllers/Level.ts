@@ -103,7 +103,7 @@ export default class Level {
 	static async search(req: Request, res: Response) {
 		let opts: ISearchOptions = new ISearchOptions();
 		try {
-			opts.cursor = req.body.cursor ?? 0;
+			opts.cursor = req.body.cursor ?? -1;
 			opts.limit = req.body.limit ?? 10;
 			opts.query = req.body.query ?? '';
 			opts.matchTitle = req.body.matchTitle ?? true;
@@ -131,8 +131,8 @@ export default class Level {
 
 		const levels = await prisma.level.findMany({
 			take: opts.limit + 1,
-			...(opts.cursor && {
-				skip: opts.cursor < 1 ? 0 : 1,
+			...(opts.cursor > 1 && {
+				skip: 1,
 				cursor: {
 					id: opts.cursor,
 				},

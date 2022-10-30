@@ -14,15 +14,15 @@
 namespace states {
 
 search::search()
-	: m_query({ .cursor = 0, .limit = 10, .query = "", .matchTitle = true, .matchDescription = true, .sortBy = "id", .order = "desc" }),
+	: m_query({ .cursor = -1, .query = "", .matchTitle = true, .matchDescription = true, .sortBy = "id", .order = "desc" }),
 	  m_sort_opts{ "downloads", "id", "createdAt", "updatedAt", "title" },
 	  m_sort_selection(0),
 	  m_order_opts{ "asc", "desc" },
 	  m_order_selection(1),
 	  m_rows(3),
-	  m_cols(4),
+	  m_cols(5),
 	  m_temp_rows(3),
-	  m_temp_cols(4),
+	  m_temp_cols(5),
 	  m_loading_gif(resource::get().tex("assets/gifs/loading-gif.png"), 29, { 200, 200 }, 40) {
 	m_update_query();
 }
@@ -119,7 +119,13 @@ void search::imdraw(fsm* sm) {
 	ImGui::SetNextWindowPos(ImVec2(0, 26), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(results_sz, ImGuiCond_Always);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-	ImGui::Begin("Results###Search", nullptr, flat);
+	if (m_query_status && m_query_status->success) {
+		int page			 = m_cpage();
+		std::string page_str = "Results (Page " + std::to_string(page) + ")###Search";
+		ImGui::Begin(page_str.c_str(), nullptr, flat);
+	} else {
+		ImGui::Begin("Results###Search", nullptr, flat);
+	}
 	ImGui::PopStyleVar();
 
 	if (m_searching()) {
@@ -128,14 +134,15 @@ void search::imdraw(fsm* sm) {
 		m_loading_gif.draw(sz);
 	} else if (m_query_status && m_query_status->success && m_query_status->levels.size() >= 1) {
 		// pagination buttons
-		ImGui::Text("%d", m_cpage());
-		ImGui::BeginDisabled(m_cpage() == 0);
-		if (ImGui::Button("prev")) {
+		int page = m_cpage();
+		ImGui::BeginDisabled(page == 0);
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/back.png"), "Back")) {
 			m_prev_page();
 		}
 		ImGui::EndDisabled();
+		ImGui::SameLine();
 		ImGui::BeginDisabled(m_last_page());
-		if (ImGui::Button("next")) {
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/forward.png"), "Next")) {
 			m_next_page();
 		}
 		ImGui::EndDisabled();
@@ -230,5 +237,4 @@ void search::m_update_query() {
 bool search::m_searching() const {
 	return m_query_future.valid();
 }
-
 }
