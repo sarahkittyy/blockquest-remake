@@ -65,7 +65,7 @@ void moving_tile_manager::update(sf::Time dt) {
 		// check for static collision
 		sf::FloatRect aabb = t.get_ghost_aabb(new_xp, new_yp);
 		debug::get().box(util::scale(aabb, float(m_tmap.tile_size())), sf::Color::Red);
-		auto contacts = m_tmap.intersects(aabb);
+		auto contacts = m_tmap.intersects(aabb, true);
 		decltype(contacts) solid_contacts;
 		std::copy_if(contacts.begin(), contacts.end(), std::back_inserter(solid_contacts), [](std::pair<sf::Vector2f, tile> t) {
 			return t.second.blocks_moving_tiles();
@@ -92,7 +92,7 @@ void moving_tile_manager::update(sf::Time dt) {
 					(util::same_sign(t2.vel().x, t.vel().x) && util::neither_zero(t.vel().x, t2.vel().x)) ||   //
 					(util::same_sign(t2.vel().y, t.vel().y) && util::neither_zero(t.vel().y, t2.vel().y))	   //
 				) { continue; }
-				sf::FloatRect tile_ghost_aabb = std::abs(new_xv) > 0.01f ? t2.get_ghost_aabb_x() : t2.get_ghost_aabb_y();
+				sf::FloatRect tile_ghost_aabb = t2.get_ghost_aabb();
 				sf::FloatRect tile_aabb		  = t2.get_aabb();
 				sf::Vector2f sz				  = moving_tile::size();
 				if (aabb.intersects(tile_ghost_aabb)) {
@@ -113,6 +113,7 @@ void moving_tile_manager::update(sf::Time dt) {
 							t2.m_yv = -t2.m_yv;
 						}
 					}
+
 					break;
 				}
 			}

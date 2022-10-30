@@ -113,7 +113,7 @@ public:
 	static ImRect calc_uvs(tile::tile_type type, sf::Texture& tex, int tile_size = 16);	  // calculates the uv coordinates of a tile for imgui purposes
 
 	// all tiles that intersect the given aabb
-	std::vector<std::pair<sf::Vector2f, tile>> intersects(sf::FloatRect aabb) const;
+	std::vector<std::pair<sf::Vector2f, tile>> intersects(sf::FloatRect aabb, bool roofs = false) const;
 
 	sf::Vector2i size() const;		   // get the map size
 	int tile_size() const;			   // get the size of a tile

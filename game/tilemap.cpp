@@ -112,14 +112,19 @@ void tilemap::m_set_quad(int i, tile t) {
 	}
 }
 
-std::vector<std::pair<sf::Vector2f, tile>> tilemap::intersects(sf::FloatRect aabb) const {
+std::vector<std::pair<sf::Vector2f, tile>> tilemap::intersects(sf::FloatRect aabb, bool roofs) const {
 	std::vector<std::pair<sf::Vector2f, tile>> ret;
 	sf::IntRect rounded_aabb(aabb.left - 1, aabb.top - 1, 3, 3);
 
 	// get all tiles around the player
 	for (int x = rounded_aabb.left; x <= rounded_aabb.left + rounded_aabb.width; x++) {
 		for (int y = rounded_aabb.top; y <= rounded_aabb.top + rounded_aabb.height; ++y) {
-			tile t = get(x, y);
+			tile t;
+			if (m_oob(x, y) && roofs) {
+				t = tile(tile::block, x, y);
+			} else {
+				t = get(x, y);
+			}
 			sf::FloatRect tile_aabb(x, y, 1, 1);
 			// add non-empty ones that intersect to the list
 			if (t != tile::empty && tile_aabb.intersects(aabb)) {
