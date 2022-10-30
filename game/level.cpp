@@ -23,7 +23,7 @@ sf::Vector2i level::mouse_tile(sf::Vector2f mouse_pos) const {
 }
 
 void level::load_from_api(api::level data) {
-	m_metadata = level::metadata(data);
+	m_metadata = data;
 	map().load(data.code);
 }
 
@@ -44,24 +44,14 @@ bool level::has_metadata() const {
 	return !!m_metadata;
 }
 
-level::metadata& level::get_metadata() {
+api::level& level::get_metadata() {
 	return *m_metadata;
 }
 
-const level::metadata& level::get_metadata() const {
+const api::level& level::get_metadata() const {
 	return *m_metadata;
 }
 
 void level::clear_metadata() {
 	m_metadata.reset();
-}
-
-level::metadata::metadata(api::level data)
-	: id(data.id),
-	  author(data.author),
-	  title(data.title),
-	  description(data.description),
-	  createdAt(data.createdAt),
-	  updatedAt(data.updatedAt),
-	  downloads(data.downloads) {
 }

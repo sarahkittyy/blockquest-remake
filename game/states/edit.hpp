@@ -17,6 +17,7 @@ namespace states {
 class edit : public state {
 public:
 	edit();
+	edit(api::level lvl);
 	~edit();
 
 	void update(fsm* sm, sf::Time dt);

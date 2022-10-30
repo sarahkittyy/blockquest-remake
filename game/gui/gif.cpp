@@ -4,6 +4,7 @@ namespace ImGui {
 
 Gif::Gif(sf::Texture& gif_atlas, int frame_ct, sf::Vector2i frame_sz, int fps)
 	: m_atlas(gif_atlas),
+	  m_img_sz(frame_sz),
 	  m_frame(0),
 	  m_frame_ct(frame_ct) {
 	m_per_frame = sf::seconds(1.f / float(fps));
@@ -24,6 +25,10 @@ void Gif::update() {
 			m_frame = 0;
 		}
 	}
+}
+
+sf::Vector2i Gif::image_size() const {
+	return m_img_sz;
 }
 
 void Gif::draw(sf::Vector2i sz) {

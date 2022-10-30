@@ -363,11 +363,15 @@ void tilemap::load(std::string str) {
 			ss >> ch;
 			continue;
 		}
-		char buf[3];
-		ss.get(buf, 3);
-		m_tiles[i].type = static_cast<tile::tile_type>(std::atoi(buf));
-		ss.get(buf, 2);
-		m_tiles[i].props.moving = std::atoi(buf);
+		try {
+			char buf[3];
+			ss.get(buf, 3);
+			m_tiles[i].type = static_cast<tile::tile_type>(std::stoi(buf));
+			ss.get(buf, 2);
+			m_tiles[i].props.moving = std::stoi(buf);
+		} catch (std::invalid_argument const& e) {
+			m_tiles[i] = tile::empty;
+		}
 	}
 	m_flush_va();
 }

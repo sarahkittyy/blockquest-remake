@@ -32,8 +32,30 @@ public:
 		std::optional<api::level> level;
 	};
 
+	struct search_query {
+		int cursor;
+		int limit;
+		std::string query;
+		bool matchTitle;
+		bool matchDescription;
+		std::string sortBy;
+		std::string order;
+		bool operator==(const search_query& other) const;
+		bool operator!=(const search_query& other) const;
+	};
+
+	struct search_response {
+		bool success;
+		std::optional<std::string> error;
+
+		std::vector<api::level> levels;
+		int cursor;
+	};
+
 	std::future<response> upload_level(::level l, const char* title, const char* description, bool override = false);
 	std::future<response> download_level(int id);
+
+	std::future<search_response> search_levels(search_query q);
 
 	// sends a download ping to be run when we fetch a level
 	void ping_download(int id);

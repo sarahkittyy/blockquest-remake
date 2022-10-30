@@ -14,10 +14,14 @@
 #include "../gui/editor_tile_button.hpp"
 #include "../gui/image_text_button.hpp"
 
-#include "./search.hpp"
-#include "states/levels.hpp"
+#include "states/search.hpp"
 
 namespace states {
+
+edit::edit(api::level lvl)
+	: edit() {
+	m_load_api_level(lvl);
+}
 
 edit::edit()
 	: m_menu_bar(),
@@ -396,7 +400,7 @@ void edit::m_load_api_level(api::level lvl) {
 	m_upload_status.reset();
 	m_download_status.reset();
 	m_level.load_from_api(lvl);
-	level::metadata md = m_level.get_metadata();
+	api::level md = m_level.get_metadata();
 	if (m_is_current_level_ours()) {
 		std::strncpy(m_title_buffer, m_level.get_metadata().title.c_str(), 50);
 		std::strncpy(m_description_buffer, m_level.get_metadata().description.c_str(), 256);
@@ -420,13 +424,15 @@ void edit::m_gui_menu(fsm* sm) {
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/search.png"), "Search###Search")) {
 		return sm->swap_state<states::search>();
 	}
+	ImGui::BeginDisabled();
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/folder.png"), "Levels###Levels")) {
-		return sm->swap_state<states::levels>();
+		//return sm->swap_state<states::search>();
 	}
+	ImGui::EndDisabled();
 }
 
 void edit::m_gui_level_info(fsm* sm) {
-	level::metadata md = m_level.get_metadata();
+	api::level md = m_level.get_metadata();
 	ImGui::Text("-= Details (ID %d) =-", md.id);
 	ImGui::TextWrapped("Title: %s", md.title.c_str());
 	ImGui::TextWrapped("Author: %s", md.author.c_str());

@@ -20,7 +20,7 @@ import {
 	validateOrReject,
 } from 'class-validator';
 
-const SortableFields = ['id', 'createdAt', 'updatedAt', 'name'] as const;
+const SortableFields = ['id', 'downloads', 'createdAt', 'updatedAt', 'title'] as const;
 const SortDirections = ['asc', 'desc'] as const;
 
 /* options for searching through levels */
@@ -130,7 +130,7 @@ export default class Level {
 			: [];
 
 		const levels = await prisma.level.findMany({
-			take: opts.limit,
+			take: opts.limit + 1,
 			...(opts.cursor && {
 				skip: opts.cursor < 1 ? 0 : 1,
 				cursor: {
@@ -148,7 +148,7 @@ export default class Level {
 			},
 		});
 
-		const lastLevel = levels?.[levels.length - 1];
+		const lastLevel = levels?.[levels.length - 2];
 
 		const ret: ISearchResponse = {
 			levels: levels.map(
@@ -163,7 +163,7 @@ export default class Level {
 					downloads: lvl.downloads,
 				})
 			),
-			cursor: lastLevel?.id ?? 0,
+			cursor: lastLevel?.id && levels.length > opts.limit ? lastLevel.id : -1,
 		};
 
 		return res.status(200).send(ret);

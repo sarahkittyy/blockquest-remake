@@ -15,11 +15,14 @@ public:
 	void update();
 	void draw(sf::Vector2i sz);
 
+	sf::Vector2i image_size() const;
+
 private:
-	sf::Texture& m_atlas;	// texture atlas
-	sf::Vector2f m_sz;		// size of one frame, from 0-1
-	sf::Clock m_c;			// clock for updating frames
-	sf::Time m_per_frame;	// time per frame
+	sf::Texture& m_atlas;	 // texture atlas
+	sf::Vector2f m_sz;		 // size of one frame, from 0-1
+	sf::Vector2i m_img_sz;	 // size of one frame in pixels
+	sf::Clock m_c;			 // clock for updating frames
+	sf::Time m_per_frame;	 // time per frame
 
 	int m_frame;
 	int m_frame_ct;

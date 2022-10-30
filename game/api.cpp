@@ -14,6 +14,67 @@ api &api::get() {
 	return instance;
 }
 
+std::future<api::search_response> api::search_levels(api::search_query q) {
+	return std::async([this, q]() -> api::search_response {
+		try {
+			nlohmann::json body;
+			body["cursor"] = q.cursor;
+			body["limit"]  = q.limit;
+			if (q.query.length() != 0) body["query"] = q.query;
+			body["matchTitle"]		 = q.matchTitle;
+			body["matchDescription"] = q.matchDescription;
+			body["sortBy"]			 = q.sortBy;
+			body["order"]			 = q.order;
+
+			if (auto res = m_cli.Post("/level/search", body.dump(), "application/json")) {
+				nlohmann::json result = nlohmann::json::parse(res->body);
+				if (res->status == 200) {
+					search_response rsp;
+					rsp.cursor	= result["cursor"].get<int>();
+					rsp.success = true;
+					for (auto &level_json : result["levels"]) {
+						api::level l{
+							.id			 = level_json["id"].get<int>(),
+							.author		 = level_json["author"],
+							.code		 = level_json["code"],
+							.title		 = level_json["title"],
+							.description = level_json["description"],
+							.createdAt	 = level_json["createdAt"].get<std::time_t>(),
+							.updatedAt	 = level_json["updatedAt"].get<std::time_t>(),
+							.downloads	 = level_json["downloads"].get<int>()
+						};
+						rsp.levels.push_back(l);
+					}
+					return rsp;
+				} else {
+					if (result.contains("error")) {
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error";
+					}
+				}
+			} else {
+				throw "Could not connect to server";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.error	 = e
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.error	 = "Unknown error."
+			};
+		}
+	});
+}
+
 void api::ping_download(int id) {
 	std::thread([this, id]() -> void {
 		try {
@@ -156,4 +217,17 @@ std::future<api::response> api::upload_level(::level l, const char *title, const
 			};
 		}
 	});
+}
+
+bool api::search_query::operator==(const search_query &other) const {
+	return limit == other.limit &&
+		   query == other.query &&
+		   matchTitle == other.matchTitle &&
+		   matchDescription == other.matchDescription &&
+		   sortBy == other.sortBy &&
+		   order == other.order;
+}
+
+bool api::search_query::operator!=(const search_query &other) const {
+	return !(other == *this);
 }

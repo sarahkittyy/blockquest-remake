@@ -11,17 +11,6 @@ class level : public sf::Drawable, public sf::Transformable {
 public:
 	level(int xs = 32, int ys = 32);
 
-	struct metadata {
-		metadata(api::level data);
-		int id;
-		std::string author;
-		std::string title;
-		std::string description;
-		std::time_t createdAt;
-		std::time_t updatedAt;
-		int downloads;
-	};
-
 	tilemap& map();				  // get the map
 	const tilemap& map() const;	  // get the map
 
@@ -32,8 +21,8 @@ public:
 
 	// does this level have metadata or is it local only
 	bool has_metadata() const;
-	metadata& get_metadata();
-	const metadata& get_metadata() const;
+	api::level& get_metadata();
+	const api::level& get_metadata() const;
 	void clear_metadata();
 
 	// load from api data
@@ -46,5 +35,5 @@ private:
 
 	tilemap m_tmap;	  // associated tilemap
 
-	std::optional<metadata> m_metadata;	  // optional level metadata
+	std::optional<api::level> m_metadata;	// optional level metadata
 };

@@ -21,7 +21,7 @@ app.post('/signup', Auth.CreateAccount);
 app.post('/login', Auth.Login);
 
 app.post('/level/upload/:confirm?', requireAuth(0), Level.upload);
-app.get('/level/search', Level.search);
+app.post('/level/search', Level.search);
 app.get('/level/:id/ping-download', Level.downloadPing);
 app.get('/level/:id', Level.getById);
 
