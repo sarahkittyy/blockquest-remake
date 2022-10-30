@@ -465,13 +465,15 @@ void edit::m_gui_controls(fsm* sm) {
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/erase.png"), "Clear")) {
 		ImGui::OpenPopup("Clear###Confirm");
 	}
-	ImGui::BeginDisabled(!m_is_current_level_ours() || !m_level.valid());
+	ImGui::BeginDisabled(!m_is_current_level_ours() || !m_level.valid() || !auth::get().authed());
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/upload.png"), "Upload")) {
 		ImGui::OpenPopup("Upload###Upload");
 	}
 	ImGui::EndDisabled();
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-		if (!m_level.valid()) {
+		if (!auth::get().authed()) {
+			ImGui::SetTooltip("You must be logged in to upload levels.");
+		} else if (!m_level.valid()) {
 			ImGui::SetTooltip("Cannot upload a level without a start & end point.");
 		} else if (!m_is_current_level_ours()) {
 			ImGui::SetTooltip("Cannot re-upload someone else's level. Clear first to make your own level for posting.");

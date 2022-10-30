@@ -29,7 +29,7 @@ async function fakeLevel(author: User) {
 	const level = await prisma.level.create({
 		data: {
 			code: randTextRange({ min: 1024, max: 4000 }),
-			name: randText({ charCount: 15 }),
+			title: randText({ charCount: 15 }),
 			description: randPhrase(),
 			author: { connect: { id: author.id } },
 			downloads: randNumber({ min: 0, max: 8900 }),

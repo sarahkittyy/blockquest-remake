@@ -278,6 +278,7 @@ export default class Level {
 					title,
 					description,
 					code,
+					updatedAt: new Date(),
 				},
 				include: { author: true },
 			});
