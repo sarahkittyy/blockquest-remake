@@ -594,9 +594,9 @@ sf::Vector2f world::m_mp_player_offset(sf::Time dt) const {
 	std::optional<moving_tile> standing_on = m_moving_platform_handle[int(m_flip_gravity ? dir::up : dir::down)];
 	if (standing_on) {
 		if (tile(*standing_on) != tile::ice) {
-			offset.x += standing_on->vel().x * dt.asSeconds();
+			offset.x += standing_on->delta().x * dt.asSeconds();
 		}
-		offset.y += standing_on->vel().y * dt.asSeconds();
+		offset.y += standing_on->delta().y * dt.asSeconds();
 	}
 
 	// check left / right moving platforms
