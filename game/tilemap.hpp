@@ -78,7 +78,7 @@ class tilemap : public sf::Drawable,
 				public sf::Transformable {
 public:
 	// construct with the tilemap's size in tiles, and the size of a single tile's texture
-	tilemap(sf::Texture& tex, int xs, int ys, int ts);
+	tilemap(sf::Texture& tex, int xs, int ys, int ts, int tex_ts = 64);
 
 	struct diff {
 		int x;
@@ -153,7 +153,8 @@ private:
 	std::vector<tile> m_tiles;	 // all tiles
 
 	int m_xs, m_ys;	  // dimension of the tilemap in tiles
-	int m_ts;		  // dimension of one tile in the tilemap texture
+	int m_ts;		  // dimension of one tile as rendered
+	int m_tex_ts;	  // dimension of one tile in the tilemap texture
 
 	bool m_editor;	 // if true, renders in editor mode
 };

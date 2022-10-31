@@ -14,6 +14,6 @@ IMGUI_API bool EditorTileButton(
 	tile::tile_type type,
 	const level& level,
 	bool selected = false,
-	int tile_size = 16);
+	int tile_size = 64);
 
 }

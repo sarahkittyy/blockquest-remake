@@ -5,7 +5,7 @@
 #include <iostream>
 
 player::player(sf::Texture& tex)
-	: animated_sprite(tex, 16, 16) {
+	: animated_sprite(tex, 64, 64) {
 	add_animation("stand", { 1 });
 	add_animation("walk", { 0, 1, 2, 1 });
 	add_animation("jump", { 3 });

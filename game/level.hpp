@@ -9,7 +9,7 @@
 // a level's data, with the ability to render previews
 class level : public sf::Drawable, public sf::Transformable {
 public:
-	level(int xs = 32, int ys = 32);
+	level(int xs = 32, int ys = 32, int ts = 64, int tex_ts = 64);
 
 	tilemap& map();				  // get the map
 	const tilemap& map() const;	  // get the map

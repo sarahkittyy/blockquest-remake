@@ -27,7 +27,7 @@ edit::edit(api::level lvl)
 edit::edit()
 	: m_menu_bar(),
 	  m_cursor(),
-	  m_border(resource::get().tex("assets/tiles.png"), 34, 32, 16),
+	  m_border(resource::get().tex("assets/tiles.png"), 34, 32, 64),
 	  m_level_size(1024),
 	  m_cursor_type(PENCIL),
 	  m_tiles(resource::get().tex("assets/tiles.png")),
@@ -35,7 +35,7 @@ edit::edit()
 	  m_stroke_start(-1, -1),
 	  m_stroke_active(false),
 	  m_pencil_active(false),
-	  m_stroke_map(resource::get().tex("assets/tiles.png"), 32, 32, 16),
+	  m_stroke_map(resource::get().tex("assets/tiles.png"), 32, 32, 64),
 	  m_old_mouse_tile(-1, -1),
 	  m_last_placed(-1, -1) {
 
@@ -46,7 +46,7 @@ edit::edit()
 	rsz_evt.size.height = resource::get().window().getSize().y;
 	process_event(rsz_evt);
 
-	m_rt.create(34 * 16, 32 * 16);
+	m_rt.create(34 * 64, 32 * 64);
 	m_map.setTexture(m_rt.getTexture());
 
 	std::memset(m_title_buffer, 0, 50);
@@ -91,11 +91,11 @@ void edit::m_update_transforms() {
 
 	float scale = m_level_scale();
 
-	m_level().setPosition(16, 0);
-	m_cursor.setPosition(16, 0);
-	m_stroke_map.setPosition(16, 0);
+	m_level().setPosition(64, 0);
+	m_cursor.setPosition(64, 0);
+	m_stroke_map.setPosition(64, 0);
 	if (m_test_play_world) {
-		m_test_play_world->setPosition(16, 0);
+		m_test_play_world->setPosition(64, 0);
 	}
 
 	m_map.setOrigin(m_rt.getSize().x / 2.f, -24 / scale);
@@ -103,7 +103,7 @@ void edit::m_update_transforms() {
 	m_map.setScale(scale, scale);
 
 	debug::get().setPosition(m_map.getPosition() - m_map.getOrigin() * 2.f);
-	debug::get().move(16 * scale, 0);
+	debug::get().move(64 * scale, 0);
 	debug::get().setScale(m_map.getScale());
 }
 

@@ -8,8 +8,8 @@
 #include <iomanip>
 #include <unordered_set>
 
-tilemap::tilemap(sf::Texture& tex, int xs, int ys, int ts)
-	: m_tex(tex), m_xs(xs), m_ys(ys), m_ts(ts), m_editor(false) {
+tilemap::tilemap(sf::Texture& tex, int xs, int ys, int ts, int tex_ts)
+	: m_tex(tex), m_xs(xs), m_ys(ys), m_ts(ts), m_tex_ts(tex_ts), m_editor(false) {
 	m_va.setPrimitiveType(sf::Quads);
 	m_va_editor.setPrimitiveType(sf::Quads);
 	m_va_arrows.setPrimitiveType(sf::Quads);
@@ -62,8 +62,8 @@ void tilemap::m_set_quad(int i, tile t) {
 		return;
 	}
 
-	int tx = int(t) % (m_tex.getSize().x / m_ts);
-	int ty = int(t) / (m_tex.getSize().x / m_ts);
+	int tx = int(t) % (m_tex.getSize().x / m_tex_ts);
+	int ty = int(t) / (m_tex.getSize().x / m_tex_ts);
 
 	// tiles only visible in editor mode
 	sf::VertexArray& va_to_modify = t.editor_only() ? m_va_editor : m_va;
@@ -83,49 +83,49 @@ void tilemap::m_set_quad(int i, tile t) {
 	// fill in the quad
 	va_to_modify[i * 4].position.x	= x * m_ts;
 	va_to_modify[i * 4].position.y	= y * m_ts;
-	va_to_modify[i * 4].texCoords.x = tx * m_ts;
-	va_to_modify[i * 4].texCoords.y = ty * m_ts;
+	va_to_modify[i * 4].texCoords.x = tx * m_tex_ts;
+	va_to_modify[i * 4].texCoords.y = ty * m_tex_ts;
 
 	va_to_modify[i * 4 + 1].position.x	= (x + 1) * m_ts;
 	va_to_modify[i * 4 + 1].position.y	= y * m_ts;
-	va_to_modify[i * 4 + 1].texCoords.x = (tx + 1) * m_ts;
-	va_to_modify[i * 4 + 1].texCoords.y = ty * m_ts;
+	va_to_modify[i * 4 + 1].texCoords.x = (tx + 1) * m_tex_ts;
+	va_to_modify[i * 4 + 1].texCoords.y = ty * m_tex_ts;
 
 	va_to_modify[i * 4 + 2].position.x	= (x + 1) * m_ts;
 	va_to_modify[i * 4 + 2].position.y	= (y + 1) * m_ts;
-	va_to_modify[i * 4 + 2].texCoords.x = (tx + 1) * m_ts;
-	va_to_modify[i * 4 + 2].texCoords.y = (ty + 1) * m_ts;
+	va_to_modify[i * 4 + 2].texCoords.x = (tx + 1) * m_tex_ts;
+	va_to_modify[i * 4 + 2].texCoords.y = (ty + 1) * m_tex_ts;
 
 	va_to_modify[i * 4 + 3].position.x	= x * m_ts;
 	va_to_modify[i * 4 + 3].position.y	= (y + 1) * m_ts;
-	va_to_modify[i * 4 + 3].texCoords.x = tx * m_ts;
-	va_to_modify[i * 4 + 3].texCoords.y = (ty + 1) * m_ts;
+	va_to_modify[i * 4 + 3].texCoords.x = tx * m_tex_ts;
+	va_to_modify[i * 4 + 3].texCoords.y = (ty + 1) * m_tex_ts;
 
 	// render movement arrows in editor mode
 	if (t.props.moving != 0) {
 		tile nt = tile::tile_type(tile::move_up_bit + t.props.moving - 1);
-		int ntx = int(nt) % (m_tex.getSize().x / m_ts);
-		int nty = int(nt) / (m_tex.getSize().x / m_ts);
+		int ntx = int(nt) % (m_tex.getSize().x / m_tex_ts);
+		int nty = int(nt) / (m_tex.getSize().x / m_tex_ts);
 
 		m_va_arrows[i * 4].position.x  = x * m_ts;
 		m_va_arrows[i * 4].position.y  = y * m_ts;
-		m_va_arrows[i * 4].texCoords.x = ntx * m_ts;
-		m_va_arrows[i * 4].texCoords.y = nty * m_ts;
+		m_va_arrows[i * 4].texCoords.x = ntx * m_tex_ts;
+		m_va_arrows[i * 4].texCoords.y = nty * m_tex_ts;
 
 		m_va_arrows[i * 4 + 1].position.x  = (x + 1) * m_ts;
 		m_va_arrows[i * 4 + 1].position.y  = y * m_ts;
-		m_va_arrows[i * 4 + 1].texCoords.x = (ntx + 1) * m_ts;
-		m_va_arrows[i * 4 + 1].texCoords.y = nty * m_ts;
+		m_va_arrows[i * 4 + 1].texCoords.x = (ntx + 1) * m_tex_ts;
+		m_va_arrows[i * 4 + 1].texCoords.y = nty * m_tex_ts;
 
 		m_va_arrows[i * 4 + 2].position.x  = (x + 1) * m_ts;
 		m_va_arrows[i * 4 + 2].position.y  = (y + 1) * m_ts;
-		m_va_arrows[i * 4 + 2].texCoords.x = (ntx + 1) * m_ts;
-		m_va_arrows[i * 4 + 2].texCoords.y = (nty + 1) * m_ts;
+		m_va_arrows[i * 4 + 2].texCoords.x = (ntx + 1) * m_tex_ts;
+		m_va_arrows[i * 4 + 2].texCoords.y = (nty + 1) * m_tex_ts;
 
 		m_va_arrows[i * 4 + 3].position.x  = x * m_ts;
 		m_va_arrows[i * 4 + 3].position.y  = (y + 1) * m_ts;
-		m_va_arrows[i * 4 + 3].texCoords.x = ntx * m_ts;
-		m_va_arrows[i * 4 + 3].texCoords.y = (nty + 1) * m_ts;
+		m_va_arrows[i * 4 + 3].texCoords.x = ntx * m_tex_ts;
+		m_va_arrows[i * 4 + 3].texCoords.y = (nty + 1) * m_tex_ts;
 	} else {
 		for (int k = 0; k < 4; ++k) {
 			m_va_arrows[i * 4 + k] = sf::Vertex();
@@ -147,7 +147,7 @@ std::vector<std::pair<sf::Vector2f, tile>> tilemap::intersects(sf::FloatRect aab
 				t = get(x, y);
 			}
 			sf::FloatRect tile_aabb(x, y, 1, 1);
-			// add non-empty ones that intersect to the list
+			// add non-empty ones that intersect to the listex_t
 			if (t != tile::empty && tile_aabb.intersects(aabb)) {
 				ret.push_back(std::make_pair(sf::Vector2f(x, y), t));
 			}
@@ -297,7 +297,7 @@ ImRect tilemap::calc_uvs(tile::tile_type type, sf::Texture& tex, int tile_size) 
 }
 
 ImRect tilemap::calc_uvs(tile::tile_type type) const {
-	return tilemap::calc_uvs(type, m_tex, m_ts);
+	return tilemap::calc_uvs(type, m_tex, m_tex_ts);
 }
 
 sf::Vector2i tilemap::size() const {
@@ -351,12 +351,12 @@ bool tilemap::m_oob(int i) const {
 
 sf::IntRect tilemap::calculate_texture_rect(tile t) const {
 	sf::IntRect res;
-	res.left = int(t) % (m_tex.getSize().x / m_ts);
-	res.top	 = int(t) / (m_tex.getSize().x / m_ts);
-	res.left *= m_ts;
-	res.top *= m_ts;
-	res.width  = m_ts;
-	res.height = m_ts;
+	res.left = int(t) % (m_tex.getSize().x / m_tex_ts);
+	res.top	 = int(t) / (m_tex.getSize().x / m_tex_ts);
+	res.left *= m_tex_ts;
+	res.top *= m_tex_ts;
+	res.width  = m_tex_ts;
+	res.height = m_tex_ts;
 	return res;
 }
 

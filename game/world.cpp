@@ -33,9 +33,14 @@ world::world(level l)
 	m_game_over.setTexture(resource::get().tex("assets/gui/defeat.png"));
 	m_game_over.setOrigin(m_game_over.getLocalBounds().width / 2.f, m_game_over.getLocalBounds().height);
 
+	m_game_clear.setScale(4, 4);
+	m_space_to_retry.setScale(4, 4);
+	m_game_over.setScale(4, 4);
+
 	m_game_clear.setPosition(m_tmap.total_size() / 2.f);
 	m_space_to_retry.setPosition(m_tmap.total_size() / 2.f);
 	m_game_over.setPosition(m_tmap.total_size() / 2.f);
+
 
 	m_dash_sfx_thread = std::jthread([this](std::stop_token stoken) {
 		using namespace std::chrono_literals;
