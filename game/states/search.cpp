@@ -16,7 +16,7 @@ namespace states {
 search::search()
 	: m_query({ .cursor = -1, .query = "", .matchTitle = true, .matchDescription = true, .sortBy = "id", .order = "desc" }),
 	  m_sort_opts{ "downloads", "id", "createdAt", "updatedAt", "title" },
-	  m_sort_selection(0),
+	  m_sort_selection(1),
 	  m_order_opts{ "asc", "desc" },
 	  m_order_selection(1),
 	  m_rows(3),
