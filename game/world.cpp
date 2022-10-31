@@ -581,8 +581,12 @@ void world::m_update_mp() {
 		m_moving_platform_handle[i].reset();
 		sf::FloatRect aabb = m_get_player_ghost_aabb(m_xp, m_yp, dir(i));
 		auto intersects	   = m_mt_mgr.intersects_raw(aabb);
-		if (intersects.size() != 0) {
-			m_moving_platform_handle[i].emplace(intersects.begin()->second);
+		// save the first solid tile
+		for (auto& [pos, mt] : intersects) {
+			if (tile(mt).solid()) {
+				m_moving_platform_handle[i].emplace(mt);
+				break;
+			}
 		}
 	}
 }
@@ -592,7 +596,7 @@ sf::Vector2f world::m_mp_player_offset(sf::Time dt) const {
 
 	// check the one we're standing on first
 	std::optional<moving_tile> standing_on = m_moving_platform_handle[int(m_flip_gravity ? dir::up : dir::down)];
-	if (standing_on) {
+	if (standing_on && tile(*standing_on).solid()) {
 		if (tile(*standing_on) != tile::ice) {
 			offset.x += standing_on->delta().x;
 		}
@@ -603,10 +607,10 @@ sf::Vector2f world::m_mp_player_offset(sf::Time dt) const {
 	std::optional<moving_tile> left	 = m_moving_platform_handle[int(dir::left)];
 	std::optional<moving_tile> right = m_moving_platform_handle[int(dir::right)];
 	// if they're moving towards us, push the character
-	if (left && left->vel().x > 0) {
+	if (left && tile(*left).solid() && left->vel().x > 0) {
 		offset.x += left->vel().x * dt.asSeconds();
 	}
-	if (right && right->vel().x < 0) {
+	if (right && tile(*right).solid() && right->vel().x < 0) {
 		offset.x += right->vel().x * dt.asSeconds();
 	}
 	if (left && tile(*left) == tile::ladder && m_climbing && m_climbing_facing == dir::left) {
