@@ -358,6 +358,7 @@ moving_tile::moving_tile(tile t, tilemap& m)
 }
 
 void moving_tile::draw(sf::RenderTarget& t, sf::RenderStates s) const {
+	if (m_t.editor_only()) return;
 	s.transform *= getTransform();
 	t.draw(m_spr, s);
 }

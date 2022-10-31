@@ -140,6 +140,7 @@ private:
 
 	sf::VertexArray m_va;			  // the tilemap vertex cache itself
 	sf::VertexArray m_va_editor;	  // additional rendering on top of the tilemap only displayed in editor mode.
+	sf::VertexArray m_va_arrows;	  // just for displaying moving arrows
 	void m_flush_va();				  // fully resets m_va with the cached tile data
 	void m_update_quad(int i);		  // sets the quad at the index to the tile value in m_tiles
 	void m_set_quad(int i, tile t);	  // sets the quad at the index to the given tile

@@ -12,6 +12,7 @@ tilemap::tilemap(sf::Texture& tex, int xs, int ys, int ts)
 	: m_tex(tex), m_xs(xs), m_ys(ys), m_ts(ts), m_editor(false) {
 	m_va.setPrimitiveType(sf::Quads);
 	m_va_editor.setPrimitiveType(sf::Quads);
+	m_va_arrows.setPrimitiveType(sf::Quads);
 	m_tiles.resize(xs * ys, tile::empty);
 	m_flush_va();
 }
@@ -22,6 +23,7 @@ void tilemap::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	t.draw(m_va, s);
 	if (m_editor) {
 		t.draw(m_va_editor, s);
+		t.draw(m_va_arrows, s);
 	}
 }
 
@@ -30,6 +32,8 @@ void tilemap::m_flush_va() {
 	m_va.resize(m_xs * m_ys * 4);
 	m_va_editor.clear();
 	m_va_editor.resize(m_xs * m_ys * 4);
+	m_va_arrows.clear();
+	m_va_arrows.resize(m_xs * m_ys * 4);
 	for (int i = 0; i < m_tiles.size(); ++i) {
 		m_update_quad(i);
 	}
@@ -40,7 +44,7 @@ void tilemap::m_set_quad(int i, tile t) {
 	int x = i % m_xs;
 	int y = i / m_xs;
 
-	if (t == tile::empty || t.editor_only()) {
+	if (t == tile::empty) {
 		sf::Vertex air;
 		m_va[i * 4]			   = air;
 		m_va[i * 4 + 1]		   = air;
@@ -50,6 +54,10 @@ void tilemap::m_set_quad(int i, tile t) {
 		m_va_editor[i * 4 + 1] = air;
 		m_va_editor[i * 4 + 2] = air;
 		m_va_editor[i * 4 + 3] = air;
+		m_va_arrows[i * 4]	   = air;
+		m_va_arrows[i * 4 + 1] = air;
+		m_va_arrows[i * 4 + 2] = air;
+		m_va_arrows[i * 4 + 3] = air;
 	}
 	if (t == tile::empty) return;
 
@@ -86,28 +94,28 @@ void tilemap::m_set_quad(int i, tile t) {
 		int ntx = int(nt) % (m_tex.getSize().x / m_ts);
 		int nty = int(nt) / (m_tex.getSize().x / m_ts);
 
-		m_va_editor[i * 4].position.x  = x * m_ts;
-		m_va_editor[i * 4].position.y  = y * m_ts;
-		m_va_editor[i * 4].texCoords.x = ntx * m_ts;
-		m_va_editor[i * 4].texCoords.y = nty * m_ts;
+		m_va_arrows[i * 4].position.x  = x * m_ts;
+		m_va_arrows[i * 4].position.y  = y * m_ts;
+		m_va_arrows[i * 4].texCoords.x = ntx * m_ts;
+		m_va_arrows[i * 4].texCoords.y = nty * m_ts;
 
-		m_va_editor[i * 4 + 1].position.x  = (x + 1) * m_ts;
-		m_va_editor[i * 4 + 1].position.y  = y * m_ts;
-		m_va_editor[i * 4 + 1].texCoords.x = (ntx + 1) * m_ts;
-		m_va_editor[i * 4 + 1].texCoords.y = nty * m_ts;
+		m_va_arrows[i * 4 + 1].position.x  = (x + 1) * m_ts;
+		m_va_arrows[i * 4 + 1].position.y  = y * m_ts;
+		m_va_arrows[i * 4 + 1].texCoords.x = (ntx + 1) * m_ts;
+		m_va_arrows[i * 4 + 1].texCoords.y = nty * m_ts;
 
-		m_va_editor[i * 4 + 2].position.x  = (x + 1) * m_ts;
-		m_va_editor[i * 4 + 2].position.y  = (y + 1) * m_ts;
-		m_va_editor[i * 4 + 2].texCoords.x = (ntx + 1) * m_ts;
-		m_va_editor[i * 4 + 2].texCoords.y = (nty + 1) * m_ts;
+		m_va_arrows[i * 4 + 2].position.x  = (x + 1) * m_ts;
+		m_va_arrows[i * 4 + 2].position.y  = (y + 1) * m_ts;
+		m_va_arrows[i * 4 + 2].texCoords.x = (ntx + 1) * m_ts;
+		m_va_arrows[i * 4 + 2].texCoords.y = (nty + 1) * m_ts;
 
-		m_va_editor[i * 4 + 3].position.x  = x * m_ts;
-		m_va_editor[i * 4 + 3].position.y  = (y + 1) * m_ts;
-		m_va_editor[i * 4 + 3].texCoords.x = ntx * m_ts;
-		m_va_editor[i * 4 + 3].texCoords.y = (nty + 1) * m_ts;
-	} else if (t != tile::stopper) {
+		m_va_arrows[i * 4 + 3].position.x  = x * m_ts;
+		m_va_arrows[i * 4 + 3].position.y  = (y + 1) * m_ts;
+		m_va_arrows[i * 4 + 3].texCoords.x = ntx * m_ts;
+		m_va_arrows[i * 4 + 3].texCoords.y = (nty + 1) * m_ts;
+	} else {
 		for (int k = 0; k < 4; ++k) {
-			m_va_editor[i * 4 + k] = sf::Vertex();
+			m_va_arrows[i * 4 + k] = sf::Vertex();
 		}
 	}
 }
@@ -454,7 +462,7 @@ bool tile::blocks_moving_tiles() const {
 }
 
 bool tile::movable() const {
-	return solid() || harmful();
+	return solid() || harmful() || type == tile::stopper;
 }
 
 bool tile::editor_only() const {
