@@ -1,7 +1,12 @@
 #include "resource.hpp"
 
 resource::resource()
-	: m_window(sf::VideoMode(1920, 1048), "BlockQuest Remake") {
+	: m_window(sf::VideoMode(1600, 928 + 24), "BlockQuest Remake") {
+
+	if (sf::VideoMode::getDesktopMode().width < 1600) {
+		m_window.setSize({ 1366, 768 + 26 });
+	}
+
 	sf::Image icon;
 	icon.loadFromFile("assets/gui/play.png");
 	m_window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());

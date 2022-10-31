@@ -39,6 +39,13 @@ edit::edit()
 	  m_old_mouse_tile(-1, -1),
 	  m_last_placed(-1, -1) {
 
+	// propagate an initial resize
+	sf::Event rsz_evt;
+	rsz_evt.type		= sf::Event::Resized;
+	rsz_evt.size.width	= resource::get().window().getSize().x;
+	rsz_evt.size.height = resource::get().window().getSize().y;
+	process_event(rsz_evt);
+
 	m_rt.create(34 * 16, 32 * 16);
 	m_map.setTexture(m_rt.getTexture());
 
@@ -367,28 +374,30 @@ void edit::imdraw(fsm* sm) {
 	flags |= ImGuiWindowFlags_NoSavedSettings;
 	flags |= ImGuiWindowFlags_AlwaysAutoResize;
 
+	sf::Vector2i wsz(resource::get().window().getSize());
+
 	// menu bar
 	m_menu_bar.imdraw(m_info_msg);
 
 	// controls
-	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_Once);
+	ImGui::SetNextWindowPos(ImVec2(0, 24), ImGuiCond_Once);
 	ImGui::Begin("Controls", nullptr, flags);
 	m_gui_controls(sm);
 	ImGui::End();
 
 	// block picker
-	ImGui::SetNextWindowPos(ImVec2(100, 500), ImGuiCond_Once);
+	ImGui::SetNextWindowPos(ImVec2(0, wsz.y / 2.f), ImGuiCond_Once);
 	ImGui::Begin("Blocks", nullptr, flags);
 	m_gui_block_picker(sm);
 	ImGui::End();
 
-	ImGui::SetNextWindowPos(ImVec2(1550, 50), ImGuiCond_Once);
+	ImGui::SetNextWindowPos(ImVec2(wsz.x - 250, 50), ImGuiCond_Once);
 	ImGui::Begin("Menu", nullptr, flags);
 	m_gui_menu(sm);
 	ImGui::End();
 
 	if (m_level().has_metadata()) {
-		ImGui::SetNextWindowPos(ImVec2(1550, 500), ImGuiCond_Once);
+		ImGui::SetNextWindowPos(ImVec2(wsz.x - 300, wsz.y / 2.f), ImGuiCond_Once);
 		ImGui::SetNextWindowSize(ImVec2(300, 500), ImGuiCond_Once);
 		ImGui::Begin("Level Info");
 		m_gui_level_info(sm);

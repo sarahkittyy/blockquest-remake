@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "imgui.h"
+#include "resource.hpp"
 #include "tilemap.hpp"
 
 debug& debug::get() {
@@ -30,8 +31,11 @@ void debug::imdraw(sf::Time dt) {
 	}
 	if (m_demo_open)
 		ImGui::ShowDemoWindow(&m_demo_open);
+
+	sf::Vector2i wsz(resource::get().window().getSize());
+
 	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
-	ImGui::SetNextWindowPos(ImVec2(1500, 1000), ImGuiCond_Once);
+	ImGui::SetNextWindowPos(ImVec2(wsz.x - 420, wsz.y - 32), ImGuiCond_Once);
 	ImGui::SetNextWindowSize(ImVec2(420, 800), ImGuiCond_Once);
 	ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
 	char title[100];
