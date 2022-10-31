@@ -44,8 +44,9 @@ void tilemap::m_set_quad(int i, tile t) {
 	int x = i % m_xs;
 	int y = i / m_xs;
 
+	sf::Vertex air;
+
 	if (t == tile::empty) {
-		sf::Vertex air;
 		m_va[i * 4]			   = air;
 		m_va[i * 4 + 1]		   = air;
 		m_va[i * 4 + 2]		   = air;
@@ -58,14 +59,26 @@ void tilemap::m_set_quad(int i, tile t) {
 		m_va_arrows[i * 4 + 1] = air;
 		m_va_arrows[i * 4 + 2] = air;
 		m_va_arrows[i * 4 + 3] = air;
+		return;
 	}
-	if (t == tile::empty) return;
 
 	int tx = int(t) % (m_tex.getSize().x / m_ts);
 	int ty = int(t) / (m_tex.getSize().x / m_ts);
 
 	// tiles only visible in editor mode
 	sf::VertexArray& va_to_modify = t.editor_only() ? m_va_editor : m_va;
+	// remove editor tiles on this spot if placing a non-editor tile on it
+	if (!t.editor_only()) {
+		m_va_editor[i * 4]	   = air;
+		m_va_editor[i * 4 + 1] = air;
+		m_va_editor[i * 4 + 2] = air;
+		m_va_editor[i * 4 + 3] = air;
+	} else {
+		m_va[i * 4]		= air;
+		m_va[i * 4 + 1] = air;
+		m_va[i * 4 + 2] = air;
+		m_va[i * 4 + 3] = air;
+	}
 
 	// fill in the quad
 	va_to_modify[i * 4].position.x	= x * m_ts;
