@@ -18,7 +18,7 @@ app::app(int argc, char** argv) {
 
 	configure_imgui_style();
 
-	m_fsm.swap_state<states::edit>();
+	m_fsm.swap_state<states::search>();
 
 	if (const char* name = std::getenv("BQR_USERNAME")) {
 		if (const char* pass = std::getenv("BQR_PASSWORD")) {
@@ -34,8 +34,6 @@ app::app(int argc, char** argv) {
 		} else if (mode == "debug") {
 			m_fsm.swap_state<states::debug>();
 		} else if (mode == "edit") {
-			m_fsm.swap_state<states::edit>();
-		} else {
 			m_fsm.swap_state<states::edit>();
 		}
 	}

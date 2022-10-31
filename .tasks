@@ -10,7 +10,7 @@ cwd=build
 
 [test]
 
-command=env SERVER_URL=https://bq-r.sushicat.rocks ./build/bq-r edit
+command=env SERVER_URL=https://bq-r.sushicat.rocks ./build/bq-r
 
 [run]
 
