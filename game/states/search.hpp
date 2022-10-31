@@ -28,7 +28,7 @@ private:
 	ImGui::AppMenuBar m_menu_bar;	// app menu bar
 
 	// QUERY STUFF
-	api::search_query m_query;		  // holds the query that we send to the api
+	api::search_query& query();		  // just fetches the query from context
 	api::search_query m_last_query;	  // holds the query that we send to the api
 
 	const char* m_sort_opts[5];	  // api sortBy options

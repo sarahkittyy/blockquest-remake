@@ -14,6 +14,7 @@
 #include "../gui/editor_tile_button.hpp"
 #include "../gui/image_text_button.hpp"
 
+#include "context.hpp"
 #include "states/search.hpp"
 
 namespace states {
@@ -25,7 +26,6 @@ edit::edit(api::level lvl)
 
 edit::edit()
 	: m_menu_bar(),
-	  m_level(),
 	  m_cursor(),
 	  m_border(resource::get().tex("assets/tiles.png"), 34, 32, 16),
 	  m_level_size(1024),
@@ -48,7 +48,7 @@ edit::edit()
 
 	m_update_transforms();
 
-	m_level.map().set_editor_view(true);
+	m_level().map().set_editor_view(true);
 	m_cursor.map().set_editor_view(true);
 	m_border.set_editor_view(true);
 	m_stroke_map.set_editor_view(true);
@@ -67,8 +67,16 @@ edit::~edit() {
 	debug::get().setPosition(0, 0);
 }
 
+level& edit::m_level() {
+	return context::get().editor_level();
+}
+
+const level& edit::m_level() const {
+	return context::get().editor_level();
+}
+
 float edit::m_level_scale() const {
-	return m_level_size / m_level.map().total_size().y;
+	return m_level_size / m_level().map().total_size().y;
 }
 
 void edit::m_update_transforms() {
@@ -76,7 +84,7 @@ void edit::m_update_transforms() {
 
 	float scale = m_level_scale();
 
-	m_level.setPosition(16, 0);
+	m_level().setPosition(16, 0);
 	m_cursor.setPosition(16, 0);
 	m_stroke_map.setPosition(16, 0);
 	if (m_test_play_world) {
@@ -98,7 +106,7 @@ void edit::process_event(sf::Event e) {
 	default:
 		break;
 	case sf::Event::Resized:
-		m_level_size = std::min(e.size.width - 2 * int(m_level.map().tile_size() * m_level_scale()), e.size.height - 24);
+		m_level_size = std::min(e.size.width - 2 * int(m_level().map().tile_size() * m_level_scale()), e.size.height - 24);
 		m_update_transforms();
 		break;
 	}
@@ -120,7 +128,7 @@ void edit::update(fsm* sm, sf::Time dt) {
 	if (!ImGui::GetIO().WantCaptureMouse &&
 		sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
 		!m_test_playing() &&
-		m_level.map().in_bounds(mouse_tile)) {
+		m_level().map().in_bounds(mouse_tile)) {
 		// set the tile
 		switch (m_cursor_type) {
 		case PENCIL: {
@@ -135,7 +143,7 @@ void edit::update(fsm* sm, sf::Time dt) {
 			break;
 		}
 		case FLOOD: {
-			auto diffs = m_flood_fill(mouse_tile, m_selected_tile, m_level.map().get(mouse_tile.x, mouse_tile.y).type, m_info_msg);
+			auto diffs = m_flood_fill(mouse_tile, m_selected_tile, m_level().map().get(mouse_tile.x, mouse_tile.y).type, m_info_msg);
 			if (!diffs.empty()) {
 				m_undo_queue.push_back(diffs);
 			}
@@ -156,7 +164,7 @@ void edit::update(fsm* sm, sf::Time dt) {
 		// if we're done stroking, render the line
 		if (m_stroke_active) {
 			m_stroke_active = false;
-			auto diffs		= m_stroke_map.layer_over(m_level.map(), true);
+			auto diffs		= m_stroke_map.layer_over(m_level().map(), true);
 			if (!diffs.empty()) {
 				m_undo_queue.push_back(diffs);
 			}
@@ -177,7 +185,7 @@ void edit::update(fsm* sm, sf::Time dt) {
 	m_rt.clear(bg());
 	m_rt.draw(m_border);
 	if (!m_test_playing()) {
-		m_rt.draw(m_level);
+		m_rt.draw(m_level());
 		m_rt.draw(m_stroke_map);
 		m_rt.draw(m_cursor);
 	} else {
@@ -232,7 +240,7 @@ std::optional<tilemap::diff> edit::m_set_tile(sf::Vector2i pos, tile::tile_type 
 	try {
 		std::optional<tilemap::diff> d;
 
-		tilemap& m	= m_level.map();
+		tilemap& m	= m_level().map();
 		const int x = pos.x;
 		const int y = pos.y;
 		switch (type) {
@@ -286,7 +294,7 @@ std::optional<tilemap::diff> edit::m_set_tile(sf::Vector2i pos, tile::tile_type 
 
 std::vector<tilemap::diff> edit::m_flood_fill(sf::Vector2i pos, tile::tile_type type, tile::tile_type replacing, std::string& error) {
 	try {
-		tilemap& m	= m_level.map();
+		tilemap& m	= m_level().map();
 		const int x = pos.x;
 		const int y = pos.y;
 		tile t		= m.get(x, y);
@@ -337,9 +345,9 @@ std::vector<tilemap::diff> edit::m_flood_fill(sf::Vector2i pos, tile::tile_type 
 sf::Vector2i edit::m_update_mouse_tile() {
 	sf::Vector2f mouse_pos(sf::Mouse::getPosition(resource::get().window()));
 	mouse_pos = m_map.getInverseTransform().transformPoint(mouse_pos);
-	mouse_pos = m_level.getInverseTransform().transformPoint(mouse_pos);
+	mouse_pos = m_level().getInverseTransform().transformPoint(mouse_pos);
 
-	const sf::Vector2i mouse_tile = m_level.mouse_tile(mouse_pos);
+	const sf::Vector2i mouse_tile = m_level().mouse_tile(mouse_pos);
 	debug::get() << mouse_tile << "\n";
 	if (mouse_tile != m_old_mouse_tile) {
 		m_last_placed = { -1, -1 };
@@ -379,7 +387,7 @@ void edit::imdraw(fsm* sm) {
 	m_gui_menu(sm);
 	ImGui::End();
 
-	if (m_level.has_metadata()) {
+	if (m_level().has_metadata()) {
 		ImGui::SetNextWindowPos(ImVec2(1550, 500), ImGuiCond_Once);
 		ImGui::SetNextWindowSize(ImVec2(300, 500), ImGuiCond_Once);
 		ImGui::Begin("Level Info");
@@ -390,20 +398,20 @@ void edit::imdraw(fsm* sm) {
 }
 
 bool edit::m_is_current_level_ours() const {
-	if (!m_level.has_metadata()) return true;
+	if (!m_level().has_metadata()) return true;
 	if (!auth::get().authed()) return false;
-	if (m_level.get_metadata().author != auth::get().username()) return false;
+	if (m_level().get_metadata().author != auth::get().username()) return false;
 	return true;
 }
 
 void edit::m_load_api_level(api::level lvl) {
 	m_upload_status.reset();
 	m_download_status.reset();
-	m_level.load_from_api(lvl);
-	api::level md = m_level.get_metadata();
+	m_level().load_from_api(lvl);
+	api::level md = m_level().get_metadata();
 	if (m_is_current_level_ours()) {
-		std::strncpy(m_title_buffer, m_level.get_metadata().title.c_str(), 50);
-		std::strncpy(m_description_buffer, m_level.get_metadata().description.c_str(), 256);
+		std::strncpy(m_title_buffer, m_level().get_metadata().title.c_str(), 50);
+		std::strncpy(m_description_buffer, m_level().get_metadata().description.c_str(), 256);
 	} else {
 		std::memset(m_title_buffer, 0, 50);
 		std::memset(m_description_buffer, 0, 50);
@@ -414,7 +422,7 @@ void edit::m_load_api_level(api::level lvl) {
 void edit::m_clear_level() {
 	m_upload_status.reset();
 	m_download_status.reset();
-	m_level.clear();
+	m_level().clear();
 	std::memset(m_title_buffer, 0, 50);
 	std::memset(m_description_buffer, 0, 50);
 	m_id = 0;
@@ -432,7 +440,7 @@ void edit::m_gui_menu(fsm* sm) {
 }
 
 void edit::m_gui_level_info(fsm* sm) {
-	api::level md = m_level.get_metadata();
+	api::level md = m_level().get_metadata();
 	ImGui::Text("-= Details (ID %d) =-", md.id);
 	ImGui::TextWrapped("Title: %s", md.title.c_str());
 	ImGui::TextWrapped("Author: %s", md.author.c_str());
@@ -465,7 +473,7 @@ void edit::m_gui_controls(fsm* sm) {
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/erase.png"), "Clear")) {
 		ImGui::OpenPopup("Clear###Confirm");
 	}
-	ImGui::BeginDisabled(!m_is_current_level_ours() || !m_level.valid() || !auth::get().authed());
+	ImGui::BeginDisabled(!m_is_current_level_ours() || !m_level().valid() || !auth::get().authed());
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/upload.png"), "Upload")) {
 		ImGui::OpenPopup("Upload###Upload");
 	}
@@ -473,7 +481,7 @@ void edit::m_gui_controls(fsm* sm) {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
 		if (!auth::get().authed()) {
 			ImGui::SetTooltip("You must be logged in to upload levels.");
-		} else if (!m_level.valid()) {
+		} else if (!m_level().valid()) {
 			ImGui::SetTooltip("Cannot upload a level without a start & end point.");
 		} else if (!m_is_current_level_ours()) {
 			ImGui::SetTooltip("Cannot re-upload someone else's level. Clear first to make your own level for posting.");
@@ -513,7 +521,7 @@ void edit::m_gui_controls(fsm* sm) {
 		ImGui::EndPopup();
 	}
 	///////////////// UPLOAD LOGIC ////////////////////////
-	bool upload_modal_open = m_level.valid();
+	bool upload_modal_open = m_level().valid();
 	if (ImGui::BeginPopupModal("Upload###Upload", &upload_modal_open, modal_flags)) {
 		if (m_upload_status && !m_upload_status->success && m_upload_status->error) {
 			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
@@ -525,13 +533,13 @@ void edit::m_gui_controls(fsm* sm) {
 		}
 		if (ImGui::InputText("Description", m_description_buffer, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
 			if (!m_upload_future.valid())
-				m_upload_future = api::get().upload_level(m_level, m_title_buffer, m_description_buffer);
+				m_upload_future = api::get().upload_level(m_level(), m_title_buffer, m_description_buffer);
 		}
 		ImGui::BeginDisabled(m_upload_future.valid());
 		const char* upload_label = m_upload_future.valid() ? "Uploading...###UploadForReal" : "Upload###UploadForReal";
 		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/upload.png"), upload_label)) {
 			if (!m_upload_future.valid())
-				m_upload_future = api::get().upload_level(m_level, m_title_buffer, m_description_buffer);
+				m_upload_future = api::get().upload_level(m_level(), m_title_buffer, m_description_buffer);
 		}
 		ImGui::EndDisabled();
 		if (m_upload_future.valid() && util::ready(m_upload_future)) {
@@ -549,7 +557,7 @@ void edit::m_gui_controls(fsm* sm) {
 				ImGui::TextWrapped("A level named %s already exists, do you want to overwrite it?", m_title_buffer);
 				if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/yes.png"), "Yes###OverrideYes")) {
 					m_upload_status.reset();
-					m_upload_future = api::get().upload_level(m_level, m_title_buffer, m_description_buffer, true);
+					m_upload_future = api::get().upload_level(m_level(), m_title_buffer, m_description_buffer, true);
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::SameLine();
@@ -581,7 +589,7 @@ void edit::m_gui_controls(fsm* sm) {
 	}
 	// import / export popups
 	if (ImGui::BeginPopupModal("Export###Export")) {
-		std::string saved = m_level.map().save();
+		std::string saved = m_level().map().save();
 		ImGui::BeginChildFrame(ImGui::GetID("###ExportText"), ImVec2(-1, 200));
 		ImGui::TextWrapped("%s", saved.c_str());
 		ImGui::EndChildFrame();
@@ -604,7 +612,7 @@ void edit::m_gui_controls(fsm* sm) {
 		ImGui::SameLine();
 		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/create.png"), "Load")) {
 			m_clear_level();
-			m_level.map().load(std::string(m_import_buffer));
+			m_level().map().load(std::string(m_import_buffer));
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
@@ -624,7 +632,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 	ImGui::BeginChildFrame(ImGui::GetID("BlocksPicker"), ImVec2(32 * 8, 32 * 8), flags);
 	for (tile::tile_type i = tile::begin; i <= tile::ice; i = (tile::tile_type)(int(i) + 1)) {
 		ImGui::PushID((int)i);
-		if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
+		if (ImGui::EditorTileButton(m_tiles, i, m_level(), m_selected_tile == i)) {
 			m_selected_tile = i;
 		}
 		if (ImGui::IsItemHovered()) {
@@ -636,7 +644,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 	ImGui::NewLine();
 	for (tile::tile_type i = tile::black; i <= tile::ladder; i = (tile::tile_type)(int(i) + 1)) {
 		ImGui::PushID((int)i);
-		if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
+		if (ImGui::EditorTileButton(m_tiles, i, m_level(), m_selected_tile == i)) {
 			m_selected_tile = i;
 		}
 		if (ImGui::IsItemHovered()) {
@@ -648,7 +656,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 	ImGui::NewLine();
 	for (tile::tile_type i = tile::stopper; i <= tile::erase; i = (tile::tile_type)(int(i) + 1)) {
 		ImGui::PushID((int)i);
-		if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
+		if (ImGui::EditorTileButton(m_tiles, i, m_level(), m_selected_tile == i)) {
 			m_selected_tile = i;
 		}
 		if (ImGui::IsItemHovered()) {
@@ -660,7 +668,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 	ImGui::NewLine();
 	for (tile::tile_type i = tile::move_up; i <= tile::move_none; i = (tile::tile_type)(int(i) + 1)) {
 		ImGui::PushID((int)i);
-		if (ImGui::EditorTileButton(m_tiles, i, m_level, m_selected_tile == i)) {
+		if (ImGui::EditorTileButton(m_tiles, i, m_level(), m_selected_tile == i)) {
 			m_selected_tile = i;
 		}
 		if (ImGui::IsItemHovered()) {
@@ -673,21 +681,21 @@ void edit::m_gui_block_picker(fsm* sm) {
 	ImGui::NewLine();
 	ImGui::TextWrapped("%s", tile::description(m_selected_tile).c_str());
 	// pencil options
-	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)PENCIL, m_level, m_cursor_type == PENCIL, 32)) {
+	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)PENCIL, m_level(), m_cursor_type == PENCIL, 32)) {
 		m_cursor_type = PENCIL;
 	}
 	if (ImGui::IsItemHovered()) {
 		ImGui::SetTooltip("%s", m_cursor_description(PENCIL));
 	}
 	ImGui::SameLine();
-	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)FLOOD, m_level, m_cursor_type == FLOOD, 32)) {
+	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)FLOOD, m_level(), m_cursor_type == FLOOD, 32)) {
 		m_cursor_type = FLOOD;
 	}
 	if (ImGui::IsItemHovered()) {
 		ImGui::SetTooltip("%s", m_cursor_description(FLOOD));
 	}
 	ImGui::SameLine();
-	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)STROKE, m_level, m_cursor_type == STROKE, 32)) {
+	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)STROKE, m_level(), m_cursor_type == STROKE, 32)) {
 		m_cursor_type = STROKE;
 	}
 	if (ImGui::IsItemHovered()) {
@@ -700,7 +708,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 		m_undo_queue.pop_back();
 		m_redo_queue.push_back(diffs);
 		for (auto& diff : diffs) {
-			m_level.map().undo(diff);
+			m_level().map().undo(diff);
 		}
 	}
 	ImGui::EndDisabled();
@@ -711,7 +719,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 		m_redo_queue.pop_back();
 		m_undo_queue.push_back(diffs);
 		for (auto& diff : diffs) {
-			m_level.map().redo(diff);
+			m_level().map().redo(diff);
 		}
 	}
 	ImGui::EndDisabled();
@@ -721,17 +729,17 @@ void edit::m_gui_block_picker(fsm* sm) {
 
 void edit::m_toggle_test_play() {
 	if (!m_test_playing()) {
-		if (!m_level.valid()) {
+		if (!m_level().valid()) {
 			m_info_msg = "Cannot start without a valid start & end position";
 			return;
 		}
-		m_level.map().set_editor_view(false);
+		m_level().map().set_editor_view(false);
 		m_info_msg = "";
-		m_test_play_world.reset(new world(m_level));
+		m_test_play_world.reset(new world(m_level()));
 		m_update_transforms();
 	} else {
 		m_test_play_world.reset();
-		m_level.map().set_editor_view(true);
+		m_level().map().set_editor_view(true);
 	}
 }
 

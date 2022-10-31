@@ -9,21 +9,25 @@
 #include "gui/image_text_button.hpp"
 #include "gui/level_card.hpp"
 
+#include "context.hpp"
 #include "edit.hpp"
 
 namespace states {
 
 search::search()
-	: m_query({ .cursor = -1, .query = "", .matchTitle = true, .matchDescription = true, .sortBy = "id", .order = "desc" }),
-	  m_sort_opts{ "downloads", "id", "createdAt", "updatedAt", "title" },
-	  m_sort_selection(1),
+	: m_sort_opts{ "downloads", "id", "createdAt", "updatedAt", "title" },
 	  m_order_opts{ "asc", "desc" },
-	  m_order_selection(1),
 	  m_rows(3),
 	  m_cols(5),
 	  m_temp_rows(3),
 	  m_temp_cols(5),
 	  m_loading_gif(resource::get().tex("assets/gifs/loading-gif.png"), 29, { 200, 200 }, 40) {
+	auto sort_it	  = std::find_if(std::begin(m_sort_opts), std::end(m_sort_opts),
+									 [this](const char* str) { return std::string(str) == query().sortBy; });
+	m_sort_selection  = sort_it != std::end(m_sort_opts) ? std::distance(std::begin(m_sort_opts), sort_it) : 1;
+	auto order_it	  = std::find_if(std::begin(m_order_opts), std::end(m_order_opts),
+									 [this](const char* str) { return std::string(str) == query().order; });
+	m_order_selection = sort_it != std::end(m_order_opts) ? std::distance(std::begin(m_order_opts), order_it) : 1;
 	m_update_query();
 }
 
@@ -93,12 +97,12 @@ void search::imdraw(fsm* sm) {
 		m_update_query();
 	}
 
-	if (ImGui::InputTextWithHint("Query", "Enter keywords here...", &m_query.query,
+	if (ImGui::InputTextWithHint("Query", "Enter keywords here...", &query().query,
 								 ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EscapeClearsAll)) {
 		m_update_query();
 	}
-	ImGui::Checkbox("Match Title", &m_query.matchTitle);
-	ImGui::Checkbox("Match Description", &m_query.matchDescription);
+	ImGui::Checkbox("Match Title", &query().matchTitle);
+	ImGui::Checkbox("Match Description", &query().matchDescription);
 
 	ImGui::SliderInt("Rows", &m_temp_rows, 1, 4);
 	ImGui::SliderInt("Cols", &m_temp_cols, 1, 5);
@@ -182,6 +186,10 @@ void search::imdraw(fsm* sm) {
 	ImGui::End();
 }
 
+api::search_query& search::query() {
+	return context::get().search_query();
+}
+
 ImGui::ApiLevelTile& search::m_gui_level_tile(api::level lvl) {
 	if (!m_api_level_tile.contains(lvl.id)) {
 		m_api_level_tile[lvl.id] = std::make_shared<ImGui::ApiLevelTile>(lvl);
@@ -190,14 +198,14 @@ ImGui::ApiLevelTile& search::m_gui_level_tile(api::level lvl) {
 }
 
 void search::m_next_page() {
-	m_cursor_log.push(m_query.cursor);
-	m_query.cursor = m_query_status->cursor;
+	m_cursor_log.push(query().cursor);
+	query().cursor = m_query_status->cursor;
 	m_update_query();
 }
 
 void search::m_prev_page() {
 	if (m_cpage() != 0) {
-		m_query.cursor = m_cursor_log.top();
+		query().cursor = m_cursor_log.top();
 		m_cursor_log.pop();
 		m_update_query();
 	}
@@ -215,23 +223,23 @@ void search::m_update_query() {
 	m_rows = m_temp_rows;
 	m_cols = m_temp_cols;
 
-	m_query.sortBy = m_sort_opts[m_sort_selection];
-	m_query.order  = m_order_opts[m_order_selection];
-	m_query.limit  = m_rows * m_cols;
+	query().sortBy = m_sort_opts[m_sort_selection];
+	query().order  = m_order_opts[m_order_selection];
+	query().limit  = m_rows * m_cols;
 
 	// wait for the current request to process
 	if (m_query_future.valid()) return;
 	debug::log() << "Search query updated\n";
 	m_api_level_tile.clear();
 
-	if (m_query != m_last_query) {
+	if (query() != m_last_query) {
 		m_cursor_log   = {};
-		m_query.cursor = -1;
+		query().cursor = -1;
 	}
 
 	m_query_status.reset();
-	m_query_future = api::get().search_levels(m_query);
-	m_last_query   = m_query;
+	m_query_future = api::get().search_levels(query());
+	m_last_query   = query();
 }
 
 bool search::m_searching() const {
