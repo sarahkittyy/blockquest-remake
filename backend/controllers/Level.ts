@@ -267,10 +267,12 @@ export default class Level {
 			if (user.id !== existingLevel.authorId) {
 				return res
 					.status(401)
-					.send({ error: 'Cannot overwrite a level you are not the author of.' });
+					.send({ error: `A level with that title already exists (ID ${existingLevel.id})` });
 			}
 			if (!overwrite) {
-				return res.status(409).send({ error: 'A level with that title already exists.' });
+				return res
+					.status(409)
+					.send({ error: `A level with that title already exists (ID ${existingLevel.id})` });
 			}
 			const updatedLevel = await prisma.level.update({
 				where: { id: existingLevel.id },
