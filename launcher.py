@@ -3,7 +3,7 @@ import readchar
 import os
 import sys
 import shutil
-import subprocess
+import distutils.dir_util
 
 def stage1():
     version_path = getattr(sys, '_MEIPASS', os.getcwd())
@@ -52,22 +52,28 @@ def stage1():
     os.remove(zip_name)
     print('Extracted latest version to new/')
 
-
-    shutil.rmtree('old/', True)
-    os.mkdir('old/')
-
     try:
-        os.rename('new/launcher.exe', './launcher_new.exe')
+        shutil.copyfile('new/launcher.exe', './launcher_new.exe')
         os.execv('./launcher_new.exe', ['./launcher_new.exe', 'stage-2'])
     except Exception as e:
         print(f'Failed to launch stage 2 of updater: {e}')
 
 def stage2():
-    print('in stage 2')
-    pass
+    # remove the old launcher file
+    try:
+        os.remove('./launcher.exe')
+    except:
+        pass
+    try:
+        distutils.dir_util.copy_tree('new', '.')
+        os.execv('./launcher.exe', ['./launcher.exe', 'stage-3'])
+    except Exception as e:
+        print(f'Failed to launch stage 3 of updater: {e}')
+
 def stage3():
-    print('in stage 3')
-    pass
+    # remove temp launcher
+    os.remove('./launcher_new.exe')
+    os.execv('./blockquest-remake.exe', ['./blockquest-remake.exe'])
 
 if len(sys.argv) < 2:
     stage1()

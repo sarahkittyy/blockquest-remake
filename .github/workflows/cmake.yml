@@ -27,7 +27,7 @@ jobs:
     - name: Configure Updater
       run: |
         echo ${{github.ref_name}} > version.txt
-        pip install pyinstaller readchar requests
+        pip install pyinstaller readchar requests distutils
         pyinstaller --onefile --console --add-data "version.txt;." --workpath=build/_pytmp --distpath=build --icon="assets/icon.ico" launcher.py
 
     - run: |
