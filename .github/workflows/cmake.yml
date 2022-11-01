@@ -27,6 +27,13 @@ jobs:
         choco install openssl
       shell: cmd
 
+
+    - name: Configure Updater
+      run: |
+        echo ${{github.ref_name}} > version.txt
+        pip install pyinstaller readchar
+        pyinstaller --onefile --console -add-data version.txt;. --workpath=build/_pytmp --distpath=build --icon="assets/icon.ico" launcher.py
+
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
@@ -42,6 +49,7 @@ jobs:
         cp build/*/bq-r.exe release/blockquest-remake.exe
         cp build/*/*.lib release/
         cp build/*/*.dll release/
+        cp build/launcher.* release/
         cp openal32.dll release/
         cp -r assets/ release/assets/
 
