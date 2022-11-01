@@ -23,6 +23,13 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
+
+    - name: Configure Updater
+      run: |
+        echo ${{github.ref_name}} > version.txt
+        pip install pyinstaller readchar requests
+        pyinstaller --onefile --console --add-data "version.txt;." --workpath=build/_pytmp --distpath=build --icon="assets/icon.ico" launcher.py
+
     - run: |
         choco install openssl
       shell: cmd
@@ -42,6 +49,7 @@ jobs:
         cp build/*/bq-r.exe release/blockquest-remake.exe
         cp build/*/*.lib release/
         cp build/*/*.dll release/
+        cp build/launcher.* release/
         cp openal32.dll release/
         cp -r assets/ release/assets/
 
