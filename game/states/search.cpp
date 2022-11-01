@@ -17,9 +17,9 @@ namespace states {
 search::search()
 	: m_sort_opts{ "downloads", "id", "createdAt", "updatedAt", "title" },
 	  m_order_opts{ "asc", "desc" },
-	  m_rows(3),
+	  m_rows(4),
 	  m_cols(4),
-	  m_temp_rows(3),
+	  m_temp_rows(4),
 	  m_temp_cols(4),
 	  m_loading_gif(resource::get().tex("assets/gifs/loading-gif.png"), 29, { 200, 200 }, 40) {
 	auto sort_it	  = std::find_if(std::begin(m_sort_opts), std::end(m_sort_opts),

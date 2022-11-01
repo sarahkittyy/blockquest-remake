@@ -452,8 +452,6 @@ void world::update(sf::Time dt) {
 	m_xp = intended_x;
 	m_yp = intended_y;
 
-	// check if we're on a moving platform
-	m_update_mp();
 	// update "touching" list
 	m_update_touching();
 

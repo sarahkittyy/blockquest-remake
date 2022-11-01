@@ -371,7 +371,6 @@ void edit::imdraw(fsm* sm) {
 	// clang-format off
 	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
 	flags |= ImGuiWindowFlags_NoResize;
-	flags |= ImGuiWindowFlags_NoSavedSettings;
 	flags |= ImGuiWindowFlags_AlwaysAutoResize;
 
 	sf::Vector2i wsz(resource::get().window().getSize());
@@ -380,24 +379,24 @@ void edit::imdraw(fsm* sm) {
 	m_menu_bar.imdraw(m_info_msg);
 
 	// controls
-	ImGui::SetNextWindowPos(ImVec2(0, 24), ImGuiCond_Once);
+	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Controls", nullptr, flags);
 	m_gui_controls(sm);
 	ImGui::End();
 
 	// block picker
-	ImGui::SetNextWindowPos(ImVec2(0, wsz.y / 2.f), ImGuiCond_Once);
+	ImGui::SetNextWindowPos(ImVec2(15, wsz.y / 2.f), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Blocks", nullptr, flags);
 	m_gui_block_picker(sm);
 	ImGui::End();
 
-	ImGui::SetNextWindowPos(ImVec2(wsz.x - 250, 50), ImGuiCond_Once);
+	ImGui::SetNextWindowPos(ImVec2(wsz.x - 250, 50), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Menu", nullptr, flags);
 	m_gui_menu(sm);
 	ImGui::End();
 
 	if (m_level().has_metadata()) {
-		ImGui::SetNextWindowPos(ImVec2(wsz.x - 300, wsz.y / 2.f), ImGuiCond_Once);
+		ImGui::SetNextWindowPos(ImVec2(wsz.x - 300, wsz.y / 2.f), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowSize(ImVec2(300, 500), ImGuiCond_Once);
 		ImGui::Begin("Level Info");
 		m_gui_level_info(sm);
