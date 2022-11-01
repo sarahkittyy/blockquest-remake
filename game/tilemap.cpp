@@ -381,8 +381,8 @@ void tilemap::load(std::string str) {
 	m_tiles.resize(m_xs * m_ys, tile::empty);
 	std::istringstream ss(str);
 	for (int i = 0; i < m_xs * m_ys; ++i) {
-		m_tiles[i].m_x = i % m_xs;
-		m_tiles[i].m_y = i / m_xs;
+		m_tiles[i].m_x = int(i % m_xs);
+		m_tiles[i].m_y = int(i / m_xs);
 		if (ss.peek() == '/') {
 			m_tiles[i].type = tile::empty;
 			char ch;
@@ -443,11 +443,11 @@ bool tile::operator!=(const tile_type&& type) const {
 	return type != this->type;
 }
 
-int tile::x() const {
+float tile::x() const {
 	return m_x;
 }
 
-int tile::y() const {
+float tile::y() const {
 	return m_y;
 }
 

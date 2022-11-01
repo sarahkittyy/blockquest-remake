@@ -2,6 +2,7 @@
 
 #include "debug.hpp"
 #include "resource.hpp"
+#include "tilemap.hpp"
 
 #include <algorithm>
 
@@ -342,6 +343,8 @@ void moving_blob::m_sync_tiles() {
 		tile.m_yp		  = tpos.y;
 		tile.m_xv		  = m_xv;
 		tile.m_yv		  = m_yv;
+		tile.m_t.m_x	  = tile.m_xp;
+		tile.m_t.m_y	  = tile.m_yp;
 		debug::get() << "i = " << i << " " << tpos << "\n";
 	}
 }

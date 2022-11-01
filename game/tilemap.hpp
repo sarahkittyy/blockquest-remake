@@ -56,8 +56,8 @@ struct tile {
 	bool operator!=(const tile_type&& type) const;	 // check if a tile is not of a given type
 	operator int() const;							 // retrieve the texture index of the tile
 
-	int x() const;	 // x pos of the tile
-	int y() const;	 // y pos of the tile
+	float x() const;   // x pos of the tile
+	float y() const;   // y pos of the tile
 
 	static std::string description(tile_type type);	  // a user-friendly description of the tile
 
@@ -69,8 +69,10 @@ struct tile {
 	bool editor_only() const;			//  tiles only visible in the editor
 private:
 	friend class tilemap;
+	friend class moving_tile;
+	friend class moving_blob;
 	tile(tile_type type, int x, int y);
-	int m_x = -1, m_y = -1;
+	float m_x = -1, m_y = -1;
 };
 
 // stores and renders all static tiles in a level
