@@ -8,9 +8,16 @@
 #include "auth.hpp"
 #include "debug.hpp"
 
+#include "gui/image_text_button.hpp"
+#include "imgui-SFML.h"
+#include "imgui.h"
+
 #include "states/debug.hpp"
 #include "states/edit.hpp"
 #include "states/search.hpp"
+
+#include "api.hpp"
+#include "util.hpp"
 
 app::app(int argc, char** argv) {
 	if (!ImGui::SFML::Init(resource::get().window()))
@@ -46,6 +53,10 @@ int app::run() {
 
 	sf::RenderWindow& win = resource::get().window();
 
+	std::future<api::update_response> version_future = api::get().is_up_to_date();
+	std::optional<api::update_response> version_resp;
+	bool version_ack = false;
+
 	// app loop
 	while (win.isOpen()) {
 		while (win.pollEvent(evt)) {
@@ -72,6 +83,40 @@ int app::run() {
 		// imgui rendering
 		m_fsm.imdraw();
 		debug::get().imdraw(dt);
+
+		// versioning / update stuff
+		if (version_future.valid() && util::ready(version_future)) {
+			version_resp = version_future.get();
+		}
+		if (!version_ack && version_resp.has_value()) {
+			if (!version_resp->success) {
+				ImGui::OpenPopup("Warning###UpdateWarning");
+			} else if (!*version_resp->up_to_date) {
+				ImGui::OpenPopup("A new update is available!###UpdateError");
+			}
+		}
+		bool dummy			   = true;
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize;
+		ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_Appearing);
+		if (ImGui::BeginPopupModal("Warning###UpdateWarning", &dummy, flags)) {
+			version_ack = true;
+			ImGui::TextWrapped("Could not run the updater - %s", version_resp->error->c_str());
+			ImGui::TextWrapped("Some things may not work correctly if you are on a version too old!");
+			ImGui::Text("Current version: %s\n", api::get().version());
+			if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/yes.png"), "Ok"))
+				ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+		}
+		ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_Appearing);
+		if (ImGui::BeginPopupModal("A new update is available!###UpdateError", &dummy, flags)) {
+			version_ack = true;
+			ImGui::TextWrapped("An update from version %s to %s is available.", api::get().version(), version_resp->latest_version->c_str());
+			ImGui::TextWrapped("Run the game through launcher.exe to update.");
+			if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/yes.png"), "Ok"))
+				ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+		}
+
 		ImGui::EndFrame();
 
 		win.clear(m_fsm.bg());

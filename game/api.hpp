@@ -55,6 +55,19 @@ public:
 	std::future<response> upload_level(::level l, const char* title, const char* description, bool override = false);
 	std::future<response> download_level(int id);
 
+	struct update_response {
+		bool success;
+		std::optional<bool> up_to_date;
+		std::optional<std::string> latest_version;
+		std::optional<std::string> error;
+	};
+
+	// get the current app version
+	const char* version() const;
+
+	// is this application up-to-date
+	std::future<update_response> is_up_to_date();
+
 	std::future<search_response> search_levels(search_query q);
 
 	// sends a download ping to be run when we fetch a level
@@ -66,4 +79,5 @@ private:
 	api(api&& other)	  = delete;
 
 	httplib::Client m_cli;
+	httplib::Client m_gh_cli;
 };

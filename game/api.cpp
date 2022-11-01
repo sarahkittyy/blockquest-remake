@@ -5,8 +5,11 @@
 #include "level.hpp"
 #include "settings.hpp"
 
+#define STRINGIFY(s) #s
+
 api::api()
-	: m_cli(settings::get().server_url()) {
+	: m_cli(settings::get().server_url()),
+	  m_gh_cli("https://api.github.com") {
 }
 
 api &api::get() {
@@ -213,6 +216,56 @@ std::future<api::response> api::upload_level(::level l, const char *title, const
 			return {
 				.success = false,
 				.code	 = -1,
+				.error	 = "Unknown error."
+			};
+		}
+	});
+}
+
+const char *api::version() const {
+#ifndef NDEBUG
+	return "vDEBUG";
+#elifdef APP_TAG
+	return STRINGIFY(APP_TAG);
+#else
+	return "vUNKNOWN";
+#endif
+}
+
+std::future<api::update_response> api::is_up_to_date() {
+	std::string ctag(version());
+	return std::async([this, ctag]() -> api::update_response {
+		try {
+			if (auto res = m_gh_cli.Get("/repos/sarahkittyy/blockquest-remake/releases/latest")) {
+				nlohmann::json result = nlohmann::json::parse(res->body);
+				if (res->status == 200) {
+					return {
+						.success		= true,
+						.up_to_date		= ctag == result["tag_name"],
+						.latest_version = result["tag_name"]
+					};
+				} else {
+					return {
+						.success = false,
+						.error	 = "Invalid response from github"
+					};
+				}
+			} else {
+				throw "Could not connect to github api";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.error	 = e,
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
 				.error	 = "Unknown error."
 			};
 		}

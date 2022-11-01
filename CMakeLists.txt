@@ -37,6 +37,10 @@ else()
 	list(APPEND flags -DSERVER_URL="http://localhost:3000")
 endif()
 
+if(APP_VERSION)
+	list(APPEND flags "-DAPP_TAG=${APP_VERSION}")
+endif()
+
 if(WIN32)
 	set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc")
 	add_executable(bq-r WIN32 ${sources} ${imgui_sources} ${APP_ICON_RESOURCE_WINDOWS})

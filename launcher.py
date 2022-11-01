@@ -1,9 +1,9 @@
 import requests
-import readchar
 import os
 import sys
 import shutil
 import distutils.dir_util
+import time
 
 def stage1():
     version_path = getattr(sys, '_MEIPASS', os.getcwd())
@@ -12,10 +12,10 @@ def stage1():
         current_version = version.read().strip()
 
     def exit_err(err):
-        print(f"Error: {err}")
-        print("Press any key to quit")
-        readchar.readchar()
-        sys.exit(-1)
+        print(f"Could not update: {err}")
+        print("Launching...")
+        time.sleep(1)
+        launch()
 
     print(f'Current version: {current_version}\nChecking for updates...')
 
