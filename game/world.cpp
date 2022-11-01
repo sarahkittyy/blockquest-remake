@@ -174,8 +174,11 @@ void world::update(sf::Time dt) {
 
 	// update moving platforms
 	m_mt_mgr.update(dt);
+
 	// check if we're on a moving platform
 	m_update_mp();
+	// update "touching" list
+	m_update_touching();
 
 	// shift the player by the amount the platform they're on moved
 	sf::Vector2f mp_offset = m_mp_player_offset(dt);
@@ -451,9 +454,6 @@ void world::update(sf::Time dt) {
 
 	m_xp = intended_x;
 	m_yp = intended_y;
-
-	// update "touching" list
-	m_update_touching();
 
 	// test for being squeezed
 	if (m_player_is_squeezed() || m_player_oob()) {
