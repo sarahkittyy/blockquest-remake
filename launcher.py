@@ -15,7 +15,7 @@ def stage1():
         print(f"Error: {err}")
         print("Press any key to quit")
         readchar.readchar()
-        exit(-1)
+        sys.exit(-1)
 
     print(f'Current version: {current_version}\nChecking for updates...')
 
@@ -28,7 +28,7 @@ def stage1():
 
     if tag == current_version:
         print('Up to date!')
-        exit(0)
+        launch()
     else:
         print(f'New version available: {current_version} -> {tag}')
 
@@ -48,12 +48,14 @@ def stage1():
 
     open(zip_name, 'wb').write(downloaded_zip.content)
 
+    print('Unzipping...')
     shutil.unpack_archive(zip_name, 'new/')
     os.remove(zip_name)
     print('Extracted latest version to new/')
 
     try:
         shutil.copyfile('new/launcher.exe', './launcher_new.exe')
+        print('Launching stage 2...')
         os.execv('./launcher_new.exe', ['./launcher_new.exe', 'stage-2'])
     except Exception as e:
         print(f'Failed to launch stage 2 of updater: {e}')
@@ -61,18 +63,27 @@ def stage1():
 def stage2():
     # remove the old launcher file
     try:
+        print('Removing old launcher...')
         os.remove('./launcher.exe')
-    except:
-        pass
-    try:
+        print('Updating...')
         distutils.dir_util.copy_tree('new', '.')
+        print('Launching cleanup...')
         os.execv('./launcher.exe', ['./launcher.exe', 'stage-3'])
     except Exception as e:
         print(f'Failed to launch stage 3 of updater: {e}')
 
 def stage3():
     # remove temp launcher
-    os.remove('./launcher_new.exe')
+    print('Cleaning up...')
+    try:
+        os.remove('./launcher_new.exe')
+        shutil.rmtree('new/')
+    except Exception as e:
+        print(f'Could not remove old files. {e}')
+    print('Done!')
+    launch()
+
+def launch():
     os.execv('./blockquest-remake.exe', ['./blockquest-remake.exe'])
 
 if len(sys.argv) < 2:
