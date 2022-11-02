@@ -7,6 +7,8 @@ import { prisma } from '@db/index';
 import { Level as LevelModel, Prisma } from '@prisma/client';
 import log from '@/log';
 
+import dayjs from 'dayjs';
+
 import {
 	IsBoolean,
 	IsIn,
@@ -255,11 +257,23 @@ export default class Level {
 			where: {
 				name: token.username,
 			},
+			include: { levels: true },
 		});
 		if (!user) {
 			return res.status(500).send({
 				error: 'Internal server error (NO_USER_FOUND)',
 			});
+		}
+		const lastLevel = user.levels?.[user.levels.length - 1];
+		if (lastLevel) {
+			const secondsSinceLastLevelPosted = dayjs().diff(lastLevel.updatedAt, 'seconds');
+			if (secondsSinceLastLevelPosted < 60) {
+				return res.status(429).send({
+					error: `Too fast! Wait ${
+						60 - secondsSinceLastLevelPosted
+					} more seconds before posting again.`,
+				});
+			}
 		}
 
 		const existingLevel = await prisma.level.findFirst({ where: { title } });
