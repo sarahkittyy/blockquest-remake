@@ -1,6 +1,6 @@
 [generate]
 
-command=cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
+command=cmake -DAPP_VERSION="v1.2.14" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
 cwd=build
 
 [build]

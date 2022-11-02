@@ -56,7 +56,10 @@ def stage1():
     try:
         shutil.copyfile('new/launcher.exe', './launcher_new.exe')
         print('Launching stage 2...')
-        os.execv('./launcher_new.exe', ['./launcher_new.exe', 'stage-2'])
+        if os.name == 'nt':
+            os.system('start ./launcher_new.exe stage-2')
+        else:
+            os.execv('./launcher_new.exe', ['./launcher_new.exe', 'stage-2'])
     except Exception as e:
         print(f'Failed to launch stage 2 of updater: {e}')
 
@@ -68,7 +71,10 @@ def stage2():
         print('Updating...')
         distutils.dir_util.copy_tree('new', '.')
         print('Launching cleanup...')
-        os.execv('./launcher.exe', ['./launcher.exe', 'stage-3'])
+        if os.name == 'nt':
+            os.system('start ./launcher.exe stage-3')
+        else:
+            os.execv('./launcher.exe', ['./launcher.exe', 'stage-3'])
     except Exception as e:
         print(f'Failed to launch stage 3 of updater: {e}')
 
@@ -84,7 +90,10 @@ def stage3():
     launch()
 
 def launch():
-    os.execv('./blockquest-remake.exe', ['./blockquest-remake.exe'])
+    if os.name == 'nt':
+        os.system('start ./blockquest-remake.exe')
+    else:
+        os.execv('./blockquest-remake.exe', ['./blockquest-remake.exe'])
 
 if len(sys.argv) < 2:
     stage1()

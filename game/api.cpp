@@ -6,6 +6,7 @@
 #include "settings.hpp"
 
 #define STRINGIFY(s) #s
+#define QUOTE(s) STRINGIFY(s)
 
 api::api()
 	: m_cli(settings::get().server_url()),
@@ -223,10 +224,10 @@ std::future<api::response> api::upload_level(::level l, const char *title, const
 }
 
 const char *api::version() const {
-#ifndef NDEBUG
+#if defined(APP_TAG)
+	return QUOTE(APP_TAG);
+#elif !defined(NDEBUG)
 	return "vDEBUG";
-#elifdef APP_TAG
-	return STRINGIFY(APP_TAG);
 #else
 	return "vUNKNOWN";
 #endif
