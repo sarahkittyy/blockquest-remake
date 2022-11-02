@@ -3,6 +3,7 @@
 
 #include "image_text_button.hpp"
 
+#include "api.hpp"
 #include "debug.hpp"
 #include "imgui.h"
 #include "resource.hpp"
@@ -259,6 +260,9 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 		ImGui::EndTable();
 		ImGui::EndPopup();
 	}
+
+	ImGui::Text("[ %s ]", api::get().version());
+
 	// debug msg
 	if (info_msg.length() != 0) {
 		ImGui::TextColored(sf::Color(255, 120, 120, 255), "[!] %s", info_msg.c_str());

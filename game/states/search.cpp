@@ -78,6 +78,9 @@ void search::imdraw(fsm* sm) {
 	}
 	ImGui::EndDisabled();
 
+	sf::Vector2f sz(ImGui::CalcTextSize(api::get().version()));
+	sf::Vector2f nwsz = ImGui::GetWindowSize();
+
 	ImGui::End();
 
 	// query options
