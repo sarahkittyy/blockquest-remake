@@ -37,7 +37,6 @@ private:
 	const char* m_order_opts[2];   // api order options
 	int m_order_selection;
 
-	int m_rows, m_cols;				// rows & columns of displayed levels
 	int m_temp_rows, m_temp_cols;	// rows & columns of displayed levels
 	// // // //
 

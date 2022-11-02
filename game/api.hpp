@@ -34,7 +34,8 @@ public:
 
 	struct search_query {
 		int cursor;
-		int limit;
+		int rows;
+		int cols;
 		std::string query;
 		bool matchTitle;
 		bool matchDescription;

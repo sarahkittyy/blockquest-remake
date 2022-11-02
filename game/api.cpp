@@ -25,7 +25,7 @@ std::future<api::search_response> api::search_levels(api::search_query q) {
 		try {
 			nlohmann::json body;
 			body["cursor"] = q.cursor;
-			body["limit"]  = q.limit;
+			body["limit"]  = q.rows * q.cols;
 			if (q.query.length() != 0) body["query"] = q.query;
 			body["matchTitle"]		 = q.matchTitle;
 			body["matchDescription"] = q.matchDescription;
@@ -277,7 +277,8 @@ std::future<api::update_response> api::is_up_to_date() {
 }
 
 bool api::search_query::operator==(const search_query &other) const {
-	return limit == other.limit &&
+	return rows == other.rows &&
+		   cols == other.cols &&
 		   query == other.query &&
 		   matchTitle == other.matchTitle &&
 		   matchDescription == other.matchDescription &&

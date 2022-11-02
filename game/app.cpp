@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "auth.hpp"
+#include "context.hpp"
 #include "debug.hpp"
 
 #include "gui/image_text_button.hpp"
@@ -61,6 +62,8 @@ int app::run() {
 	while (win.isOpen()) {
 		while (win.pollEvent(evt)) {
 			ImGui::SFML::ProcessEvent(evt);
+			m_fsm.process_event(evt);
+			context::get().process_event(evt);
 			switch (evt.type) {
 			default:
 				break;
@@ -72,7 +75,6 @@ int app::run() {
 				win.setView(sf::View(visibleArea));
 				break;
 			}
-			m_fsm.process_event(evt);
 		}
 		// updates
 		sf::Time dt = delta_clock.restart();

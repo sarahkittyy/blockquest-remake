@@ -17,10 +17,8 @@ namespace states {
 search::search()
 	: m_sort_opts{ "downloads", "id", "createdAt", "updatedAt", "title" },
 	  m_order_opts{ "asc", "desc" },
-	  m_rows(4),
-	  m_cols(4),
-	  m_temp_rows(4),
-	  m_temp_cols(4),
+	  m_temp_rows(query().rows),
+	  m_temp_cols(query().cols),
 	  m_loading_gif(resource::get().tex("assets/gifs/loading-gif.png"), 29, { 200, 200 }, 40) {
 	auto sort_it	  = std::find_if(std::begin(m_sort_opts), std::end(m_sort_opts),
 									 [this](const char* str) { return std::string(str) == query().sortBy; });
@@ -156,15 +154,15 @@ void search::imdraw(fsm* sm) {
 
 		// this can be unset if next/prev page is called
 		ImGuiTableFlags flags = ImGuiTableFlags_BordersInnerH;
-		if (m_query_status && ImGui::BeginTable("###LevelDisplay", m_cols, flags)) {
+		if (m_query_status && ImGui::BeginTable("###LevelDisplay", query().cols, flags)) {
 			// level table
 			bool no_more_levels = false;
-			for (int row = 0; row < m_rows && !no_more_levels; ++row) {
+			for (int row = 0; row < query().rows && !no_more_levels; ++row) {
 				ImGui::TableNextRow();
-				for (int col = 0; col < m_cols; ++col) {
-					ImGui::PushID(row * m_cols + col);
+				for (int col = 0; col < query().cols; ++col) {
+					ImGui::PushID(row * query().cols + col);
 					ImGui::TableNextColumn();
-					int idx = row * m_cols + col;
+					int idx = row * query().cols + col;
 
 					api::level l = m_query_status->levels[idx];
 
@@ -223,12 +221,10 @@ int search::m_cpage() const {
 }
 
 void search::m_update_query() {
-	m_rows = m_temp_rows;
-	m_cols = m_temp_cols;
-
 	query().sortBy = m_sort_opts[m_sort_selection];
 	query().order  = m_order_opts[m_order_selection];
-	query().limit  = m_rows * m_cols;
+	query().rows   = m_temp_rows;
+	query().cols   = m_temp_cols;
 
 	// wait for the current request to process
 	if (m_query_future.valid()) return;
