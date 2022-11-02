@@ -15,7 +15,7 @@ def stage1():
         print(f"Could not update: {err}")
         print("Launching...")
         time.sleep(1)
-        launch()
+        return launch()
 
     print(f'Current version: {current_version}\nChecking for updates...')
 
@@ -28,7 +28,7 @@ def stage1():
 
     if tag == current_version:
         print('Up to date!')
-        launch()
+        return launch()
     else:
         print(f'New version available: {current_version} -> {tag}')
 
@@ -87,7 +87,7 @@ def stage3():
     except Exception as e:
         print(f'Could not remove old files. {e}')
     print('Done!')
-    launch()
+    return launch()
 
 def launch():
     if os.name == 'nt':
