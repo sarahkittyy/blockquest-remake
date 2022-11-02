@@ -5,7 +5,7 @@
 
 context::context()
 	: m_editor_level(32, 32),
-	  m_query({ .cursor = -1, .query = "", .matchTitle = true, .matchDescription = true, .sortBy = "id", .order = "desc" }) {
+	  m_query({ .cursor = -1, .rows = 4, .cols = 4, .query = "", .matchTitle = true, .matchDescription = true, .sortBy = "id", .order = "desc" }) {
 	load_from_file("bq-r.json");
 }
 
