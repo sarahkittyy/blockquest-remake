@@ -5,6 +5,8 @@
 #include "level.hpp"
 #include "settings.hpp"
 
+#include <cstdlib>
+
 #define STRINGIFY(s) #s
 #define QUOTE(s) STRINGIFY(s)
 
@@ -224,10 +226,11 @@ std::future<api::response> api::upload_level(::level l, const char *title, const
 }
 
 const char *api::version() const {
-#if defined(APP_TAG)
+#if !defined(NDEBUG)
+	static const char *v = std::getenv("APP_TAG");
+	return v ? v : QUOTE(APP_TAG);
+#elif defined(APP_TAG)
 	return QUOTE(APP_TAG);
-#elif !defined(NDEBUG)
-	return "vDEBUG";
 #else
 	return "vUNKNOWN";
 #endif

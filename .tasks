@@ -10,7 +10,7 @@ cwd=build
 
 [test]
 
-command=env SERVER_URL=https://bq-r.sushicat.rocks ./build/bq-r
+command=env SERVER_URL=https://bq-r.sushicat.rocks ./start-authed.sh
 
 [run]
 
