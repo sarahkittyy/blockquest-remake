@@ -3,6 +3,8 @@
 #include <fstream>
 #include "json.hpp"
 
+#include "resource.hpp"
+
 context::context()
 	: m_editor_level(32, 32),
 	  m_query({ .cursor = -1, .rows = 4, .cols = 4, .query = "", .matchTitle = true, .matchDescription = true, .sortBy = "id", .order = "desc" }) {
@@ -43,6 +45,12 @@ std::string context::save() const {
 	jq["sortBy"]		   = q.sortBy;
 	jq["order"]			   = q.order;
 
+	j["screen_size"]["x"] = resource::get().window().getSize().x;
+	j["screen_size"]["y"] = resource::get().window().getSize().y;
+
+	j["screen_pos"]["x"] = resource::get().window().getPosition().x;
+	j["screen_pos"]["y"] = resource::get().window().getPosition().y;
+
 	return j.dump();
 }
 
@@ -74,6 +82,19 @@ void context::load(std::string data) {
 	q.matchDescription = jq["matchDescription"];
 	q.sortBy		   = jq["sortBy"];
 	q.order			   = jq["order"];
+
+	if (j.contains("screen_size")) {
+		sf::RenderWindow& win = resource::get().window();
+		sf::Vector2i nsz(j["screen_size"]["x"].get<unsigned>(),
+						 j["screen_size"]["y"].get<unsigned>());
+		win.setSize(sf::Vector2u(nsz));
+	}
+	if (j.contains("screen_pos")) {
+		sf::RenderWindow& win = resource::get().window();
+		sf::Vector2i npos(j["screen_pos"]["x"].get<int>(),
+						  j["screen_pos"]["y"].get<int>());
+		win.setPosition(npos);
+	}
 }
 
 bool context::save_to_file(std::string path) const {
