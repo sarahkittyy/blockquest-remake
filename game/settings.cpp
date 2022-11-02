@@ -2,6 +2,8 @@
 
 #include <cstdlib>
 
+#include "resource.hpp"
+
 settings::settings()
 	: m_keys({
 		  { key::LEFT, sf::Keyboard::Left },

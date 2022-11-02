@@ -109,6 +109,9 @@ void edit::m_update_transforms() {
 
 void edit::process_event(sf::Event e) {
 	m_menu_bar.process_event(e);
+	if (m_test_play_world) {
+		m_test_play_world->process_event(e);
+	}
 	switch (e.type) {
 	default:
 		break;

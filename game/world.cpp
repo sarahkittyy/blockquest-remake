@@ -12,7 +12,8 @@
 #include "resource.hpp"
 
 world::world(level l)
-	: m_tmap(l.map()),
+	: m_has_focus(true),
+	  m_tmap(l.map()),
 	  m_mt_mgr(m_tmap),
 	  m_level(l),
 	  m_player(resource::get().tex("assets/player.png")),
@@ -112,6 +113,19 @@ bool world::lost() const {
 	return m_dead;
 }
 
+void world::process_event(sf::Event e) {
+	switch (e.type) {
+	default:
+		break;
+	case sf::Event::LostFocus:
+		m_has_focus = false;
+		break;
+	case sf::Event::GainedFocus:
+		m_has_focus = true;
+		break;
+	}
+}
+
 /*
 http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platformers/
 - Decompose movement into X and Y axes, step one at a time. If you’re planning on implementing slopes afterwards, step X first, then Y. Otherwise, the order shouldn’t matter much. Then, for each axis:
@@ -123,12 +137,12 @@ http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platforme
 */
 
 void world::update(sf::Time dt) {
-	bool left_keyed	   = settings::get().key_down(key::LEFT);
-	bool right_keyed   = settings::get().key_down(key::RIGHT);
-	bool dash_keyed	   = settings::get().key_down(key::DASH);
-	bool jump_keyed	   = settings::get().key_down(key::JUMP);
-	bool up_keyed	   = settings::get().key_down(key::UP);
-	bool down_keyed	   = settings::get().key_down(key::DOWN);
+	bool left_keyed	   = m_has_focus ? settings::get().key_down(key::LEFT) : false;
+	bool right_keyed   = m_has_focus ? settings::get().key_down(key::RIGHT) : false;
+	bool dash_keyed	   = m_has_focus ? settings::get().key_down(key::DASH) : false;
+	bool jump_keyed	   = m_has_focus ? settings::get().key_down(key::JUMP) : false;
+	bool up_keyed	   = m_has_focus ? settings::get().key_down(key::UP) : false;
+	bool down_keyed	   = m_has_focus ? settings::get().key_down(key::DOWN) : false;
 	m_left_this_frame  = left_keyed;
 	m_right_this_frame = right_keyed;
 	m_dash_this_frame  = dash_keyed;
