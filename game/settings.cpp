@@ -25,6 +25,14 @@ std::string settings::server_url() const {
 	}
 }
 
+void settings::set_key_map(std::unordered_map<key, sf::Keyboard::Key> map) {
+	m_keys = map;
+}
+
+std::unordered_map<key, sf::Keyboard::Key> settings::get_key_map() const {
+	return m_keys;
+}
+
 settings& settings::get() {
 	static settings instance;
 	return instance;

@@ -29,6 +29,9 @@ public:
 
 	std::string server_url() const;
 
+	std::unordered_map<key, sf::Keyboard::Key> get_key_map() const;
+	void set_key_map(std::unordered_map<key, sf::Keyboard::Key> map);
+
 private:
 	settings();
 	settings(const settings&)		= delete;

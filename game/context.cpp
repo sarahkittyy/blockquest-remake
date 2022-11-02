@@ -4,6 +4,7 @@
 #include "json.hpp"
 
 #include "resource.hpp"
+#include "settings.hpp"
 
 context::context()
 	: m_editor_level(32, 32),
@@ -51,6 +52,8 @@ std::string context::save() const {
 	j["screen_pos"]["x"] = resource::get().window().getPosition().x;
 	j["screen_pos"]["y"] = resource::get().window().getPosition().y;
 
+	j["controls"] = settings::get().get_key_map();
+
 	return j.dump();
 }
 
@@ -73,15 +76,17 @@ void context::load(std::string data) {
 		m_editor_level.map().load(j["editor_level"]);
 	}
 
-	auto& q			   = m_query;
-	nlohmann::json& jq = j["query"];
-	q.query			   = jq["query"];
-	q.cols			   = jq["cols"];
-	q.rows			   = jq["rows"];
-	q.matchTitle	   = jq["matchTitle"];
-	q.matchDescription = jq["matchDescription"];
-	q.sortBy		   = jq["sortBy"];
-	q.order			   = jq["order"];
+	if (j.contains("query")) {
+		auto& q			   = m_query;
+		nlohmann::json& jq = j["query"];
+		q.query			   = jq["query"];
+		q.cols			   = jq["cols"];
+		q.rows			   = jq["rows"];
+		q.matchTitle	   = jq["matchTitle"];
+		q.matchDescription = jq["matchDescription"];
+		q.sortBy		   = jq["sortBy"];
+		q.order			   = jq["order"];
+	}
 
 	if (j.contains("screen_size")) {
 		sf::RenderWindow& win = resource::get().window();
@@ -94,6 +99,9 @@ void context::load(std::string data) {
 		sf::Vector2i npos(j["screen_pos"]["x"].get<int>(),
 						  j["screen_pos"]["y"].get<int>());
 		win.setPosition(npos);
+	}
+	if (j.contains("controls")) {
+		settings::get().set_key_map(j["controls"]);
 	}
 }
 
