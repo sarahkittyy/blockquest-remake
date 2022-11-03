@@ -153,7 +153,7 @@ void edit::update(fsm* sm, sf::Time dt) {
 			break;
 		}
 		case FLOOD: {
-			auto diffs = m_flood_fill(mouse_tile, m_selected_tile, m_level().map().get(mouse_tile.x, mouse_tile.y).type, m_info_msg);
+			auto diffs = m_flood_fill(mouse_tile, m_level().map().get(mouse_tile.x, mouse_tile.y), m_info_msg);
 			if (!diffs.empty()) {
 				m_undo_queue.push_back(diffs);
 			}
@@ -166,7 +166,7 @@ void edit::update(fsm* sm, sf::Time dt) {
 					m_undo_queue.push_back({ *diff });
 				}
 			} else
-				m_stroke_fill(mouse_tile, m_selected_tile, m_info_msg);
+				m_stroke_fill(mouse_tile, m_info_msg);
 			break;
 		}
 		m_last_placed = mouse_tile;
@@ -204,9 +204,9 @@ void edit::update(fsm* sm, sf::Time dt) {
 	m_rt.display();
 }
 
-std::vector<tilemap::diff> edit::m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& error) {
+std::vector<tilemap::diff> edit::m_stroke_fill(sf::Vector2i pos, std::string& error) {
 	// exclude certain types
-	switch (type) {
+	switch (m_selected_tile) {
 	default:
 		break;
 	case tile::move_up:
@@ -243,7 +243,15 @@ std::vector<tilemap::diff> edit::m_stroke_fill(sf::Vector2i pos, tile::tile_type
 		}
 	}
 	last_pos = pos;
-	return m_stroke_map.set_line(m_stroke_start, pos, type);
+	return m_stroke_map.set_line(m_stroke_start, pos, selected());
+}
+
+tile edit::selected() const {
+	tile t(m_selected_tile);
+	if (t.movable() && m_selected_direction != tile::move_none) {
+		t.props = { .moving = int(m_selected_direction) - 13 };
+	}
+	return t;
 }
 
 std::optional<tilemap::diff> edit::m_set_tile(sf::Vector2i pos, tile::tile_type type, std::string& error) {
@@ -261,7 +269,7 @@ std::optional<tilemap::diff> edit::m_set_tile(sf::Vector2i pos, tile::tile_type 
 		case tile::spike:
 		case tile::ladder:
 		case tile::stopper:
-			d = m.set(x, y, type);
+			d = m.set(x, y, selected());
 			break;
 		case tile::empty:
 		case tile::erase:
@@ -271,13 +279,7 @@ std::optional<tilemap::diff> edit::m_set_tile(sf::Vector2i pos, tile::tile_type 
 		case tile::move_down:
 		case tile::move_left:
 		case tile::move_right:
-			if (m.get(x, y).movable()) {
-				d = m.set(x, y, tile(m.get(x, y).type, { .moving = int(type) - 13 }));
-			}
-			break;
 		case tile::move_none:
-			d = m.set(x, y, tile(m.get(x, y).type, { .moving = 0 }));
-			break;
 		case tile::move_up_bit:
 		case tile::move_right_bit:
 		case tile::move_down_bit:
@@ -290,7 +292,7 @@ std::optional<tilemap::diff> edit::m_set_tile(sf::Vector2i pos, tile::tile_type 
 				sf::Vector2i to_remove = m.find_first_of(type);
 				m.clear(to_remove.x, to_remove.y);
 			}
-			d = m.set(x, y, type);
+			d = m.set(x, y, selected());
 			break;
 		default:
 			return {};
@@ -302,18 +304,20 @@ std::optional<tilemap::diff> edit::m_set_tile(sf::Vector2i pos, tile::tile_type 
 	}
 }
 
-std::vector<tilemap::diff> edit::m_flood_fill(sf::Vector2i pos, tile::tile_type type, tile::tile_type replacing, std::string& error) {
+std::vector<tilemap::diff> edit::m_flood_fill(sf::Vector2i pos, tile replacing, std::string& error) {
 	try {
 		tilemap& m	= m_level().map();
 		const int x = pos.x;
 		const int y = pos.y;
 		tile t		= m.get(x, y);
+		tile sel	= selected();
+		// do not set this tile if these conditions are met
 		if (x < 0 || x >= m.size().x || y < 0 || y >= m.size().y) return {};
-		if (t != replacing) return {};
-		if (t == type) return {};
-		if (type == replacing) return {};
-		if (t == tile::empty && type == tile::erase) return {};
-		switch (type) {
+		if (!t.eq(replacing)) return {};
+		if (t.eq(sel)) return {};
+		if (sel.eq(replacing)) return {};
+		if (t == tile::empty && sel.type == tile::erase) return {};
+		switch (sel.type) {
 		case tile::move_up:
 		case tile::move_down:
 		case tile::move_left:
@@ -330,15 +334,16 @@ std::vector<tilemap::diff> edit::m_flood_fill(sf::Vector2i pos, tile::tile_type 
 		default:
 			break;
 		}
+		////////////////////////////////////////////////////
 
 		std::vector<tilemap::diff> ret;
-		auto d = m_set_tile(pos, type, error);
+		auto d = m_set_tile(pos, sel.type, error);
 		if (d) {
 			ret.push_back(*d);
-			auto ret1 = m_flood_fill({ x - 1, y }, type, replacing, error);
-			auto ret2 = m_flood_fill({ x + 1, y }, type, replacing, error);
-			auto ret3 = m_flood_fill({ x, y - 1 }, type, replacing, error);
-			auto ret4 = m_flood_fill({ x, y + 1 }, type, replacing, error);
+			auto ret1 = m_flood_fill({ x - 1, y }, replacing, error);
+			auto ret2 = m_flood_fill({ x + 1, y }, replacing, error);
+			auto ret3 = m_flood_fill({ x, y - 1 }, replacing, error);
+			auto ret4 = m_flood_fill({ x, y + 1 }, replacing, error);
 			ret.reserve(ret1.size() + ret2.size() + ret3.size() + ret4.size() + 1);
 			ret.insert(ret.end(), ret1.begin(), ret1.end());
 			ret.insert(ret.end(), ret2.begin(), ret2.end());
@@ -636,11 +641,10 @@ void edit::m_gui_controls(fsm* sm) {
 
 void edit::m_gui_block_picker(fsm* sm) {
 	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
-	flags |= ImGuiWindowFlags_NoResize;
 	flags |= ImGuiWindowFlags_AlwaysAutoResize;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
-	ImGui::BeginChildFrame(ImGui::GetID("BlocksPicker"), ImVec2(32 * 8, 32 * 8), flags);
+	ImGui::BeginChildFrame(ImGui::GetID("BlocksPicker"), ImVec2(32 * 8, 32 * 9.5f), flags);
 	for (tile::tile_type i = tile::begin; i <= tile::ice; i = (tile::tile_type)(int(i) + 1)) {
 		ImGui::PushID((int)i);
 		if (ImGui::EditorTileButton(m_tiles, i, m_level(), m_selected_tile == i)) {
@@ -677,10 +681,11 @@ void edit::m_gui_block_picker(fsm* sm) {
 		ImGui::PopID();
 	}
 	ImGui::NewLine();
+	ImGui::TextWrapped("%s", tile::description(m_selected_tile).c_str());
 	for (tile::tile_type i = tile::move_up; i <= tile::move_none; i = (tile::tile_type)(int(i) + 1)) {
 		ImGui::PushID((int)i);
-		if (ImGui::EditorTileButton(m_tiles, i, m_level(), m_selected_tile == i)) {
-			m_selected_tile = i;
+		if (ImGui::EditorTileButton(m_tiles, i, m_level(), m_selected_direction == i)) {
+			m_selected_direction = i;
 		}
 		if (ImGui::IsItemHovered()) {
 			ImGui::SetTooltip("%s", tile::description(i).c_str());
@@ -690,7 +695,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 	}
 	ImGui::PopStyleVar();
 	ImGui::NewLine();
-	ImGui::TextWrapped("%s", tile::description(m_selected_tile).c_str());
+	ImGui::TextWrapped("%s", tile::description(m_selected_direction).c_str());
 	// pencil options
 	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)PENCIL, m_level(), m_cursor_type == PENCIL, 32)) {
 		m_cursor_type = PENCIL;

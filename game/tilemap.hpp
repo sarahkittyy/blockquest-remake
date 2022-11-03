@@ -39,7 +39,7 @@ struct tile {
 		move_right_bit,
 		move_down_bit,
 		move_left_bit,
-		move_up,
+		move_up,   // # 14
 		move_right,
 		move_down,
 		move_left,
@@ -55,6 +55,8 @@ struct tile {
 	bool operator==(const tile_type&& type) const;	 // check if a tile is of a given type
 	bool operator!=(const tile_type&& type) const;	 // check if a tile is not of a given type
 	operator int() const;							 // retrieve the texture index of the tile
+
+	bool eq(const tile& other) const;	// differs from == by checking props too
 
 	float x() const;   // x pos of the tile
 	float y() const;   // y pos of the tile

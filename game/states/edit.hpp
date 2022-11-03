@@ -74,19 +74,21 @@ private:
 
 	sf::Texture& m_tiles;	// texture of all tiles
 	sf::Texture& m_tools;	// texture of tools
-	tile::tile_type m_selected_tile = tile::begin;
+	tile::tile_type m_selected_tile		 = tile::begin;
+	tile::tile_type m_selected_direction = tile::move_none;
+	tile selected() const;
 
 	// sets the tile on the map, false if the tile could not be placed, with an error output
 	std::optional<tilemap::diff> m_set_tile(sf::Vector2i pos, tile::tile_type type, std::string& error);
 	// recursively flood fills the map
-	std::vector<tilemap::diff> m_flood_fill(sf::Vector2i pos, tile::tile_type type, tile::tile_type replacing, std::string& error);
+	std::vector<tilemap::diff> m_flood_fill(sf::Vector2i pos, tile replacing, std::string& error);
 
 	// for undoing entire pencil strokes at once
 	std::vector<tilemap::diff> m_pencil_undo_queue;
 	bool m_pencil_active;
 
 	// draw straight lines
-	std::vector<tilemap::diff> m_stroke_fill(sf::Vector2i pos, tile::tile_type type, std::string& error);
+	std::vector<tilemap::diff> m_stroke_fill(sf::Vector2i pos, std::string& error);
 	sf::Vector2i m_stroke_start;
 	bool m_stroke_active;
 	tilemap m_stroke_map;	// for temporary rendering of stroke tool graphics

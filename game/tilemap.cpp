@@ -443,6 +443,10 @@ bool tile::operator!=(const tile_type&& type) const {
 	return type != this->type;
 }
 
+bool tile::eq(const tile& other) const {
+	return type == other.type && props.moving == other.props.moving;
+}
+
 float tile::x() const {
 	return m_x;
 }
@@ -506,11 +510,11 @@ std::string tile::description(tile_type type) {
 		{ tile::move_right_bit, "For internal use only" },
 		{ tile::move_down_bit, "For internal use only" },
 		{ tile::move_left_bit, "For internal use only" },
-		{ tile::move_up, "Makes a tile move upward" },
-		{ tile::move_right, "Makes a tile move rightward" },
-		{ tile::move_down, "Makes a tile move downward" },
-		{ tile::move_left, "Makes a tile move leftward" },
-		{ tile::move_none, "Makes a tile stationary again" },
+		{ tile::move_up, "Tile will move up" },
+		{ tile::move_right, "Tile will move right" },
+		{ tile::move_down, "Tile will move down" },
+		{ tile::move_left, "Tile will move left" },
+		{ tile::move_none, "Tile is stationary" },
 		{ tile::cursor, "For internal use only" }
 	};
 	return map.at(type);
