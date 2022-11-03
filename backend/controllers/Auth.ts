@@ -218,7 +218,7 @@ export default class Auth {
 		}
 		const codeIssuedSecondsAgo = dayjs().diff(user.codeIssued, 'seconds');
 		// send a new verification email if necessary
-		if (user.code == null || codeIssuedSecondsAgo >= 30) {
+		if (!user.confirmed && (user.code == null || codeIssuedSecondsAgo >= 30)) {
 			// create the new code if necessary
 			const newUser = await mail.updateCode(user.name);
 			if (!newUser) {
