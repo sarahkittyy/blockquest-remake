@@ -2,36 +2,36 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+	provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+	provider = "postgresql"
+		url      = env("DATABASE_URL")
 }
 
 model User {
-  id        Int         @id @default(autoincrement())
-  createdAt	DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  email     String      @unique
-  name      String      @unique
-  password  String
-  levels    Level[]
-  confirmed Boolean     @default(false)
+	id        Int         @id @default(autoincrement())
+	createdAt	DateTime    @default(now())
+	updatedAt DateTime    @updatedAt
+	email     String      @unique
+	name      String      @unique
+	password  String
+	levels    Level[]
+	confirmed Boolean     @default(false)
 	code			String?
 	codeIssued DateTime   @default(now())
-  tier		Int			@default(0)
+	tier		Int			@default(0)
 }
 
 model Level {
-  id			Int         @id @default(autoincrement())
-  createdAt		DateTime    @default(now())
-  updatedAt		DateTime    @default(now())
-  code			String      @db.Text
-  author		User        @relation(fields: [authorId], references: id)
-  authorId		Int
-  title			String		@db.VarChar(50) @unique
-  description	String?		@db.Text
+	id			Int         @id @default(autoincrement())
+	createdAt		DateTime    @default(now())
+	updatedAt		DateTime    @default(now())
+	code			String      @db.Text
+	author		User        @relation(fields: [authorId], references: id)
+	authorId		Int
+	title			String		@db.VarChar(50) @unique
+	description	String?		@db.Text
 	downloads			Int			@default(0)
 }

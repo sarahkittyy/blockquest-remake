@@ -5,5 +5,4 @@
 
 */
 -- AlterTable
-ALTER TABLE "User" DROP COLUMN "emailCode",
-ADD COLUMN     "code" TEXT;
+ALTER TABLE "User" ADD COLUMN     "code" TEXT;
