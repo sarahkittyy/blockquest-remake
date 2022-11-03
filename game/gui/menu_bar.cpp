@@ -23,7 +23,8 @@ AppMenuBar::AppMenuBar()
 					 std::make_pair(ImGui::Gif(resource::get().tex("assets/gifs/wallkick.png"), 37, { 240, 240 }, 20),
 									"Left + Right to wallkick"),
 					 std::make_pair(ImGui::Gif(resource::get().tex("assets/gifs/climb.png"), 25, { 240, 240 }, 20),
-									"Up & Down to climb") }) {
+									"Up & Down to climb") }),
+	  m_v_code(0) {
 	std::memset(m_username, 0, 50);
 	std::memset(m_password, 0, 50);
 	std::memset(m_email, 0, 150);
@@ -40,6 +41,67 @@ void AppMenuBar::process_event(sf::Event e) {
 		break;
 	default:
 		break;
+	}
+}
+
+void AppMenuBar::m_open_verify_popup() {
+	m_v_code = 0;
+	m_verify_status.reset();
+	m_reverify_status.reset();
+	m_signup_status.reset();
+	m_login_status.reset();
+	ImGui::OpenPopup("Verify###Verify");
+}
+
+void AppMenuBar::m_gui_verify_popup() {
+	ImGuiWindowFlags modal_flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
+	bool dummy					 = true;
+	// VERIFICATION
+	if (ImGui::BeginPopupModal("Verify###Verify", &dummy, modal_flags)) {
+		if (m_reverify_status) {
+			if (m_reverify_status->success)
+				ImGui::TextWrapped("%s", m_reverify_status->msg->c_str());
+			else {
+				ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
+				ImGui::TextWrapped("%s", m_reverify_status->error->c_str());
+				ImGui::PopStyleColor();
+			}
+		} else if (m_verify_status && !m_verify_status->success) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
+			ImGui::TextWrapped("%s", m_verify_status->error->c_str());
+			ImGui::PopStyleColor();
+		}
+		ImGui::TextWrapped("A verification code was sent to your email.");
+		ImGui::InputScalar("Code###VCODE", ImGuiDataType_S32, &m_v_code);
+		ImGui::BeginDisabled(m_verify_future.valid() || m_reverify_future.valid());
+		const char* submit_text = m_verify_future.valid() ? "Checking...###VerifyCheck" : "Check###VerifyCheck";
+		if (ImGui::Button(submit_text)) {
+			if (!m_verify_future.valid()) {
+				m_verify_future = auth::get().verify(m_v_code);
+				m_reverify_status.reset();
+			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Resend Code")) {
+			if (!m_reverify_future.valid()) {
+				m_reverify_future = auth::get().resend_verify();
+			}
+		}
+		ImGui::EndDisabled();
+		if (m_verify_future.valid()) {
+			if (util::ready(m_verify_future)) {
+				m_verify_status = m_verify_future.get();
+			}
+		}
+		if (m_verify_status && m_verify_status->success && *(m_verify_status->confirmed)) {
+			m_close_auth_popup();
+		}
+		if (m_reverify_future.valid()) {
+			if (util::ready(m_reverify_future)) {
+				m_reverify_status = m_reverify_future.get();
+			}
+		}
+		ImGui::EndPopup();
 	}
 }
 
@@ -100,8 +162,13 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 					}
 				}
 				if (m_login_status && m_login_status->success) {
-					m_close_auth_popup();
+					if (*(m_login_status->confirmed)) {
+						m_close_auth_popup();
+					} else {
+						m_open_verify_popup();
+					}
 				}
+				m_gui_verify_popup();
 				ImGui::EndTabItem();
 			}
 			ImGui::EndDisabled();
@@ -136,14 +203,18 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 					}
 				}
 				if (m_signup_status && m_signup_status->success) {
-					m_close_auth_popup();
+					if (*(m_signup_status->confirmed)) {
+						m_close_auth_popup();
+					} else {
+						m_open_verify_popup();
+					}
 				}
+				m_gui_verify_popup();
 				ImGui::EndTabItem();
 			}
 			ImGui::EndDisabled();
 
 			ImGui::EndTabBar();
-
 			ImGui::EndPopup();
 		}
 	}
@@ -275,14 +346,25 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 }
 
 bool AppMenuBar::m_auth_unresolved() const {
-	return m_login_future.valid() || m_signup_future.valid() || m_login_status || m_signup_status;
+	return m_login_future.valid() ||
+		   m_signup_future.valid() ||
+		   m_login_status ||
+		   m_signup_status ||
+		   m_verify_future.valid() ||
+		   m_verify_status ||
+		   m_reverify_future.valid() ||
+		   m_reverify_status;
 }
 
 void AppMenuBar::m_close_auth_popup() {
-	m_login_future	= decltype(m_login_future)();
-	m_signup_future = decltype(m_signup_future)();
+	m_login_future	  = decltype(m_login_future)();
+	m_signup_future	  = decltype(m_signup_future)();
+	m_verify_future	  = decltype(m_verify_future)();
+	m_reverify_future = decltype(m_reverify_future)();
 	m_login_status.reset();
 	m_signup_status.reset();
+	m_verify_status.reset();
+	m_reverify_status.reset();
 
 	std::memset(m_username, 0, 50);
 	std::memset(m_password, 0, 50);

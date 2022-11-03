@@ -14,6 +14,7 @@ export function isValidLevel(code: string): boolean {
 export interface IAuthToken {
 	username: string;
 	tier: number;
+	confirmed: boolean;
 }
 
 export async function saltAndHash(password: string): Promise<string | undefined> {
@@ -30,12 +31,13 @@ export function validatePassword(given: string, saved: string): boolean {
 	return bcrypt.compareSync(given, saved);
 }
 
-export function generateJwt(username: string, tier: number): string {
+export function generateJwt(username: string, tier: number, confirmed: boolean): string {
 	const secret = process.env.SECRET ?? 'NOTSECRET';
 	return jwt.sign(
 		{
 			username,
 			tier,
+			confirmed,
 		},
 		secret,
 		{
@@ -54,11 +56,14 @@ export function decodeToken(token: string): IAuthToken | undefined {
 	}
 }
 
-export function requireAuth(tier = 0) {
+export function requireAuth(tier = 0, confirmed = true) {
 	return async (req: Request, res: Response, next: NextFunction) => {
 		const token: IAuthToken | undefined = decodeToken(req.body?.jwt);
 		if (!token) {
 			return res.status(401).send({ error: 'Not logged in' });
+		}
+		if (!token.confirmed && confirmed) {
+			return res.status(409).send({ error: 'Email not verified ' });
 		}
 		if (token.tier < tier) {
 			return res.status(401).send({ error: 'Insufficient permissions' });

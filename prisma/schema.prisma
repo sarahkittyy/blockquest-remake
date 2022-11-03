@@ -19,6 +19,8 @@ model User {
   password  String
   levels    Level[]
   confirmed Boolean     @default(false)
+	code			String?
+	codeIssued DateTime   @default(now())
   tier		Int			@default(0)
 }
 

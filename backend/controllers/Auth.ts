@@ -1,9 +1,13 @@
 import { Request, Response } from 'express';
 import validator from 'validator';
+import dayjs from 'dayjs';
 
 import { prisma } from '@db/index';
 
-import { generateJwt, saltAndHash, validatePassword } from '@util/tools';
+import { generateJwt, IAuthToken, saltAndHash, validatePassword } from '@util/tools';
+import * as mail from '@util/mail';
+import log from '@/log';
+import { User } from '@prisma/client';
 
 export default class Auth {
 	static async CreateAccount(req: Request, res: Response) {
@@ -58,6 +62,9 @@ export default class Auth {
 				email,
 				name,
 				password: hashedPass,
+				code: `${Math.floor(100000 + Math.random() * 900000)}`,
+				codeIssued: dayjs().toDate(),
+				confirmed: false,
 			},
 		});
 
@@ -66,9 +73,123 @@ export default class Auth {
 				error: 'Internal server error.',
 			});
 		}
-		return res.status(200).send({
-			jwt: generateJwt(user.name, user.tier),
+		// send email
+		try {
+			await mail.sendVerificationEmail(user.email, user.code);
+			return res.status(200).send({
+				jwt: generateJwt(user.name, user.tier, user.confirmed),
+				confirmed: user.confirmed,
+			});
+		} catch (e) {
+			return res.status(500).send({ error: 'Internal server error (NO_SEND_CODE)' });
+		}
+	}
+
+	static async Verify(req: Request, res: Response) {
+		// check and validate code
+		let { code } = req.params;
+		if (code == null) return res.status(400).send({ error: 'No code specified.' });
+		if (!validator.isInt(code, { allow_leading_zeroes: false, min: 100000, max: 999999 }))
+			return res.status(400).send({ error: 'Invalid code specified.' });
+
+		// fetch user
+		const token: IAuthToken = res.locals.token;
+		const user = await prisma.user.findFirst({
+			where: {
+				name: token.username,
+			},
 		});
+		if (!user) {
+			return res.status(500).send({
+				error: 'Internal server error (NO_USER_FOUND)',
+			});
+		}
+		if (user.confirmed === true) {
+			return res.status(200).send({
+				jwt: generateJwt(user.name, user.tier, user.confirmed),
+				confirmed: true,
+			});
+		}
+		// validate code
+		if (user.code != code) return res.status(400).send({ error: 'Code does not match.' });
+		// resend new code if expired
+		if (dayjs().diff(user.codeIssued, 'minute') >= 10) {
+			const newUser = await mail.updateCode(user.name);
+			if (!newUser) {
+				return res.status(500).send({
+					error: 'Internal server error (NO_UPDATE_CODE)',
+				});
+			}
+			try {
+				await mail.sendVerificationEmail(newUser.email, newUser.code);
+				return res.status(400).send({
+					error: `Code has expired. New code has been sent to ${newUser.email}. It expires in 10 minutes.`,
+				});
+			} catch (e) {
+				return res.status(500).send({ error: 'Internal server error (NO_RESEND_CODE)' });
+			}
+		}
+		// set user as confirmed and return new jwt
+		try {
+			const confirmedUser = await prisma.user.update({
+				where: {
+					name: token.username,
+				},
+				data: {
+					code: null,
+					confirmed: true,
+				},
+			});
+			log.info(`User ${confirmedUser.name} has been verified!`);
+			return res.status(200).send({
+				jwt: generateJwt(confirmedUser.name, confirmedUser.tier, confirmedUser.confirmed),
+				confirmed: true,
+			});
+		} catch (e) {
+			log.error(`Verification error: ${e}`);
+			return res.status(500).send({
+				error: 'Internal server error (NO_UPDATE_USER)',
+			});
+		}
+	}
+
+	static async ResendVerify(req: Request, res: Response) {
+		const token: IAuthToken = res.locals.token;
+		const user = await prisma.user.findFirst({
+			where: {
+				name: token.username,
+			},
+		});
+		// if the user is confirmed already, ignore
+		if (user.confirmed) {
+			return res
+				.status(400)
+				.send({ error: 'This account is already verified. Try logging in again. ' });
+		}
+		const codeIssuedSecondsAgo = dayjs().diff(user.codeIssued, 'seconds');
+		if (user.code != null && codeIssuedSecondsAgo < 30) {
+			return res.status(420).send({
+				error: `A code was just sent ${codeIssuedSecondsAgo} seconds ago. Please wait ${
+					30 - codeIssuedSecondsAgo
+				} seconds before retrying.`,
+			});
+		}
+		// create the new code
+		const newUser = await mail.updateCode(user.name);
+		if (!newUser) {
+			return res.status(500).send({
+				error: 'Internal server error (NO_UPDATE_CODE)',
+			});
+		}
+		// send it
+		try {
+			await mail.sendVerificationEmail(newUser.email, newUser.code);
+			return res.status(200).send({
+				message: `New code has been sent to ${newUser.email}. It expires in 10 minutes.`,
+			});
+		} catch (e) {
+			return res.status(500).send({ error: 'Internal server error (NO_RESEND_CODE)' });
+		}
 	}
 
 	static async Login(req: Request, res: Response) {
@@ -95,8 +216,26 @@ export default class Auth {
 		if (!password || !user.password || !validatePassword(password, user.password)) {
 			return res.status(401).send({ error: 'Invalid password' });
 		}
+		const codeIssuedSecondsAgo = dayjs().diff(user.codeIssued, 'seconds');
+		// send a new verification email if necessary
+		if (user.code == null || codeIssuedSecondsAgo >= 30) {
+			// create the new code if necessary
+			const newUser = await mail.updateCode(user.name);
+			if (!newUser) {
+				return res.status(500).send({
+					error: 'Internal server error (NO_UPDATE_CODE)',
+				});
+			}
+			// send it
+			try {
+				await mail.sendVerificationEmail(newUser?.email ?? user.email, newUser.code ?? user.code);
+			} catch (e) {
+				return res.status(500).send({ error: 'Internal server error (NO_RESEND_CODE)' });
+			}
+		}
 		return res.status(200).send({
-			jwt: generateJwt(user.name, user.tier),
+			jwt: generateJwt(user.name, user.tier, user.confirmed),
+			confirmed: user.confirmed,
 		});
 	}
 }
