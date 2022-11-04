@@ -2,6 +2,8 @@
 
 [Download the latest release here :)](https://github.com/sarahkittyy/blockquest-remake/releases/latest)
 
+[Roadmap](https://trello.com/b/i9xWNDe9/blockquest-remake)
+
 This is a remake of [BlockQuest](http://www.blockquest.net/).
 
 ![Run](gifs/run.gif)
