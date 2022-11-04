@@ -77,7 +77,7 @@ export default class Auth {
 		try {
 			await mail.sendVerificationEmail(user.email, user.code);
 			return res.status(200).send({
-				jwt: generateJwt(user.name, user.tier, user.confirmed),
+				jwt: generateJwt(user),
 				confirmed: user.confirmed,
 			});
 		} catch (e) {
@@ -106,7 +106,7 @@ export default class Auth {
 		}
 		if (user.confirmed === true) {
 			return res.status(200).send({
-				jwt: generateJwt(user.name, user.tier, user.confirmed),
+				jwt: generateJwt(user),
 				confirmed: true,
 			});
 		}
@@ -142,7 +142,7 @@ export default class Auth {
 			});
 			log.info(`User ${confirmedUser.name} has been verified!`);
 			return res.status(200).send({
-				jwt: generateJwt(confirmedUser.name, confirmedUser.tier, confirmedUser.confirmed),
+				jwt: generateJwt(confirmedUser),
 				confirmed: true,
 			});
 		} catch (e) {
@@ -234,7 +234,7 @@ export default class Auth {
 			}
 		}
 		return res.status(200).send({
-			jwt: generateJwt(user.name, user.tier, user.confirmed),
+			jwt: generateJwt(user),
 			confirmed: user.confirmed,
 		});
 	}

@@ -3,6 +3,7 @@
 #include <fstream>
 #include "json.hpp"
 
+#include "api.hpp"
 #include "resource.hpp"
 #include "settings.hpp"
 
@@ -23,17 +24,11 @@ const level& context::editor_level() const {
 std::string context::save() const {
 	nlohmann::json j;
 
-	j["editor_level"] = m_editor_level.map().save();
 	if (m_editor_level.has_metadata()) {
-		auto md				 = m_editor_level.get_metadata();
-		nlohmann::json& md_j = j["editor_level_metadata"];
-		md_j["author"]		 = md.author;
-		md_j["createdAt"]	 = md.createdAt;
-		md_j["updatedAt"]	 = md.updatedAt;
-		md_j["title"]		 = md.title;
-		md_j["description"]	 = md.description;
-		md_j["downloads"]	 = md.downloads;
-		md_j["id"]			 = md.id;
+		auto md					   = m_editor_level.get_metadata();
+		j["editor_level_metadata"] = api::level_to_json(md);
+	} else {
+		j["editor_level"] = m_editor_level.map().save();
 	}
 
 	auto& q				   = m_query;
@@ -61,17 +56,12 @@ void context::load(std::string data) {
 	nlohmann::json j = nlohmann::json::parse(data);
 
 	if (j.contains("editor_level_metadata")) {
-		api::level md;
-		nlohmann::json md_j = j["editor_level_metadata"];
-		md.author			= md_j["author"];
-		md.createdAt		= md_j["createdAt"];
-		md.updatedAt		= md_j["updatedAt"];
-		md.title			= md_j["title"];
-		md.description		= md_j["description"];
-		md.downloads		= md_j["downloads"];
-		md.id				= md_j["id"];
-		md.code				= j["editor_level"];
-		m_editor_level.load_from_api(md);
+		api::level md = api::level_from_json(j["editor_level_metadata"]);
+		if (md.code.empty()) {
+			md.code = j.value("editor_level", "");
+		}
+		if (!md.code.empty())
+			m_editor_level.load_from_api(md);
 	} else {
 		m_editor_level.map().load(j["editor_level"]);
 	}

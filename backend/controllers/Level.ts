@@ -22,7 +22,15 @@ import {
 	validateOrReject,
 } from 'class-validator';
 
-const SortableFields = ['id', 'downloads', 'createdAt', 'updatedAt', 'title'] as const;
+const SortableFields = [
+	'id',
+	'downloads',
+	'likes',
+	'createdAt',
+	'updatedAt',
+	'title',
+	'author',
+] as const;
 const SortDirections = ['asc', 'desc'] as const;
 
 /* options for searching through levels */
@@ -53,7 +61,7 @@ export class ISearchOptions {
 	order!: typeof SortDirections[number];
 }
 
-export interface ISearchLevel {
+export interface ILevelResponse {
 	id: number;
 	code: string;
 	author: string;
@@ -62,16 +70,52 @@ export interface ISearchLevel {
 	createdAt: number;
 	updatedAt: number;
 	downloads: number;
+	likes: number;
+	dislikes: number;
+	myVote?: 1 | 0 | -1;
 }
 
 /* what is returned from the search endpoint */
 export interface ISearchResponse {
-	levels: ISearchLevel[];
+	levels: ILevelResponse[];
 	cursor: number;
 }
 
 /* level controller */
 export default class Level {
+	static async vote(req: Request, res: Response) {
+		const token: tools.IAuthToken = res.locals.token;
+		const levelId = parseInt(req.params.id);
+		const vote: 'like' | 'dislike' = req.params.vote as any;
+
+		if (isNaN(levelId)) return res.status(400).send({ error: 'Level ID is not an int.' });
+
+		try {
+			const voteModel = await prisma.userLevelVote.upsert({
+				where: {
+					userId_levelId: {
+						userId: token.id,
+						levelId: levelId,
+					},
+				},
+				create: {
+					user: { connect: { id: token.id } },
+					level: { connect: { id: levelId } },
+					vote: vote === 'like' ? 1 : -1,
+				},
+				update: {
+					vote: vote === 'like' ? 1 : -1,
+				},
+				include: { level: { include: { author: true, votes: true } } },
+			});
+			return res.status(200).send({
+				level: tools.toLevelResponse(voteModel.level, token.id),
+			});
+		} catch (e) {
+			return res.status(400).send({ error: 'Level' });
+		}
+	}
+
 	static async downloadPing(req: Request, res: Response) {
 		let id: string | number | undefined = req.params.id;
 		if (id) {
@@ -147,24 +191,16 @@ export default class Level {
 			},
 			include: {
 				author: true,
+				votes: true,
 			},
 		});
 
 		const lastLevel = levels?.[levels.length - 2];
 
+		const token: tools.IAuthToken | undefined = res.locals.token;
+
 		const ret: ISearchResponse = {
-			levels: levels.map(
-				(lvl): ISearchLevel => ({
-					id: lvl.id,
-					code: lvl.code,
-					author: lvl.author.name,
-					title: lvl.title,
-					description: lvl.description ?? '',
-					createdAt: lvl.createdAt.getTime() / 1000,
-					updatedAt: lvl.updatedAt.getTime() / 1000,
-					downloads: lvl.downloads,
-				})
-			),
+			levels: levels.map((lvl) => tools.toLevelResponse(lvl, token?.id)),
 			cursor: lastLevel?.id && levels.length > opts.limit ? lastLevel.id : -1,
 		};
 
@@ -218,7 +254,7 @@ export default class Level {
 				createdAt: level.createdAt.getTime() / 1000,
 				updatedAt: level.updatedAt.getTime() / 1000,
 				downloads: level.downloads + 1,
-			} as ISearchLevel,
+			} as ILevelResponse,
 		});
 	}
 
@@ -296,7 +332,7 @@ export default class Level {
 					code,
 					updatedAt: new Date(),
 				},
-				include: { author: true },
+				include: { author: true, votes: true },
 			});
 			if (!updatedLevel)
 				return res.status(500).send({ error: 'Internal server error (NO_OVERWRITE_LEVEL)' });
@@ -304,16 +340,7 @@ export default class Level {
 				`Level ${updatedLevel.title}#${updatedLevel.id} updated by user ${updatedLevel.author.name} (${updatedLevel.author.email})`
 			);
 			return res.status(200).send({
-				level: {
-					id: updatedLevel.id,
-					author: updatedLevel.author.name,
-					code: updatedLevel.code,
-					title: updatedLevel.title,
-					description: updatedLevel.description ?? '',
-					createdAt: updatedLevel.createdAt.getTime() / 1000,
-					updatedAt: updatedLevel.updatedAt.getTime() / 1000,
-					downloads: updatedLevel.downloads,
-				} as ISearchLevel,
+				level: tools.toLevelResponse(updatedLevel, token.id),
 			});
 		}
 
@@ -324,7 +351,7 @@ export default class Level {
 				title,
 				description,
 			},
-			include: { author: true },
+			include: { author: true, votes: true },
 		});
 
 		if (!newLevel) {
@@ -336,16 +363,7 @@ export default class Level {
 		);
 
 		return res.status(200).send({
-			level: {
-				id: newLevel.id,
-				author: newLevel.author.name,
-				code: newLevel.code,
-				title: newLevel.title,
-				description: newLevel.description ?? '',
-				createdAt: newLevel.createdAt.getTime() / 1000,
-				updatedAt: newLevel.updatedAt.getTime() / 1000,
-				downloads: newLevel.downloads,
-			} as ISearchLevel,
+			level: tools.toLevelResponse(newLevel, token.id),
 		});
 	}
 }

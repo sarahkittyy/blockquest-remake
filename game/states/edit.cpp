@@ -461,6 +461,9 @@ void edit::m_gui_level_info(fsm* sm) {
 	ImGui::TextWrapped("Title: %s", md.title.c_str());
 	ImGui::TextWrapped("Author: %s", md.author.c_str());
 	ImGui::TextWrapped("Downloads: %d", md.downloads);
+	ImGui::TextWrapped("Likes: %d", md.likes);
+	ImGui::TextWrapped("Dislikes: %d", md.dislikes);
+	ImGui::TextWrapped("Ratio: %.2f", md.likes / std::min<float>(md.likes + md.dislikes, 1));
 	char date_fmt[100];
 	tm* date_tm = std::localtime(&md.createdAt);
 	std::strftime(date_fmt, 100, "%D %r", date_tm);
@@ -527,7 +530,7 @@ void edit::m_gui_controls(fsm* sm) {
 			m_download_status = m_download_future.get();
 		}
 		if (m_download_status) {
-			api::response res = *m_download_status;
+			api::level_response res = *m_download_status;
 			if (res.success) {
 				m_load_api_level(*res.level);
 				ImGui::CloseCurrentPopup();
@@ -562,7 +565,7 @@ void edit::m_gui_controls(fsm* sm) {
 			m_upload_status = m_upload_future.get();
 		}
 		if (m_upload_status) {
-			api::response res = *m_upload_status;
+			api::level_response res = *m_upload_status;
 			if (res.success) {
 				m_load_api_level(*res.level);
 				ImGui::CloseCurrentPopup();

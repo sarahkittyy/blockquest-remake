@@ -29,6 +29,12 @@ auth::jwt auth::get_jwt() {
 	return *m_jwt;
 }
 
+void auth::add_jwt_to_body(nlohmann::json& body) {
+	if (m_jwt.has_value()) {
+		body["jwt"] = get_jwt().raw;
+	}
+}
+
 std::future<auth::response> auth::signup(std::string email, std::string username, std::string password) {
 	// clang-format off
 	using namespace std::chrono_literals;
@@ -52,6 +58,7 @@ std::future<auth::response> auth::signup(std::string email, std::string username
 					m_jwt = auth::jwt{
 						.exp = payload_json["exp"].get<std::time_t>(),
 						.username = payload_json["username"].get<std::string>(),
+						.id = payload_json["id"].get<int>(),
 						.confirmed = payload_json["confirmed"].get<bool>(),
 						.tier = payload_json["tier"].get<int>(),
 						.raw = jwt,
@@ -113,6 +120,7 @@ std::future<auth::response> auth::login(std::string email_or_username, std::stri
 					m_jwt = auth::jwt{
 						.exp = payload_json["exp"].get<std::time_t>(),
 						.username = payload_json["username"].get<std::string>(),
+						.id = payload_json["id"].get<int>(),
 						.confirmed = payload_json["confirmed"].get<bool>(),
 						.tier = payload_json["tier"].get<int>(),
 						.raw = jwt,
@@ -177,6 +185,7 @@ std::future<auth::response> auth::verify(int code) {
 					m_jwt = auth::jwt{
 						.exp = payload_json["exp"].get<std::time_t>(),
 						.username = payload_json["username"].get<std::string>(),
+						.id = payload_json["id"].get<int>(),
 						.confirmed = payload_json["confirmed"].get<bool>(),
 						.tier = payload_json["tier"].get<int>(),
 						.raw = jwt,

@@ -6,6 +6,7 @@
 #include <string>
 
 #include "httplib.h"
+#include "json.hpp"
 
 class level;
 
@@ -23,9 +24,12 @@ public:
 		std::time_t createdAt;
 		std::time_t updatedAt;
 		int downloads;
+		int likes;
+		int dislikes;
+		std::optional<int> myVote;
 	};
 
-	struct response {
+	struct level_response {
 		bool success;
 		int code;
 		std::optional<std::string> error;
@@ -53,15 +57,27 @@ public:
 		int cursor;
 	};
 
-	std::future<response> upload_level(::level l, const char* title, const char* description, bool override = false);
-	std::future<response> download_level(int id);
-
 	struct update_response {
 		bool success;
 		std::optional<bool> up_to_date;
 		std::optional<std::string> latest_version;
 		std::optional<std::string> error;
 	};
+
+	enum class vote {
+		LIKE,
+		DISLIKE
+	};
+
+	struct vote_response {
+		bool success;
+		std::optional<std::string> error;
+		std::optional<api::level> level;
+	};
+
+	std::future<level_response> upload_level(::level l, const char* title, const char* description, bool override = false);
+	std::future<level_response> download_level(int id);
+	std::future<vote_response> vote_level(api::level lvl, vote v);
 
 	// get the current app version
 	const char* version() const;
@@ -73,6 +89,9 @@ public:
 
 	// sends a download ping to be run when we fetch a level
 	void ping_download(int id);
+
+	static api::level level_from_json(nlohmann::json lvl);
+	static nlohmann::json level_to_json(api::level lvl);
 
 private:
 	api();

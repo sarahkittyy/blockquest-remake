@@ -25,6 +25,7 @@ public:
 	struct jwt {
 		std::time_t exp;
 		std::string username;
+		int id;
 		bool confirmed;
 		int tier;
 		std::string raw;
@@ -47,6 +48,8 @@ public:
 	int tier() const;				// the user's tier that we're logged in as
 
 	jwt get_jwt();
+
+	void add_jwt_to_body(nlohmann::json& body);	  // adds the jwt to the body of a query if it exists
 
 private:
 	auth();

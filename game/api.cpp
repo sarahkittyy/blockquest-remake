@@ -1,7 +1,7 @@
 #include "api.hpp"
 
 #include "auth.hpp"
-#include "json.hpp"
+#include "debug.hpp"
 #include "level.hpp"
 #include "settings.hpp"
 
@@ -20,6 +20,42 @@ api &api::get() {
 	return instance;
 }
 
+api::level api::level_from_json(nlohmann::json lvl) {
+	api::level l{
+		.id			 = lvl["id"].get<int>(),
+		.author		 = lvl["author"],
+		.code		 = lvl.value("code", ""),
+		.title		 = lvl["title"],
+		.description = lvl["description"],
+		.createdAt	 = lvl["createdAt"].get<std::time_t>(),
+		.updatedAt	 = lvl["updatedAt"].get<std::time_t>(),
+		.downloads	 = lvl["downloads"].get<int>(),
+		.likes		 = lvl["likes"].get<int>(),
+		.dislikes	 = lvl["dislikes"].get<int>(),
+	};
+	if (lvl.contains("myVote")) {
+		l.myVote = lvl["myVote"].get<int>();
+	}
+	return l;
+}
+
+nlohmann::json api::level_to_json(api::level lvl) {
+	nlohmann::json ret;
+	ret["id"]		   = lvl.id;
+	ret["author"]	   = lvl.author;
+	ret["code"]		   = lvl.code;
+	ret["title"]	   = lvl.title;
+	ret["description"] = lvl.description;
+	ret["createdAt"]   = lvl.createdAt;
+	ret["updatedAt"]   = lvl.updatedAt;
+	ret["downloads"]   = lvl.downloads;
+	ret["likes"]	   = lvl.likes;
+	ret["dislikes"]	   = lvl.dislikes;
+	if (lvl.myVote)
+		ret["myVote"] = *lvl.myVote;
+	return ret;
+}
+
 std::future<api::search_response> api::search_levels(api::search_query q) {
 	return std::async([this, q]() -> api::search_response {
 		try {
@@ -31,6 +67,7 @@ std::future<api::search_response> api::search_levels(api::search_query q) {
 			body["matchDescription"] = q.matchDescription;
 			body["sortBy"]			 = q.sortBy;
 			body["order"]			 = q.order;
+			auth::get().add_jwt_to_body(body);
 
 			if (auto res = m_cli.Post("/level/search", body.dump(), "application/json")) {
 				nlohmann::json result = nlohmann::json::parse(res->body);
@@ -39,17 +76,7 @@ std::future<api::search_response> api::search_levels(api::search_query q) {
 					rsp.cursor	= result["cursor"].get<int>();
 					rsp.success = true;
 					for (auto &level_json : result["levels"]) {
-						api::level l{
-							.id			 = level_json["id"].get<int>(),
-							.author		 = level_json["author"],
-							.code		 = level_json["code"],
-							.title		 = level_json["title"],
-							.description = level_json["description"],
-							.createdAt	 = level_json["createdAt"].get<std::time_t>(),
-							.updatedAt	 = level_json["updatedAt"].get<std::time_t>(),
-							.downloads	 = level_json["downloads"].get<int>()
-						};
-						rsp.levels.push_back(l);
+						rsp.levels.push_back(level_from_json(level_json));
 					}
 					return rsp;
 				} else {
@@ -91,28 +118,19 @@ void api::ping_download(int id) {
 	}).detach();
 }
 
-std::future<api::response> api::download_level(int id) {
-	return std::async([this, id]() -> api::response {
+std::future<api::level_response> api::download_level(int id) {
+	return std::async([this, id]() -> api::level_response {
 		try {
 			std::string path = "/level/" + std::to_string(id);
-			if (auto res = m_cli.Get(path)) {
+			nlohmann::json body;
+			auth::get().add_jwt_to_body(body);
+			if (auto res = m_cli.Post(path, body.dump(), "application/json")) {
 				nlohmann::json result = nlohmann::json::parse(res->body);
 				if (res->status == 200) {
-					nlohmann::json level = result["level"];
-					api::level l{
-						.id			 = level["id"].get<int>(),
-						.author		 = level["author"],
-						.code		 = level["code"],
-						.title		 = level["title"],
-						.description = level["description"],
-						.createdAt	 = level["createdAt"].get<std::time_t>(),
-						.updatedAt	 = level["updatedAt"].get<std::time_t>(),
-						.downloads	 = level["downloads"].get<int>()
-					};
 					return {
 						.success = true,
 						.code	 = 200,
-						.level	 = l,
+						.level	 = level_from_json(result["level"]),
 					};
 				} else {
 					if (result.contains("error")) {
@@ -152,8 +170,8 @@ std::future<api::response> api::download_level(int id) {
 	});
 }
 
-std::future<api::response> api::upload_level(::level l, const char *title, const char *description, bool override) {
-	return std::async([this, l, title, description, override]() -> api::response {
+std::future<api::level_response> api::upload_level(::level l, const char *title, const char *description, bool override) {
+	return std::async([this, l, title, description, override]() -> api::level_response {
 		if (!auth::get().authed()) {
 			return {
 				.success = false,
@@ -166,8 +184,8 @@ std::future<api::response> api::upload_level(::level l, const char *title, const
 			body["code"]		= l.map().save();
 			body["title"]		= title;
 			body["description"] = description;
-			body["jwt"]			= auth::get().get_jwt().raw;
-			std::string path	= override ? "/level/upload/confirm" : "/level/upload";
+			auth::get().add_jwt_to_body(body);
+			std::string path = override ? "/level/upload/confirm" : "/level/upload";
 			if (auto res = m_cli.Post(path, body.dump(), "application/json")) {
 				nlohmann::json result = nlohmann::json::parse(res->body);
 				if (res->status == 200) {
@@ -219,6 +237,50 @@ std::future<api::response> api::upload_level(::level l, const char *title, const
 			return {
 				.success = false,
 				.code	 = -1,
+				.error	 = "Unknown error."
+			};
+		}
+	});
+}
+
+std::future<api::vote_response> api::vote_level(api::level lvl, api::vote v) {
+	return std::async([this, lvl, v]() -> api::vote_response {
+		try {
+			std::string url = "/level/";
+			url += std::to_string(lvl.id);
+			url += "/";
+			url += v == vote::LIKE ? "like" : "dislike";
+			nlohmann::json body;
+			auth::get().add_jwt_to_body(body);
+			if (auto res = m_cli.Post(url, body.dump(), "application/json")) {
+				nlohmann::json result = nlohmann::json::parse(res->body);
+				if (res->status == 200) {
+					return {
+						.success = true,
+						.level	 = level_from_json(result["level"]),
+					};
+				} else {
+					return {
+						.success = false,
+						.error	 = result["error"].get<std::string>()
+					};
+				}
+			} else {
+				throw "Could not connect to github api";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.error	 = e,
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
 				.error	 = "Unknown error."
 			};
 		}

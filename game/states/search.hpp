@@ -31,7 +31,7 @@ private:
 	api::search_query& query();		  // just fetches the query from context
 	api::search_query m_last_query;	  // holds the query that we send to the api
 
-	const char* m_sort_opts[5];	  // api sortBy options
+	const char* m_sort_opts[7];	  // api sortBy options
 	int m_sort_selection;
 
 	const char* m_order_opts[2];   // api order options
@@ -48,7 +48,7 @@ private:
 
 	// handles automatic loading & caching to prevent unnecessary draws
 	std::unordered_map<int, std::shared_ptr<ImGui::ApiLevelTile>> m_api_level_tile;
-	ImGui::ApiLevelTile& m_gui_level_tile(api::level lvl);
+	ImGui::ApiLevelTile& m_gui_level_tile(api::level& lvl);
 
 	void m_update_query();								// sends the query to the api
 	std::future<api::search_response> m_query_future;	// holds the active query future

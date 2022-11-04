@@ -59,11 +59,11 @@ private:
 	int m_id;
 
 	// future & status of level upload
-	std::future<api::response> m_upload_future;
-	std::optional<api::response> m_upload_status;
+	std::future<api::level_response> m_upload_future;
+	std::optional<api::level_response> m_upload_status;
 
-	std::future<api::response> m_download_future;
-	std::optional<api::response> m_download_status;
+	std::future<api::level_response> m_download_future;
+	std::optional<api::level_response> m_download_status;
 
 	// can we upload the level currently on display
 	bool m_is_current_level_ours() const;

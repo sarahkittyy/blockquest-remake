@@ -26,13 +26,13 @@ app::app(int argc, char** argv) {
 
 	configure_imgui_style();
 
-	m_fsm.swap_state<states::search>();
-
 	if (const char* name = std::getenv("BQR_USERNAME")) {
 		if (const char* pass = std::getenv("BQR_PASSWORD")) {
 			auth::get().login(std::string(name), std::string(pass));
 		}
 	}
+
+	m_fsm.swap_state<states::search>();
 
 #ifndef NDEBUG
 	if (argc > 1) {

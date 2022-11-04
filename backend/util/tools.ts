@@ -3,6 +3,9 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 import log from '@/log';
+import { User, Level, UserLevelVote } from '@prisma/client';
+import { prisma } from '@db/index';
+import { ILevelResponse } from '@/controllers/Level';
 
 export function isValidLevel(code: string): boolean {
 	const levelRegex = /^(?:[0-9]{3}|\/){1024}/g;
@@ -13,6 +16,7 @@ export function isValidLevel(code: string): boolean {
 
 export interface IAuthToken {
 	username: string;
+	id: number;
 	tier: number;
 	confirmed: boolean;
 }
@@ -31,13 +35,14 @@ export function validatePassword(given: string, saved: string): boolean {
 	return bcrypt.compareSync(given, saved);
 }
 
-export function generateJwt(username: string, tier: number, confirmed: boolean): string {
+export function generateJwt(user: User): string {
 	const secret = process.env.SECRET ?? 'NOTSECRET';
 	return jwt.sign(
 		{
-			username,
-			tier,
-			confirmed,
+			username: user.name,
+			id: user.id,
+			tier: user.tier,
+			confirmed: user.confirmed,
 		},
 		secret,
 		{
@@ -71,4 +76,66 @@ export function requireAuth(tier = 0, confirmed = true) {
 		res.locals.token = token;
 		next();
 	};
+}
+
+export function checkAuth() {
+	return async (req: Request, res: Response, next: NextFunction) => {
+		const token: IAuthToken | undefined = decodeToken(req.body?.jwt);
+		if (token) res.locals.token = token;
+		next();
+	};
+}
+
+export function toLevelResponse(
+	lvl: Level & { votes: UserLevelVote[]; author: User },
+	userId?: number
+): ILevelResponse {
+	const likes = likesCount(lvl.votes);
+	const dislikes = dislikesCount(lvl.votes);
+	if (lvl.likes !== likes || lvl.dislikes !== dislikes) {
+		prisma.level
+			.update({
+				where: {
+					id: lvl.id,
+				},
+				data: {
+					likes,
+					dislikes,
+				},
+			})
+			.catch(log.warn);
+	}
+	return {
+		id: lvl.id,
+		code: lvl.code,
+		author: lvl.author.name,
+		title: lvl.title,
+		description: lvl.description ?? '',
+		createdAt: lvl.createdAt.getTime() / 1000,
+		updatedAt: lvl.updatedAt.getTime() / 1000,
+		downloads: lvl.downloads,
+		likes,
+		dislikes,
+		myVote: userId != null ? userVote(userId, lvl.votes) : undefined,
+	};
+}
+
+export function userVote(userId: number, votes: UserLevelVote[]): 1 | 0 | -1 {
+	return (votes.find((vote) => vote.userId === userId)?.vote as any) ?? 0;
+}
+
+export function likesCount(votes: UserLevelVote[]) {
+	return votes.reduce((sum: number, vote: UserLevelVote) => {
+		return vote.vote > 0 ? sum + 1 : sum;
+	}, 0);
+}
+
+export function dislikesCount(votes: UserLevelVote[]) {
+	return votes.reduce((sum: number, vote: UserLevelVote) => {
+		return vote.vote < 0 ? sum + 1 : sum;
+	}, 0);
+}
+
+export function rating(votes: UserLevelVote[]) {
+	return votes.reduce((sum: number, vote: UserLevelVote) => sum + vote.vote, 0);
 }

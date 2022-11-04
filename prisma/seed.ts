@@ -1,4 +1,4 @@
-import { PrismaClient, User, Level } from '@prisma/client';
+import { PrismaClient, User, Level, UserLevelVote } from '@prisma/client';
 import {
 	randUserName,
 	randPassword,
@@ -25,6 +25,16 @@ async function fakeUser(): Promise<User> {
 	return user;
 }
 
+async function fakeVote(user: User, level: Level): Promise<UserLevelVote> {
+	return await prisma.userLevelVote.create({
+		data: {
+			vote: Math.random() > 0.5 ? 1 : -1,
+			level: { connect: { id: level.id } },
+			user: { connect: { id: user.id } },
+		},
+	});
+}
+
 async function fakeLevel(author: User) {
 	const level = await prisma.level.create({
 		data: {
@@ -35,6 +45,7 @@ async function fakeLevel(author: User) {
 			downloads: randNumber({ min: 0, max: 8900 }),
 		},
 	});
+	return level;
 }
 
 async function main() {
@@ -43,7 +54,8 @@ async function main() {
 		const levelCount = Math.floor(Math.random() * 4);
 		const user = await fakeUser();
 		for (let j = 0; j < levelCount; ++j) {
-			await fakeLevel(user);
+			const level = await fakeLevel(user);
+			await fakeVote(user, level);
 		}
 	}
 }

@@ -15,7 +15,7 @@
 namespace states {
 
 search::search()
-	: m_sort_opts{ "downloads", "id", "createdAt", "updatedAt", "title" },
+	: m_sort_opts{ "downloads", "likes", "id", "createdAt", "updatedAt", "title", "author" },
 	  m_order_opts{ "asc", "desc" },
 	  m_temp_rows(query().rows),
 	  m_temp_cols(query().cols),
@@ -90,11 +90,11 @@ void search::imdraw(fsm* sm) {
 	ImGui::PopStyleVar();
 
 	ImGui::SetNextItemWidth(160);
-	if (ImGui::Combo("Sort By###SortBy", &m_sort_selection, m_sort_opts, 5)) {
+	if (ImGui::Combo("Sort By###SortBy", &m_sort_selection, m_sort_opts, sizeof(m_sort_opts) / sizeof(m_sort_opts[0]))) {
 		m_update_query();
 	}
 	ImGui::SetNextItemWidth(140);
-	if (ImGui::Combo("Order By###OrderBy", &m_order_selection, m_order_opts, 2)) {
+	if (ImGui::Combo("Order By###OrderBy", &m_order_selection, m_order_opts, sizeof(m_order_opts) / sizeof(m_order_opts[0]))) {
 		m_update_query();
 	}
 
@@ -164,7 +164,7 @@ void search::imdraw(fsm* sm) {
 					ImGui::TableNextColumn();
 					int idx = row * query().cols + col;
 
-					api::level l = m_query_status->levels[idx];
+					api::level& l = m_query_status->levels[idx];
 
 					bool download;
 					m_gui_level_tile(l).imdraw(&download);
@@ -191,7 +191,7 @@ api::search_query& search::query() {
 	return context::get().search_query();
 }
 
-ImGui::ApiLevelTile& search::m_gui_level_tile(api::level lvl) {
+ImGui::ApiLevelTile& search::m_gui_level_tile(api::level& lvl) {
 	if (!m_api_level_tile.contains(lvl.id)) {
 		m_api_level_tile[lvl.id] = std::make_shared<ImGui::ApiLevelTile>(lvl);
 	}
