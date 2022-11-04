@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include "resource.hpp"
 
+#include "auth.hpp"
 #include "util.hpp"
 
 namespace ImGui {
@@ -44,12 +45,13 @@ void ApiLevelTile::imdraw(bool* download) {
 	ImVec2 uv0(0, 0), uv1(1, 1);
 	int fp				 = 4;
 	ImVec4 bg			 = ImVec4(1, 0, 0, 0);
-	std::string likes	 = std::to_string(m_lvl.likes);
-	std::string dislikes = std::to_string(m_lvl.dislikes);
+	std::string likes	 = std::to_string(m_lvl.likes) + "###LIKES";
+	std::string dislikes = std::to_string(m_lvl.dislikes) + "###DISLIKES";
 	ImU32 likes_tcol	 = ImGui::GetColorU32(sf::Color::Green);
 	ImU32 dislikes_tcol	 = ImGui::GetColorU32(sf::Color::Red);
+	bool authed			 = auth::get().authed();
 	ImGui::PushStyleColor(ImGuiCol_Text, likes_tcol);
-	ImGui::BeginDisabled(m_vote_future.valid() || m_lvl.myVote.value_or(0) == 1);
+	ImGui::BeginDisabled(m_vote_future.valid() || m_lvl.myVote.value_or(0) == 1 || !authed);
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/heart.png"), likes.c_str(), x16, uv0, uv1, fp, bg)) {
 		if (!m_vote_future.valid())
 			m_vote_future = api::get().vote_level(m_lvl, api::vote::LIKE);
@@ -63,7 +65,7 @@ void ApiLevelTile::imdraw(bool* download) {
 	ImGui::SameLine();
 
 	ImGui::PushStyleColor(ImGuiCol_Text, dislikes_tcol);
-	ImGui::BeginDisabled(m_vote_future.valid() || m_lvl.myVote.value_or(0) == -1);
+	ImGui::BeginDisabled(m_vote_future.valid() || m_lvl.myVote.value_or(0) == -1 || !authed);
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/spike.png"), dislikes.c_str(), x16, uv0, uv1, fp, bg)) {
 		if (!m_vote_future.valid())
 			m_vote_future = api::get().vote_level(m_lvl, api::vote::DISLIKE);
