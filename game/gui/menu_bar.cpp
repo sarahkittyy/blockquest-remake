@@ -109,7 +109,7 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 	const ImTextureID tiles = resource::get().imtex("assets/tiles.png");
 	sf::Texture& tiles_tex	= resource::get().tex("assets/tiles.png");
 
-	const int tile_size = 16;
+	const int tile_size = 64;
 
 	using namespace std::chrono_literals;
 
