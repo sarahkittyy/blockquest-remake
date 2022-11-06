@@ -44,6 +44,8 @@ private:
 	int m_cpage() const;			// current page we're on
 	bool m_last_page() const;		// are we on the last page
 
+	bool m_authed_last_frame;	// tracks the auth status so we can trigger an event when authed
+
 	api_handle<api::search_response> m_query_handle;   // holds the active query future
 
 	// handles automatic loading & caching to prevent unnecessary draws

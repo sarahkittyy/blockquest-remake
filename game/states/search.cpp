@@ -20,12 +20,13 @@ search::search()
 	  m_temp_rows(query().rows),
 	  m_temp_cols(query().cols),
 	  m_loading_gif(resource::get().tex("assets/gifs/loading-gif.png"), 29, { 200, 200 }, 40) {
-	auto sort_it	  = std::find_if(std::begin(m_sort_opts), std::end(m_sort_opts),
-									 [this](const char* str) { return std::string(str) == query().sortBy; });
-	m_sort_selection  = sort_it != std::end(m_sort_opts) ? std::distance(std::begin(m_sort_opts), sort_it) : 1;
-	auto order_it	  = std::find_if(std::begin(m_order_opts), std::end(m_order_opts),
-									 [this](const char* str) { return std::string(str) == query().order; });
-	m_order_selection = sort_it != std::end(m_order_opts) ? std::distance(std::begin(m_order_opts), order_it) : 1;
+	auto sort_it		= std::find_if(std::begin(m_sort_opts), std::end(m_sort_opts),
+									   [this](const char* str) { return std::string(str) == query().sortBy; });
+	m_sort_selection	= sort_it != std::end(m_sort_opts) ? std::distance(std::begin(m_sort_opts), sort_it) : 1;
+	auto order_it		= std::find_if(std::begin(m_order_opts), std::end(m_order_opts),
+									   [this](const char* str) { return std::string(str) == query().order; });
+	m_order_selection	= sort_it != std::end(m_order_opts) ? std::distance(std::begin(m_order_opts), order_it) : 1;
+	m_authed_last_frame = auth::get().authed();
 	m_update_query();
 }
 
@@ -36,6 +37,10 @@ void search::update(fsm* sm, sf::Time dt) {
 	m_loading_gif.update();
 	// check if a pending query is ready, and update status accordingly
 	m_query_handle.poll();
+	if (!m_authed_last_frame && auth::get().authed()) {
+		m_update_query();
+	}
+	m_authed_last_frame = auth::get().authed();
 }
 
 void search::imdraw(fsm* sm) {
