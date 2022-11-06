@@ -37,16 +37,17 @@ public:
 	};
 
 	struct search_query {
-		int cursor;
-		int rows;
-		int cols;
-		std::string query;
-		bool matchTitle;
-		bool matchDescription;
-		bool matchAuthor;
-		bool matchSelf;
-		std::string sortBy;
-		std::string order;
+		int cursor			  = -1;
+		int rows			  = 4;
+		int cols			  = 4;
+		std::string query	  = "";
+		bool matchTitle		  = true;
+		bool matchDescription = true;
+		bool matchAuthor	  = false;
+		bool matchSelf		  = false;
+		std::string sortBy	  = "likes";
+		std::string order	  = "desc";
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::search_query, cursor, rows, cols, query, matchTitle, matchDescription, matchAuthor, matchSelf, sortBy, order);
 		bool operator==(const search_query& other) const;
 		bool operator!=(const search_query& other) const;
 	};

@@ -59,17 +59,10 @@ nlohmann::json api::level_to_json(api::level lvl) {
 std::future<api::search_response> api::search_levels(api::search_query q) {
 	return std::async([this, q]() -> api::search_response {
 		try {
-			nlohmann::json body;
-			body["cursor"] = q.cursor;
-			body["limit"]  = q.rows * q.cols;
-			if (q.query.length() != 0) body["query"] = q.query;
-			body["matchTitle"]		 = q.matchTitle;
-			body["matchDescription"] = q.matchDescription;
-			body["matchAuthor"]		 = q.matchAuthor;
-			body["matchSelf"]		 = q.matchSelf;
-			body["sortBy"]			 = q.sortBy;
-			body["order"]			 = q.order;
+			nlohmann::json body = q;
+			body["limit"]		= q.rows * q.cols;
 			auth::get().add_jwt_to_body(body);
+			debug::log() << body.dump() << "\n";
 
 			if (auto res = m_cli.Post("/level/search", body.dump(), "application/json")) {
 				nlohmann::json result = nlohmann::json::parse(res->body);

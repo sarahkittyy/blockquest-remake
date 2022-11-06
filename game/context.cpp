@@ -40,17 +40,8 @@ std::string context::save() const {
 		j["editor_level"] = m_editor_level.map().save();
 	}
 
-	auto& q				   = m_query;
-	nlohmann::json& jq	   = j["query"];
-	jq["query"]			   = q.query;
-	jq["cols"]			   = q.cols;
-	jq["rows"]			   = q.rows;
-	jq["matchTitle"]	   = q.matchTitle;
-	jq["matchDescription"] = q.matchDescription;
-	jq["matchAuthor"]	   = q.matchAuthor;
-	jq["matchSelf"]		   = q.matchSelf;
-	jq["sortBy"]		   = q.sortBy;
-	jq["order"]			   = q.order;
+	auto& q	   = m_query;
+	j["query"] = q;
 
 	j["screen_size"]["x"] = resource::get().window().getSize().x;
 	j["screen_size"]["y"] = resource::get().window().getSize().y;
@@ -78,17 +69,7 @@ void context::load(std::string data) {
 	}
 
 	if (j.contains("query")) {
-		auto& q			   = m_query;
-		nlohmann::json& jq = j["query"];
-		q.query			   = jq["query"];
-		q.cols			   = jq["cols"];
-		q.rows			   = jq["rows"];
-		q.matchTitle	   = jq["matchTitle"];
-		q.matchDescription = jq["matchDescription"];
-		q.matchAuthor	   = jq.value("matchAuthor", false);
-		q.matchSelf		   = jq.value("matchSelf", false);
-		q.sortBy		   = jq["sortBy"];
-		q.order			   = jq["order"];
+		j["query"].get_to(m_query);
 	}
 
 	if (j.contains("screen_size")) {
