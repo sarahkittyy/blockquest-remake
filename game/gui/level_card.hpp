@@ -7,6 +7,7 @@
 #include "imgui_internal.h"
 
 #include "api.hpp"
+#include "api_handle.hpp"
 #include "tilemap.hpp"
 
 namespace ImGui {
@@ -25,8 +26,7 @@ private:
 	tilemap m_tmap;	  // tilemap generated from the level data
 	sf::RenderTexture m_map_tex;
 
-	std::future<api::vote_response> m_vote_future;
-	std::optional<api::vote_response> m_vote_status;
+	api_handle<api::vote_response> m_vote_handle;
 };
 
 }

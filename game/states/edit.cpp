@@ -134,6 +134,9 @@ void edit::update(fsm* sm, sf::Time dt) {
 		m_redo_queue.pop_front();
 	}
 
+	m_upload_handle.poll();
+	m_download_handle.poll();
+
 	// if we're not on gui, and on the map, and ready to place a tile
 	if (!ImGui::GetIO().WantCaptureMouse &&
 		sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
@@ -421,8 +424,8 @@ bool edit::m_is_current_level_ours() const {
 }
 
 void edit::m_load_api_level(api::level lvl) {
-	m_upload_status.reset();
-	m_download_status.reset();
+	m_upload_handle.reset();
+	m_download_handle.reset();
 	m_level().load_from_api(lvl);
 	api::level md = m_level().get_metadata();
 	if (m_is_current_level_ours()) {
@@ -436,8 +439,8 @@ void edit::m_load_api_level(api::level lvl) {
 }
 
 void edit::m_clear_level() {
-	m_upload_status.reset();
-	m_download_status.reset();
+	m_upload_handle.reset();
+	m_download_handle.reset();
 	m_level().clear();
 	std::memset(m_title_buffer, 0, 50);
 	std::memset(m_description_buffer, 0, 50);
@@ -514,23 +517,20 @@ void edit::m_gui_controls(fsm* sm) {
 	bool dummy_open = true;
 	ImGuiWindowFlags modal_flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
 	if (ImGui::BeginPopup("Download###Download")) {
-		if (m_download_status && !m_download_status->success) {
+		if (m_download_handle.ready() && !m_download_handle.get().success) {
 			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
-			ImGui::TextWrapped("%s", m_download_status->error->c_str());
+			ImGui::TextWrapped("%s", m_download_handle.get().error->c_str());
 			ImGui::PopStyleColor();
 		}
 		ImGui::InputScalar("Level ID###DownloadId", ImGuiDataType_S32, &m_id);
-		ImGui::BeginDisabled(m_download_future.valid());
+		ImGui::BeginDisabled(m_download_handle.fetching());
 		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/download.png"), "Download")) {
-			if (!m_download_future.valid())
-				m_download_future = api::get().download_level(m_id);
+			if (!m_download_handle.fetching())
+				m_download_handle.reset(api::get().download_level(m_id));
 		}
 		ImGui::EndDisabled();
-		if (m_download_future.valid() && util::ready(m_download_future)) {
-			m_download_status = m_download_future.get();
-		}
-		if (m_download_status) {
-			api::level_response res = *m_download_status;
+		if (m_download_handle.ready()) {
+			auto res = m_download_handle.get();
 			if (res.success) {
 				m_load_api_level(*res.level);
 				ImGui::CloseCurrentPopup();
@@ -542,30 +542,27 @@ void edit::m_gui_controls(fsm* sm) {
 	///////////////// UPLOAD LOGIC ////////////////////////
 	bool upload_modal_open = m_level().valid();
 	if (ImGui::BeginPopupModal("Upload###Upload", &upload_modal_open, modal_flags)) {
-		if (m_upload_status && !m_upload_status->success && m_upload_status->error) {
+		if (m_upload_handle.ready() && !m_upload_handle.get().success && m_upload_handle.get().error) {
 			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
-			ImGui::TextWrapped("%s", m_upload_status->error->c_str());
+			ImGui::TextWrapped("%s", m_upload_handle.get().error->c_str());
 			ImGui::PopStyleColor();
 		}
 		if (ImGui::InputText("Title", m_title_buffer, 50, ImGuiInputTextFlags_EnterReturnsTrue)) {
 			ImGui::SetKeyboardFocusHere(0);
 		}
 		if (ImGui::InputText("Description", m_description_buffer, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-			if (!m_upload_future.valid())
-				m_upload_future = api::get().upload_level(m_level(), m_title_buffer, m_description_buffer);
+			if (!m_upload_handle.fetching())
+				m_upload_handle.reset(api::get().upload_level(m_level(), m_title_buffer, m_description_buffer));
 		}
-		ImGui::BeginDisabled(m_upload_future.valid());
-		const char* upload_label = m_upload_future.valid() ? "Uploading...###UploadForReal" : "Upload###UploadForReal";
+		ImGui::BeginDisabled(m_upload_handle.fetching());
+		const char* upload_label = m_upload_handle.fetching() ? "Uploading...###UploadForReal" : "Upload###UploadForReal";
 		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/upload.png"), upload_label)) {
-			if (!m_upload_future.valid())
-				m_upload_future = api::get().upload_level(m_level(), m_title_buffer, m_description_buffer);
+			if (!m_upload_handle.fetching())
+				m_upload_handle.reset(api::get().upload_level(m_level(), m_title_buffer, m_description_buffer));
 		}
 		ImGui::EndDisabled();
-		if (m_upload_future.valid() && util::ready(m_upload_future)) {
-			m_upload_status = m_upload_future.get();
-		}
-		if (m_upload_status) {
-			api::level_response res = *m_upload_status;
+		if (m_upload_handle.ready()) {
+			auto res = m_upload_handle.get();
 			if (res.success) {
 				m_load_api_level(*res.level);
 				ImGui::CloseCurrentPopup();
@@ -575,13 +572,13 @@ void edit::m_gui_controls(fsm* sm) {
 			if (ImGui::BeginPopupModal("Confirm###ConfirmUpload", nullptr, modal_flags)) {
 				ImGui::TextWrapped("A level named %s already exists, do you want to overwrite it?", m_title_buffer);
 				if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/yes.png"), "Yes###OverrideYes")) {
-					m_upload_status.reset();
-					m_upload_future = api::get().upload_level(m_level(), m_title_buffer, m_description_buffer, true);
+					m_upload_handle.reset();
+					m_upload_handle.reset(api::get().upload_level(m_level(), m_title_buffer, m_description_buffer, true));
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::SameLine();
 				if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/no.png"), "No###OverrideNo")) {
-					m_upload_status.reset();
+					m_upload_handle.reset();
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::EndPopup();

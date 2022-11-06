@@ -13,6 +13,8 @@
 #include "auth.hpp"
 #include "settings.hpp"
 
+#include "api_handle.hpp"
+
 namespace ImGui {
 
 class AppMenuBar {
@@ -33,15 +35,10 @@ private:
 	char m_email[150];
 	int m_v_code;
 
-	std::future<auth::response> m_login_future;
-	std::future<auth::response> m_signup_future;
-	std::future<auth::response> m_verify_future;
-	std::future<auth::reverify_response> m_reverify_future;
-
-	std::optional<auth::response> m_login_status;
-	std::optional<auth::response> m_signup_status;
-	std::optional<auth::response> m_verify_status;
-	std::optional<auth::reverify_response> m_reverify_status;
+	api_handle<auth::response> m_login_handle;
+	api_handle<auth::response> m_signup_handle;
+	api_handle<auth::response> m_verify_handle;
+	api_handle<auth::reverify_response> m_reverify_handle;
 
 	bool m_auth_unresolved() const;	  // are the login/signup futures / statues all reset properly?
 	void m_open_verify_popup();

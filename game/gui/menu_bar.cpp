@@ -46,10 +46,10 @@ void AppMenuBar::process_event(sf::Event e) {
 
 void AppMenuBar::m_open_verify_popup() {
 	m_v_code = 0;
-	m_verify_status.reset();
-	m_reverify_status.reset();
-	m_signup_status.reset();
-	m_login_status.reset();
+	m_verify_handle.reset();
+	m_reverify_handle.reset();
+	m_signup_handle.reset();
+	m_login_handle.reset();
 	ImGui::OpenPopup("Verify###Verify");
 }
 
@@ -58,48 +58,39 @@ void AppMenuBar::m_gui_verify_popup() {
 	bool dummy					 = true;
 	// VERIFICATION
 	if (ImGui::BeginPopupModal("Verify###Verify", &dummy, modal_flags)) {
-		if (m_reverify_status) {
-			if (m_reverify_status->success)
-				ImGui::TextWrapped("%s", m_reverify_status->msg->c_str());
+		if (m_reverify_handle.ready()) {
+			auto status = m_reverify_handle.get();
+			if (status.success)
+				ImGui::TextWrapped("%s", status.msg->c_str());
 			else {
 				ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
-				ImGui::TextWrapped("%s", m_reverify_status->error->c_str());
+				ImGui::TextWrapped("%s", status.error->c_str());
 				ImGui::PopStyleColor();
 			}
-		} else if (m_verify_status && !m_verify_status->success) {
+		} else if (m_verify_handle.ready() && !m_verify_handle.get().success) {
 			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
-			ImGui::TextWrapped("%s", m_verify_status->error->c_str());
+			ImGui::TextWrapped("%s", m_verify_handle.get().error->c_str());
 			ImGui::PopStyleColor();
 		}
 		ImGui::TextWrapped("A verification code was sent to your email.");
 		ImGui::InputScalar("Code###VCODE", ImGuiDataType_S32, &m_v_code);
-		ImGui::BeginDisabled(m_verify_future.valid() || m_reverify_future.valid());
-		const char* submit_text = m_verify_future.valid() ? "Checking...###VerifyCheck" : "Check###VerifyCheck";
+		ImGui::BeginDisabled(m_verify_handle.fetching() || m_reverify_handle.fetching());
+		const char* submit_text = m_verify_handle.fetching() ? "Checking...###VerifyCheck" : "Check###VerifyCheck";
 		if (ImGui::Button(submit_text)) {
-			if (!m_verify_future.valid()) {
-				m_verify_future = auth::get().verify(m_v_code);
-				m_reverify_status.reset();
+			if (!m_verify_handle.fetching()) {
+				m_verify_handle.reset(auth::get().verify(m_v_code));
+				m_reverify_handle.reset();
 			}
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Resend Code")) {
-			if (!m_reverify_future.valid()) {
-				m_reverify_future = auth::get().resend_verify();
+			if (!m_reverify_handle.fetching()) {
+				m_reverify_handle.reset(auth::get().resend_verify());
 			}
 		}
 		ImGui::EndDisabled();
-		if (m_verify_future.valid()) {
-			if (util::ready(m_verify_future)) {
-				m_verify_status = m_verify_future.get();
-			}
-		}
-		if (m_verify_status && m_verify_status->success && *(m_verify_status->confirmed)) {
+		if (m_verify_handle.ready() && m_verify_handle.get().success && m_verify_handle.get().confirmed) {
 			m_close_auth_popup();
-		}
-		if (m_reverify_future.valid()) {
-			if (util::ready(m_reverify_future)) {
-				m_reverify_status = m_reverify_future.get();
-			}
 		}
 		ImGui::EndPopup();
 	}
@@ -112,6 +103,11 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 	const int tile_size = 64;
 
 	using namespace std::chrono_literals;
+
+	m_login_handle.poll();
+	m_signup_handle.poll();
+	m_verify_handle.poll();
+	m_reverify_handle.poll();
 
 	ImGuiWindowFlags modal_flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
 
@@ -135,34 +131,29 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 			ImGuiInputTextFlags iflags_none	 = ImGuiInputTextFlags_None;
 			ImGuiInputTextFlags iflags_enter = ImGuiInputTextFlags_EnterReturnsTrue;
 			// ---- login ---- //
-			ImGui::BeginDisabled(m_signup_future.valid());
+			ImGui::BeginDisabled(m_signup_handle.fetching());
 			if (ImGui::BeginTabItem("Login")) {
-				if (m_login_status && !m_login_status->success) {
+				if (m_login_handle.ready() && !m_login_handle.get().success) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
-					ImGui::TextWrapped("%s", m_login_status->error->c_str());
+					ImGui::TextWrapped("%s", m_login_handle.get().error->c_str());
 					ImGui::PopStyleColor();
 				}
 				if (ImGui::InputText("Username / Email###UserEmail", m_email, 150, iflags_enter)) {
 					ImGui::SetKeyboardFocusHere(0);
 				}
 				if (ImGui::InputText("Password###Pword", m_password, 50, ImGuiInputTextFlags_Password | iflags_enter)) {
-					if (!m_login_future.valid())
-						m_login_future = auth::get().login(m_email, m_password);
+					if (!m_login_handle.fetching())
+						m_login_handle.reset(auth::get().login(m_email, m_password));
 				}
-				ImGui::BeginDisabled(m_login_future.valid());
-				const char* submit_text = m_login_future.valid() ? "Submitting...###LoginSubmit" : "Submit###LoginSubmit";
+				ImGui::BeginDisabled(m_login_handle.fetching());
+				const char* submit_text = m_login_handle.fetching() ? "Submitting...###LoginSubmit" : "Submit###LoginSubmit";
 				if (ImGui::Button(submit_text)) {
-					if (!m_login_future.valid())
-						m_login_future = auth::get().login(m_email, m_password);
+					if (!m_login_handle.fetching())
+						m_login_handle.reset(auth::get().login(m_email, m_password));
 				}
 				ImGui::EndDisabled();
-				if (m_login_future.valid()) {
-					if (util::ready(m_login_future)) {
-						m_login_status = m_login_future.get();
-					}
-				}
-				if (m_login_status && m_login_status->success) {
-					if (*(m_login_status->confirmed)) {
+				if (m_login_handle.ready() && m_login_handle.get().success) {
+					if (m_login_handle.get().confirmed) {
 						m_close_auth_popup();
 					} else {
 						m_open_verify_popup();
@@ -173,11 +164,11 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 			}
 			ImGui::EndDisabled();
 			// ---- sign up ---- //
-			ImGui::BeginDisabled(m_login_future.valid());
+			ImGui::BeginDisabled(m_login_handle.fetching());
 			if (ImGui::BeginTabItem("Sign up")) {
-				if (m_signup_status && !m_signup_status->success) {
+				if (m_signup_handle.ready() && !m_signup_handle.get().success) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
-					ImGui::TextWrapped("%s", m_signup_status->error->c_str());
+					ImGui::TextWrapped("%s", m_signup_handle.get().error->c_str());
 					ImGui::PopStyleColor();
 				}
 				if (ImGui::InputText("Email###Email", m_email, 150, iflags_enter)) {
@@ -187,23 +178,18 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 					ImGui::SetKeyboardFocusHere(0);
 				}
 				if (ImGui::InputText("Password###Pword", m_password, 50, ImGuiInputTextFlags_Password | iflags_enter)) {
-					if (!m_signup_future.valid())
-						m_signup_future = auth::get().signup(m_email, m_username, m_password);
+					if (!m_signup_handle.fetching())
+						m_signup_handle.reset(auth::get().signup(m_email, m_username, m_password));
 				}
-				ImGui::BeginDisabled(m_signup_future.valid());
-				const char* submit_text = m_signup_future.valid() ? "Submitting...###SignupSubmit" : "Submit###SignupSubmit";
+				ImGui::BeginDisabled(m_signup_handle.fetching());
+				const char* submit_text = m_signup_handle.fetching() ? "Submitting...###SignupSubmit" : "Submit###SignupSubmit";
 				if (ImGui::Button(submit_text)) {
-					if (!m_signup_future.valid())
-						m_signup_future = auth::get().signup(m_email, m_username, m_password);
+					if (!m_signup_handle.fetching())
+						m_signup_handle.reset(auth::get().signup(m_email, m_username, m_password));
 				}
 				ImGui::EndDisabled();
-				if (m_signup_future.valid()) {
-					if (util::ready(m_signup_future)) {
-						m_signup_status = m_signup_future.get();
-					}
-				}
-				if (m_signup_status && m_signup_status->success) {
-					if (*(m_signup_status->confirmed)) {
+				if (m_signup_handle.ready() && m_signup_handle.get().success) {
+					if (m_signup_handle.get().confirmed) {
 						m_close_auth_popup();
 					} else {
 						m_open_verify_popup();
@@ -346,25 +332,21 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 }
 
 bool AppMenuBar::m_auth_unresolved() const {
-	return m_login_future.valid() ||
-		   m_signup_future.valid() ||
-		   m_login_status ||
-		   m_signup_status ||
-		   m_verify_future.valid() ||
-		   m_verify_status ||
-		   m_reverify_future.valid() ||
-		   m_reverify_status;
+	return m_login_handle.fetching() ||
+		   m_signup_handle.fetching() ||
+		   m_login_handle.ready() ||
+		   m_signup_handle.ready() ||
+		   m_verify_handle.fetching() ||
+		   m_verify_handle.ready() ||
+		   m_reverify_handle.fetching() ||
+		   m_reverify_handle.ready();
 }
 
 void AppMenuBar::m_close_auth_popup() {
-	m_login_future	  = decltype(m_login_future)();
-	m_signup_future	  = decltype(m_signup_future)();
-	m_verify_future	  = decltype(m_verify_future)();
-	m_reverify_future = decltype(m_reverify_future)();
-	m_login_status.reset();
-	m_signup_status.reset();
-	m_verify_status.reset();
-	m_reverify_status.reset();
+	m_login_handle.reset();
+	m_signup_handle.reset();
+	m_verify_handle.reset();
+	m_reverify_handle.reset();
 
 	std::memset(m_username, 0, 50);
 	std::memset(m_password, 0, 50);

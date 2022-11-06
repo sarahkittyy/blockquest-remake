@@ -35,9 +35,7 @@ search::~search() {
 void search::update(fsm* sm, sf::Time dt) {
 	m_loading_gif.update();
 	// check if a pending query is ready, and update status accordingly
-	if (m_query_future.valid() && util::ready(m_query_future)) {
-		m_query_status = m_query_future.get();
-	}
+	m_query_handle.poll();
 }
 
 void search::imdraw(fsm* sm) {
@@ -108,9 +106,9 @@ void search::imdraw(fsm* sm) {
 	ImGui::SliderInt("Rows", &m_temp_rows, 1, 4);
 	ImGui::SliderInt("Cols", &m_temp_cols, 1, 5);
 
-	if (m_query_status && !m_query_status->success) {
+	if (m_query_handle.ready() && !m_query_handle.get().success) {
 		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
-		ImGui::TextWrapped("%s", m_query_status->error->c_str());
+		ImGui::TextWrapped("%s", m_query_handle.get().error->c_str());
 		ImGui::PopStyleColor();
 	}
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/search.png"), "Refresh")) {
@@ -124,7 +122,7 @@ void search::imdraw(fsm* sm) {
 	ImGui::SetNextWindowPos(ImVec2(0, 26), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(results_sz, ImGuiCond_Always);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-	if (m_query_status && m_query_status->success) {
+	if (m_query_handle.ready() && m_query_handle.get().success) {
 		int page			 = m_cpage();
 		std::string page_str = "Results (Page " + std::to_string(page) + ")###Search";
 		ImGui::Begin(page_str.c_str(), nullptr, flat);
@@ -137,24 +135,24 @@ void search::imdraw(fsm* sm) {
 		sf::Vector2i sz(100, 100);
 		ImGui::SetCursorPos(ImVec2((results_sz.x - sz.x) / 2.f, (results_sz.y - sz.y) / 2.f));
 		m_loading_gif.draw(sz);
-	} else if (m_query_status && m_query_status->success && m_query_status->levels.size() >= 1) {
+	} else if (m_query_handle.ready() && m_query_handle.get().success && m_query_handle.get().levels.size() >= 1) {
 		// pagination buttons
 		int page = m_cpage();
 		ImGui::BeginDisabled(page == 0);
 		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/back.png"), "Back")) {
-			m_prev_page();
+			if (m_query_handle.ready()) m_prev_page();
 		}
 		ImGui::EndDisabled();
 		ImGui::SameLine();
 		ImGui::BeginDisabled(m_last_page());
 		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/forward.png"), "Next")) {
-			m_next_page();
+			if (m_query_handle.ready()) m_next_page();
 		}
 		ImGui::EndDisabled();
 
 		// this can be unset if next/prev page is called
 		ImGuiTableFlags flags = ImGuiTableFlags_BordersInnerH;
-		if (m_query_status && ImGui::BeginTable("###LevelDisplay", query().cols, flags)) {
+		if (m_query_handle.ready() && ImGui::BeginTable("###LevelDisplay", query().cols, flags)) {
 			// level table
 			bool no_more_levels = false;
 			for (int row = 0; row < query().rows && !no_more_levels; ++row) {
@@ -164,7 +162,7 @@ void search::imdraw(fsm* sm) {
 					ImGui::TableNextColumn();
 					int idx = row * query().cols + col;
 
-					api::level& l = m_query_status->levels[idx];
+					api::level& l = m_query_handle.get().levels[idx];
 
 					bool download;
 					m_gui_level_tile(l).imdraw(&download);
@@ -173,7 +171,7 @@ void search::imdraw(fsm* sm) {
 						api::get().ping_download(l.id);
 						sm->swap_state<states::edit>(l);
 					}
-					if (idx >= m_query_status->levels.size() - 1) {
+					if (idx >= m_query_handle.get().levels.size() - 1) {
 						no_more_levels = true;
 						break;
 					}
@@ -200,7 +198,7 @@ ImGui::ApiLevelTile& search::m_gui_level_tile(api::level& lvl) {
 
 void search::m_next_page() {
 	m_cursor_log.push(query().cursor);
-	query().cursor = m_query_status->cursor;
+	query().cursor = m_query_handle.get().cursor;
 	m_update_query();
 }
 
@@ -213,7 +211,7 @@ void search::m_prev_page() {
 }
 
 bool search::m_last_page() const {
-	return m_query_status && m_query_status->success && m_query_status->cursor == -1;
+	return m_query_handle.ready() && m_query_handle.get().success && m_query_handle.get().cursor == -1;
 }
 
 int search::m_cpage() const {
@@ -227,7 +225,7 @@ void search::m_update_query() {
 	query().cols   = m_temp_cols;
 
 	// wait for the current request to process
-	if (m_query_future.valid()) return;
+	if (m_query_handle.fetching()) return;
 	debug::log() << "Search query updated\n";
 	m_api_level_tile.clear();
 
@@ -236,12 +234,11 @@ void search::m_update_query() {
 		query().cursor = -1;
 	}
 
-	m_query_status.reset();
-	m_query_future = api::get().search_levels(query());
-	m_last_query   = query();
+	m_query_handle.reset(api::get().search_levels(query()));
+	m_last_query = query();
 }
 
 bool search::m_searching() const {
-	return m_query_future.valid();
+	return m_query_handle.fetching();
 }
 }

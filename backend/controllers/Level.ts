@@ -224,38 +224,29 @@ export default class Level {
 			return res.status(400).send({ error: `Id "${id}" is not valid` });
 		}
 
-		const level = await prisma.level.findUnique({
-			where: { id: idNumber },
-			include: { author: true },
-		});
-
-		if (!level) {
-			return res.status(404).send({ error: `Level id "${id}" not found` });
-		}
-		prisma.level
-			.update({
+		try {
+			const level = await prisma.level.update({
 				where: {
-					id: level.id,
+					id: idNumber,
 				},
 				data: {
 					downloads: {
 						increment: 1,
 					},
 				},
-			})
-			.catch((err) => undefined);
-		return res.status(200).send({
-			level: {
-				id: level.id,
-				author: level.author.name,
-				code: level.code,
-				title: level.title,
-				description: level.description ?? '',
-				createdAt: level.createdAt.getTime() / 1000,
-				updatedAt: level.updatedAt.getTime() / 1000,
-				downloads: level.downloads + 1,
-			} as ILevelResponse,
-		});
+				include: { author: true, votes: true },
+			});
+			if (!level) {
+				return res.status(404).send({ error: `Level id "${id}" not found` });
+			}
+			return res.status(200).send({
+				level: tools.toLevelResponse(level),
+			});
+		} catch (e) {
+			return res.status(500).send({
+				error: 'Internal server error (NO_FETCH_LEVEL)',
+			});
+		}
 	}
 
 	/**

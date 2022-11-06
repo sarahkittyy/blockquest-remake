@@ -51,10 +51,10 @@ void ApiLevelTile::imdraw(bool* download) {
 	ImU32 dislikes_tcol	 = ImGui::GetColorU32(sf::Color::Red);
 	bool authed			 = auth::get().authed();
 	ImGui::PushStyleColor(ImGuiCol_Text, likes_tcol);
-	ImGui::BeginDisabled(m_vote_future.valid() || m_lvl.myVote.value_or(0) == 1 || !authed);
+	ImGui::BeginDisabled(m_vote_handle.fetching() || m_lvl.myVote.value_or(0) == 1 || !authed);
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/heart.png"), likes.c_str(), x16, uv0, uv1, fp, bg)) {
-		if (!m_vote_future.valid())
-			m_vote_future = api::get().vote_level(m_lvl, api::vote::LIKE);
+		if (!m_vote_handle.fetching())
+			m_vote_handle.reset(api::get().vote_level(m_lvl, api::vote::LIKE));
 	}
 	ImGui::EndDisabled();
 	ImGui::PopStyleColor();
@@ -65,10 +65,10 @@ void ApiLevelTile::imdraw(bool* download) {
 	ImGui::SameLine();
 
 	ImGui::PushStyleColor(ImGuiCol_Text, dislikes_tcol);
-	ImGui::BeginDisabled(m_vote_future.valid() || m_lvl.myVote.value_or(0) == -1 || !authed);
+	ImGui::BeginDisabled(m_vote_handle.fetching() || m_lvl.myVote.value_or(0) == -1 || !authed);
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/spike.png"), dislikes.c_str(), x16, uv0, uv1, fp, bg)) {
-		if (!m_vote_future.valid())
-			m_vote_future = api::get().vote_level(m_lvl, api::vote::DISLIKE);
+		if (!m_vote_handle.fetching())
+			m_vote_handle.reset(api::get().vote_level(m_lvl, api::vote::DISLIKE));
 	}
 	ImGui::EndDisabled();
 	ImGui::PopStyleColor();
@@ -76,12 +76,14 @@ void ApiLevelTile::imdraw(bool* download) {
 		ImGui::SetTooltip(m_lvl.myVote.value_or(0) == -1 ? "Disliked!" : "Dislike");
 	}
 
-	if (m_vote_future.valid() && util::ready(m_vote_future)) {
-		m_vote_status = m_vote_future.get();
-		if (m_vote_status->success) {
-			m_lvl.likes	   = m_vote_status->level->likes;
-			m_lvl.dislikes = m_vote_status->level->dislikes;
-			m_lvl.myVote   = m_vote_status->level->myVote;
+	m_vote_handle.poll();
+	if (m_vote_handle.ready()) {
+		auto status = m_vote_handle.get();
+		if (status.success) {
+			m_lvl.likes	   = status.level->likes;
+			m_lvl.dislikes = status.level->dislikes;
+			m_lvl.myVote   = status.level->myVote;
+			m_vote_handle.reset();
 		}
 	}
 

@@ -44,14 +44,13 @@ private:
 	int m_cpage() const;			// current page we're on
 	bool m_last_page() const;		// are we on the last page
 
-	std::optional<api::search_response> m_query_status;	  // holds the last received api response
+	api_handle<api::search_response> m_query_handle;   // holds the active query future
 
 	// handles automatic loading & caching to prevent unnecessary draws
 	std::unordered_map<int, std::shared_ptr<ImGui::ApiLevelTile>> m_api_level_tile;
 	ImGui::ApiLevelTile& m_gui_level_tile(api::level& lvl);
 
-	void m_update_query();								// sends the query to the api
-	std::future<api::search_response> m_query_future;	// holds the active query future
+	void m_update_query();	 // sends the query to the api
 	void m_next_page();
 	void m_prev_page();
 

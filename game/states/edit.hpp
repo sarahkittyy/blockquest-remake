@@ -9,6 +9,7 @@
 
 #include "../api.hpp"
 
+#include "../api_handle.hpp"
 #include "../gui/menu_bar.hpp"
 
 namespace states {
@@ -59,11 +60,8 @@ private:
 	int m_id;
 
 	// future & status of level upload
-	std::future<api::level_response> m_upload_future;
-	std::optional<api::level_response> m_upload_status;
-
-	std::future<api::level_response> m_download_future;
-	std::optional<api::level_response> m_download_status;
+	api_handle<api::level_response> m_upload_handle;
+	api_handle<api::level_response> m_download_handle;
 
 	// can we upload the level currently on display
 	bool m_is_current_level_ours() const;
