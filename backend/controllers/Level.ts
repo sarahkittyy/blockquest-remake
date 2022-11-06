@@ -54,6 +54,9 @@ export class ISearchOptions {
 	@IsBoolean({ message: 'Malformed matchDescription boolean' })
 	matchDescription!: boolean;
 
+	@IsBoolean({ message: 'Malformed matchAuthor boolean' })
+	matchAuthor!: boolean;
+
 	@IsBoolean({ message: 'Malformed matchSelf boolean' })
 	matchSelf!: boolean;
 
@@ -160,6 +163,7 @@ export default class Level {
 			opts.sortBy = req.body.sortBy ?? 'id';
 			opts.order = req.body.order ?? 'asc';
 			opts.matchSelf = req.body.matchSelf ?? false;
+			opts.matchAuthor = req.body.matchAuthor ?? false;
 			const errors = await validate(opts);
 			if (errors?.length > 0) {
 				return res.status(400).send({
@@ -178,6 +182,9 @@ export default class Level {
 		const descriptionKeywordOr = opts.matchDescription
 			? keywords?.map((word) => ({ description: { contains: word } }))
 			: [];
+		const authorKeywordOr = opts.matchAuthor
+			? keywords?.map((word) => ({ author: { name: { contains: word } } }))
+			: [];
 
 		const token: tools.IAuthToken | undefined = res.locals.token;
 
@@ -190,7 +197,11 @@ export default class Level {
 				},
 			}),
 			where: {
-				OR: [...(titleKeywordOr ?? []), ...(descriptionKeywordOr ?? [])],
+				OR: [
+					...(titleKeywordOr ?? []),
+					...(descriptionKeywordOr ?? []),
+					...(authorKeywordOr ?? []),
+				],
 				...(token != undefined && opts.matchSelf === true && { authorId: token.id }),
 			},
 			orderBy: {

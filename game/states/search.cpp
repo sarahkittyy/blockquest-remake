@@ -107,6 +107,7 @@ void search::imdraw(fsm* sm) {
 	}
 	ImGui::Checkbox("Match Title", &query().matchTitle);
 	ImGui::Checkbox("Match Description", &query().matchDescription);
+	ImGui::Checkbox("Match Author", &query().matchAuthor);
 	if (auth::get().authed())
 		ImGui::Checkbox("Show only my levels", &query().matchSelf);
 

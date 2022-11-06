@@ -43,6 +43,7 @@ public:
 		std::string query;
 		bool matchTitle;
 		bool matchDescription;
+		bool matchAuthor;
 		bool matchSelf;
 		std::string sortBy;
 		std::string order;

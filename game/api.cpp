@@ -65,6 +65,7 @@ std::future<api::search_response> api::search_levels(api::search_query q) {
 			if (q.query.length() != 0) body["query"] = q.query;
 			body["matchTitle"]		 = q.matchTitle;
 			body["matchDescription"] = q.matchDescription;
+			body["matchAuthor"]		 = q.matchAuthor;
 			body["matchSelf"]		 = q.matchSelf;
 			body["sortBy"]			 = q.sortBy;
 			body["order"]			 = q.order;

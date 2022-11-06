@@ -9,7 +9,16 @@
 
 context::context()
 	: m_editor_level(32, 32),
-	  m_query({ .cursor = -1, .rows = 4, .cols = 4, .query = "", .matchTitle = true, .matchDescription = true, .matchSelf = false, .sortBy = "id", .order = "desc" }) {
+	  m_query({ .cursor			  = -1,
+				.rows			  = 4,
+				.cols			  = 4,
+				.query			  = "",
+				.matchTitle		  = true,
+				.matchDescription = true,
+				.matchAuthor	  = false,
+				.matchSelf		  = false,
+				.sortBy			  = "id",
+				.order			  = "desc" }) {
 	load_from_file("bq-r.json");
 }
 
@@ -38,6 +47,8 @@ std::string context::save() const {
 	jq["rows"]			   = q.rows;
 	jq["matchTitle"]	   = q.matchTitle;
 	jq["matchDescription"] = q.matchDescription;
+	jq["matchAuthor"]	   = q.matchAuthor;
+	jq["matchSelf"]		   = q.matchSelf;
 	jq["sortBy"]		   = q.sortBy;
 	jq["order"]			   = q.order;
 
@@ -74,6 +85,8 @@ void context::load(std::string data) {
 		q.rows			   = jq["rows"];
 		q.matchTitle	   = jq["matchTitle"];
 		q.matchDescription = jq["matchDescription"];
+		q.matchAuthor	   = jq.value("matchAuthor", false);
+		q.matchSelf		   = jq.value("matchSelf", false);
 		q.sortBy		   = jq["sortBy"];
 		q.order			   = jq["order"];
 	}
