@@ -54,6 +54,9 @@ export class ISearchOptions {
 	@IsBoolean({ message: 'Malformed matchDescription boolean' })
 	matchDescription!: boolean;
 
+	@IsBoolean({ message: 'Malformed matchSelf boolean' })
+	matchSelf!: boolean;
+
 	@IsIn(SortableFields)
 	sortBy!: typeof SortableFields[number];
 
@@ -156,6 +159,7 @@ export default class Level {
 			opts.matchDescription = req.body.matchDescription ?? true;
 			opts.sortBy = req.body.sortBy ?? 'id';
 			opts.order = req.body.order ?? 'asc';
+			opts.matchSelf = req.body.matchSelf ?? false;
 			const errors = await validate(opts);
 			if (errors?.length > 0) {
 				return res.status(400).send({
@@ -175,6 +179,8 @@ export default class Level {
 			? keywords?.map((word) => ({ description: { contains: word } }))
 			: [];
 
+		const token: tools.IAuthToken | undefined = res.locals.token;
+
 		const levels = await prisma.level.findMany({
 			take: opts.limit + 1,
 			...(opts.cursor > 1 && {
@@ -185,6 +191,7 @@ export default class Level {
 			}),
 			where: {
 				OR: [...(titleKeywordOr ?? []), ...(descriptionKeywordOr ?? [])],
+				...(token != undefined && opts.matchSelf === true && { authorId: token.id }),
 			},
 			orderBy: {
 				[opts.sortBy]: opts.order,
@@ -196,8 +203,6 @@ export default class Level {
 		});
 
 		const lastLevel = levels?.[levels.length - 2];
-
-		const token: tools.IAuthToken | undefined = res.locals.token;
 
 		const ret: ISearchResponse = {
 			levels: levels.map((lvl) => tools.toLevelResponse(lvl, token?.id)),

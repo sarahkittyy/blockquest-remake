@@ -65,6 +65,7 @@ std::future<api::search_response> api::search_levels(api::search_query q) {
 			if (q.query.length() != 0) body["query"] = q.query;
 			body["matchTitle"]		 = q.matchTitle;
 			body["matchDescription"] = q.matchDescription;
+			body["matchSelf"]		 = q.matchSelf;
 			body["sortBy"]			 = q.sortBy;
 			body["order"]			 = q.order;
 			auth::get().add_jwt_to_body(body);
@@ -299,6 +300,15 @@ const char *api::version() const {
 }
 
 std::future<api::update_response> api::is_up_to_date() {
+#if !defined(NDEBUG)
+	return std::async([this]() -> api::update_response {
+		return {
+			.success		= true,
+			.up_to_date		= true,
+			.latest_version = "vDEBUG"
+		};
+	});
+#endif
 	std::string ctag(version());
 	return std::async([this, ctag]() -> api::update_response {
 		try {
