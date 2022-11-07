@@ -744,6 +744,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 }
 
 void edit::m_toggle_test_play() {
+	auto& music = resource::get().music("assets/sound/bg1_upbeat.wav");
 	if (!m_test_playing()) {
 		if (!m_level().valid()) {
 			m_info_msg = "Cannot start without a valid start & end position";
@@ -752,10 +753,14 @@ void edit::m_toggle_test_play() {
 		m_level().map().set_editor_view(false);
 		m_info_msg = "";
 		m_test_play_world.reset(new world(m_level()));
+		auto& music = resource::get().music("assets/sound/bg1_upbeat.wav");
+		music.setLoop(true);
+		music.play();
 		m_update_transforms();
 	} else {
 		m_test_play_world.reset();
 		m_level().map().set_editor_view(true);
+		music.stop();
 	}
 }
 

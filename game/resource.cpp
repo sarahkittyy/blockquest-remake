@@ -1,5 +1,7 @@
 #include "resource.hpp"
 
+#include "context.hpp"
+
 resource::resource()
 	: m_window(sf::VideoMode(1600, 928 + 24), "BlockQuest Remake") {
 
@@ -43,6 +45,15 @@ sf::Font& resource::font(std::string path) {
 	return m_fonts[path];
 }
 
+sf::Music& resource::music(std::string path) {
+	if (!m_music.contains(path)) {
+		m_music[path].openFromFile(path);
+	}
+	sf::Music& m = m_music[path];
+	m.setVolume(context::get().music_volume());
+	return m_music[path];
+}
+
 sf::RenderWindow& resource::window() {
 	return m_window;
 }
@@ -62,6 +73,7 @@ void resource::play_sound(std::string name) {
 	if (!m_sounds.contains(name)) {
 		throw "a sound of that name was not found!";
 	}
+	m_sounds[name].setVolume(context::get().sfx_volume());
 	m_sounds[name].play();
 }
 

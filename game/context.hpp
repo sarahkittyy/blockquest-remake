@@ -26,6 +26,9 @@ public:
 	api::search_query& search_query();
 	const api::search_query& search_query() const;
 
+	float& music_volume();
+	float& sfx_volume();
+
 private:
 	context();
 	context(const context&) = delete;
@@ -33,4 +36,6 @@ private:
 
 	level m_editor_level;
 	api::search_query m_query;
+	float m_sfx_volume;
+	float m_music_volume;
 };

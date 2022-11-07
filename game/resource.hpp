@@ -19,12 +19,16 @@ public:
 	// imgui texture id given the path
 	ImTextureID imtex(std::string path);
 
+	// fetch the music object at the given file path
+	sf::Music& music(std::string path);
+
 	// retrieve the app window handle
 	sf::RenderWindow& window();
 	const sf::RenderWindow& window() const;
 
 	// load a sound & give it a name
 	void load_sound(std::string name, std::string path);
+
 	// play the sound with the given name
 	void play_sound(std::string name);
 	// fetch the sound buffer with the given name
@@ -33,6 +37,8 @@ public:
 private:
 	std::unordered_map<std::string, sf::Texture> m_texs;
 	std::unordered_map<std::string, sf::Font> m_fonts;
+
+	std::unordered_map<std::string, sf::Music> m_music;
 
 	sf::RenderWindow m_window;
 

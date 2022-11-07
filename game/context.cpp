@@ -18,7 +18,9 @@ context::context()
 				.matchAuthor	  = false,
 				.matchSelf		  = false,
 				.sortBy			  = "id",
-				.order			  = "desc" }) {
+				.order			  = "desc" }),
+	  m_sfx_volume(50.f),
+	  m_music_volume(50.f) {
 	load_from_file("bq-r.json");
 }
 
@@ -28,6 +30,14 @@ level& context::editor_level() {
 
 const level& context::editor_level() const {
 	return m_editor_level;
+}
+
+float& context::music_volume() {
+	return m_music_volume;
+}
+
+float& context::sfx_volume() {
+	return m_sfx_volume;
 }
 
 std::string context::save() const {
@@ -50,6 +60,9 @@ std::string context::save() const {
 	j["screen_pos"]["y"] = resource::get().window().getPosition().y;
 
 	j["controls"] = settings::get().get_key_map();
+
+	j["volume"]["sfx"]	 = m_sfx_volume;
+	j["volume"]["music"] = m_music_volume;
 
 	return j.dump();
 }
@@ -86,6 +99,10 @@ void context::load(std::string data) {
 	}
 	if (j.contains("controls")) {
 		settings::get().set_key_map(j["controls"]);
+	}
+	if (j.contains("volume")) {
+		m_sfx_volume   = j["volume"].value("sfx", 50.f);
+		m_music_volume = j["volume"].value("music", 50.f);
 	}
 }
 
