@@ -23,6 +23,7 @@ public:
 	~world();
 
 	void update(sf::Time dt);
+	void step(sf::Time dt);	  // handles physics stuff
 	void process_event(sf::Event e);
 
 	bool won() const;
@@ -43,6 +44,13 @@ private:
 	moving_tile_manager m_mt_mgr;	// manages all moving tiles
 
 	level m_level;	 // the raw level data itself
+
+	sf::Time m_ctime		  = sf::Time::Zero;
+	const sf::Time m_timestep = sf::milliseconds(15);
+	// for interpolation
+	inline float dt_since_step() const {
+		return m_ctime.asSeconds();
+	}
 
 	// messages shown on victory
 	sf::Sprite m_game_clear;

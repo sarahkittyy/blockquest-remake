@@ -103,6 +103,7 @@ void world::m_restart_world() {
 	m_jump_this_frame  = false;
 	m_climbing		   = false;
 	m_touched_goal	   = false;
+	m_ctime			   = sf::Time::Zero;
 }
 
 bool world::won() const {
@@ -126,63 +127,7 @@ void world::process_event(sf::Event e) {
 	}
 }
 
-/*
-http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platformers/
-- Decompose movement into X and Y axes, step one at a time. If you’re planning on implementing slopes afterwards, step X first, then Y. Otherwise, the order shouldn’t matter much. Then, for each axis:
-- Get the coordinate of the forward-facing edge, e.g. : If walking left, the x coordinate of left of bounding box. If walking right, x coordinate of right side. If up, y coordinate of top, etc.
-- Figure which lines of tiles the bounding box intersects with – this will give you a minimum and maximum tile value on the OPPOSITE axis. For example, if we’re walking left, perhaps the player intersects with horizontal rows 32, 33 and 34 (that is, tiles with y = 32 * TS, y = 33 * TS, and y = 34 * TS, where TS = tile size).
-- Scan along those lines of tiles and towards the direction of movement until you find the closest static obstacle. Then loop through every moving obstacle, and determine which is the closest obstacle that is actually on your path.
-- The total movement of the player along that direction is then the minimum between the distance to closest obstacle, and the amount that you wanted to move in the first place.
-- Move player to the new position. With this new position, step the other coordinate, if still not done.
-*/
-
-void world::update(sf::Time dt) {
-	bool left_keyed	   = m_has_focus ? settings::get().key_down(key::LEFT) : false;
-	bool right_keyed   = m_has_focus ? settings::get().key_down(key::RIGHT) : false;
-	bool dash_keyed	   = m_has_focus ? settings::get().key_down(key::DASH) : false;
-	bool jump_keyed	   = m_has_focus ? settings::get().key_down(key::JUMP) : false;
-	bool up_keyed	   = m_has_focus ? settings::get().key_down(key::UP) : false;
-	bool down_keyed	   = m_has_focus ? settings::get().key_down(key::DOWN) : false;
-	m_left_this_frame  = left_keyed;
-	m_right_this_frame = right_keyed;
-	m_dash_this_frame  = dash_keyed;
-	m_jump_this_frame  = jump_keyed;
-	m_up_this_frame	   = up_keyed;
-	m_down_this_frame  = down_keyed;
-
-	m_pmgr.update(dt);
-
-	// update the player's animations
-	m_player.update();
-
-	if (won()) {
-		sf::Color opacity = m_space_to_retry.getColor();
-		m_end_alpha += 255.f * dt.asSeconds();
-		m_end_alpha = std::min(255.f, m_end_alpha);
-		opacity.a	= m_end_alpha;
-		m_space_to_retry.setColor(opacity);
-		m_game_clear.setColor(opacity);
-		if (m_just_jumped()) {
-			return m_restart_world();
-		} else {
-			m_jump_last_frame = jump_keyed;
-			return;
-		}
-	} else if (lost()) {
-		sf::Color opacity = m_space_to_retry.getColor();
-		m_end_alpha += 255.f * dt.asSeconds();
-		m_end_alpha = std::min(255.f, m_end_alpha);
-		opacity.a	= m_end_alpha;
-		m_space_to_retry.setColor(opacity);
-		m_game_over.setColor(opacity);
-		if (m_just_jumped()) {
-			return m_restart_world();
-		} else {
-			m_jump_last_frame = jump_keyed;
-			return;
-		}
-	}
-
+void world::step(sf::Time dt) {
 	// -1 if gravity is flipped. used for y velocity calculations
 	float gravity_sign = m_flip_gravity ? -1 : 1;
 
@@ -210,7 +155,7 @@ void world::update(sf::Time dt) {
 
 	// controls //
 
-	if (dash_keyed) {
+	if (m_dash_this_frame) {
 		// can only start dashing if on the ground
 		if (grounded && !m_climbing) {
 			if (!m_dashing) {	// start of dash
@@ -227,7 +172,7 @@ void world::update(sf::Time dt) {
 	debug::get() << "climbing = " << m_climbing << "\n";
 	debug::get() << "won = " << won() << "\n";
 
-	float air_control_factor	  = grounded ? 1 : (m_dashing && dash_keyed ? phys.dash_air_control : phys.air_control);
+	float air_control_factor	  = grounded ? 1 : (m_dashing && m_dash_this_frame ? phys.dash_air_control : phys.air_control);
 	float ground_control_factor	  = m_dashing && grounded ? 0 : 1;
 	float wallkick_control_factor = m_is_wallkick_locked() ? 0 : 1;
 	bool on_ice					  = m_on_ice();	  // since this is expensive
@@ -252,7 +197,7 @@ void world::update(sf::Time dt) {
 		}
 	}
 	bool lr_inputted = false;
-	if (right_keyed) {
+	if (m_right_this_frame) {
 		lr_inputted = !lr_inputted;
 		// wallkick
 		if (m_can_player_wallkick(dir::left)) {
@@ -263,7 +208,7 @@ void world::update(sf::Time dt) {
 			m_yv			  = 0;
 		} else if (m_climbing && m_against_ladder(dir::left) && m_right_last_frame) {
 			m_climbing = false;
-		} else if (!left_keyed) {
+		} else if (!m_left_this_frame) {
 			// normal acceleration
 			if (m_xv < 0 && !on_ice) {
 				m_xv += phys.x_decel * dt.asSeconds() *
@@ -282,7 +227,7 @@ void world::update(sf::Time dt) {
 				m_player.setScale(-1, m_player.getScale().y);
 		}
 	}
-	if (left_keyed) {
+	if (m_left_this_frame) {
 		lr_inputted = !lr_inputted;
 		// wallkick
 		if (m_can_player_wallkick(dir::right)) {
@@ -293,7 +238,7 @@ void world::update(sf::Time dt) {
 			m_yv			  = 0;
 		} else if (m_climbing && m_against_ladder(dir::right) && m_right_last_frame) {
 			m_climbing = false;
-		} else if (!right_keyed) {
+		} else if (!m_right_this_frame) {
 			// normal acceleration
 			if (m_xv > 0 && !on_ice) {
 				m_xv -= phys.x_decel * dt.asSeconds() *
@@ -325,7 +270,7 @@ void world::update(sf::Time dt) {
 		}
 	}
 
-	if (jump_keyed) {
+	if (m_jump_this_frame) {
 		if (!m_jumping && !m_climbing && m_player_grounded_ago(sf::milliseconds(phys.coyote_millis)) && !m_tile_above_player()) {
 			m_yv = -phys.jump_v * gravity_sign;
 			// so that we can't jump twice :)
@@ -346,12 +291,12 @@ void world::update(sf::Time dt) {
 	}
 
 	if (m_climbing) {	// up and down controls while climbing
-		if (up_keyed) {
+		if (m_up_this_frame) {
 			m_yv -= phys.climb_ya * dt.asSeconds() * gravity_sign;
 			// to prevent sticking
 			if (m_player_grounded())
 				m_yp -= 0.01f * gravity_sign;
-		} else if (down_keyed) {
+		} else if (m_down_this_frame) {
 			m_yv += phys.climb_ya * dt.asSeconds() * gravity_sign;
 		} else {
 			if (m_yv > (phys.climb_ya / 2.f) * dt.asSeconds()) {
@@ -490,6 +435,72 @@ void world::update(sf::Time dt) {
 		m_dashing	   = false;
 		m_player.setScale(m_player.getScale().x, m_flip_gravity ? -1 : 1);
 	}
+}
+
+/*
+http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platformers/
+- Decompose movement into X and Y axes, step one at a time. If you’re planning on implementing slopes afterwards, step X first, then Y. Otherwise, the order shouldn’t matter much. Then, for each axis:
+- Get the coordinate of the forward-facing edge, e.g. : If walking left, the x coordinate of left of bounding box. If walking right, x coordinate of right side. If up, y coordinate of top, etc.
+- Figure which lines of tiles the bounding box intersects with – this will give you a minimum and maximum tile value on the OPPOSITE axis. For example, if we’re walking left, perhaps the player intersects with horizontal rows 32, 33 and 34 (that is, tiles with y = 32 * TS, y = 33 * TS, and y = 34 * TS, where TS = tile size).
+- Scan along those lines of tiles and towards the direction of movement until you find the closest static obstacle. Then loop through every moving obstacle, and determine which is the closest obstacle that is actually on your path.
+- The total movement of the player along that direction is then the minimum between the distance to closest obstacle, and the amount that you wanted to move in the first place.
+- Move player to the new position. With this new position, step the other coordinate, if still not done.
+*/
+
+void world::update(sf::Time dt) {
+	bool left_keyed	   = m_has_focus ? settings::get().key_down(key::LEFT) : false;
+	bool right_keyed   = m_has_focus ? settings::get().key_down(key::RIGHT) : false;
+	bool dash_keyed	   = m_has_focus ? settings::get().key_down(key::DASH) : false;
+	bool jump_keyed	   = m_has_focus ? settings::get().key_down(key::JUMP) : false;
+	bool up_keyed	   = m_has_focus ? settings::get().key_down(key::UP) : false;
+	bool down_keyed	   = m_has_focus ? settings::get().key_down(key::DOWN) : false;
+	m_left_this_frame  = left_keyed;
+	m_right_this_frame = right_keyed;
+	m_dash_this_frame  = dash_keyed;
+	m_jump_this_frame  = jump_keyed;
+	m_up_this_frame	   = up_keyed;
+	m_down_this_frame  = down_keyed;
+
+	m_pmgr.update(dt);
+
+	// update the player's animations
+	m_player.update();
+
+	if (won()) {
+		sf::Color opacity = m_space_to_retry.getColor();
+		m_end_alpha += 255.f * dt.asSeconds();
+		m_end_alpha = std::min(255.f, m_end_alpha);
+		opacity.a	= m_end_alpha;
+		m_space_to_retry.setColor(opacity);
+		m_game_clear.setColor(opacity);
+		if (m_just_jumped()) {
+			return m_restart_world();
+		} else {
+			m_jump_last_frame = jump_keyed;
+			return;
+		}
+	} else if (lost()) {
+		sf::Color opacity = m_space_to_retry.getColor();
+		m_end_alpha += 255.f * dt.asSeconds();
+		m_end_alpha = std::min(255.f, m_end_alpha);
+		opacity.a	= m_end_alpha;
+		m_space_to_retry.setColor(opacity);
+		m_game_over.setColor(opacity);
+		if (m_just_jumped()) {
+			return m_restart_world();
+		} else {
+			m_jump_last_frame = jump_keyed;
+			return;
+		}
+	}
+
+	// physics updates!
+	m_ctime += dt;
+	while (m_ctime > m_timestep) {
+		m_ctime -= m_timestep;
+		step(m_timestep);
+	}
+
 	// some debug info
 	debug::get() << "dt = " << dt.asMilliseconds() << "ms\n";
 	debug::get() << "velocity = " << sf::Vector2f(m_xv, m_yv) << "\n";
@@ -806,7 +817,9 @@ void world::m_player_die() {
 }
 
 void world::m_sync_player_position() {
-	m_player.setPosition(m_xp * m_player.size().x, m_yp * m_player.size().y);
+	float xp = m_xp + m_xv * dt_since_step();
+	float yp = m_yp + m_yv * dt_since_step();
+	m_player.setPosition(xp * m_player.size().x, yp * m_player.size().y);
 }
 
 bool world::m_on_ice() const {
