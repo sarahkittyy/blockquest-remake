@@ -11,7 +11,7 @@
 
 #include "resource.hpp"
 
-world::world(level l)
+world::world(level l, std::optional<replay> rp)
 	: m_has_focus(true),
 	  m_tmap(l.map()),
 	  m_mt_mgr(m_tmap),
@@ -19,6 +19,8 @@ world::world(level l)
 	  m_player(resource::get().tex("assets/player.png")),
 	  m_start_x(0),
 	  m_start_y(0),
+	  m_cstep(0),
+	  m_playback(rp),
 	  m_flip_gravity(false),
 	  m_moving_platform_handle() {
 	m_player.set_animation("walk");
@@ -89,21 +91,17 @@ void world::m_restart_world() {
 	m_sync_player_position();
 	m_player.setScale(1, 1);
 	m_mt_mgr.restart();
-	m_time_airborne	   = sf::seconds(999);
-	m_jumping		   = true;
-	m_dashing		   = false;
-	m_since_wallkick   = sf::seconds(999);
-	m_left_last_frame  = false;
-	m_right_last_frame = false;
-	m_dash_last_frame  = false;
-	m_jump_last_frame  = false;
-	m_left_this_frame  = false;
-	m_right_this_frame = false;
-	m_dash_this_frame  = false;
-	m_jump_this_frame  = false;
-	m_climbing		   = false;
-	m_touched_goal	   = false;
-	m_ctime			   = sf::Time::Zero;
+	m_time_airborne	 = sf::seconds(999);
+	m_jumping		 = true;
+	m_dashing		 = false;
+	m_since_wallkick = sf::seconds(999);
+	this_frame		 = input_state();
+	last_frame		 = input_state();
+	m_climbing		 = false;
+	m_touched_goal	 = false;
+	m_ctime			 = sf::Time::Zero;
+	m_replay.reset();
+	m_cstep = 0;
 }
 
 bool world::won() const {
@@ -112,6 +110,10 @@ bool world::won() const {
 
 bool world::lost() const {
 	return m_dead;
+}
+
+replay& world::get_replay() {
+	return m_replay;
 }
 
 void world::process_event(sf::Event e) {
@@ -130,6 +132,10 @@ void world::process_event(sf::Event e) {
 void world::step(sf::Time dt) {
 	// -1 if gravity is flipped. used for y velocity calculations
 	float gravity_sign = m_flip_gravity ? -1 : 1;
+
+	m_cstep++;
+
+	if (!m_playback && !m_dead) m_replay.push(this_frame);
 
 	// update moving platforms
 	m_mt_mgr.update(dt);
@@ -155,7 +161,7 @@ void world::step(sf::Time dt) {
 
 	// controls //
 
-	if (m_dash_this_frame) {
+	if (this_frame.dash) {
 		// can only start dashing if on the ground
 		if (grounded && !m_climbing) {
 			if (!m_dashing) {	// start of dash
@@ -172,7 +178,7 @@ void world::step(sf::Time dt) {
 	debug::get() << "climbing = " << m_climbing << "\n";
 	debug::get() << "won = " << won() << "\n";
 
-	float air_control_factor	  = grounded ? 1 : (m_dashing && m_dash_this_frame ? phys.dash_air_control : phys.air_control);
+	float air_control_factor	  = grounded ? 1 : (m_dashing && this_frame.dash ? phys.dash_air_control : phys.air_control);
 	float ground_control_factor	  = m_dashing && grounded ? 0 : 1;
 	float wallkick_control_factor = m_is_wallkick_locked() ? 0 : 1;
 	bool on_ice					  = m_on_ice();	  // since this is expensive
@@ -197,7 +203,7 @@ void world::step(sf::Time dt) {
 		}
 	}
 	bool lr_inputted = false;
-	if (m_right_this_frame) {
+	if (this_frame.right) {
 		lr_inputted = !lr_inputted;
 		// wallkick
 		if (m_can_player_wallkick(dir::left)) {
@@ -206,9 +212,9 @@ void world::step(sf::Time dt) {
 			m_climbing		  = true;
 			m_climbing_facing = dir::right;
 			m_yv			  = 0;
-		} else if (m_climbing && m_against_ladder(dir::left) && m_right_last_frame) {
+		} else if (m_climbing && m_against_ladder(dir::left) && last_frame.right) {
 			m_climbing = false;
-		} else if (!m_left_this_frame) {
+		} else if (!this_frame.left) {
 			// normal acceleration
 			if (m_xv < 0 && !on_ice) {
 				m_xv += phys.x_decel * dt.asSeconds() *
@@ -227,7 +233,7 @@ void world::step(sf::Time dt) {
 				m_player.setScale(-1, m_player.getScale().y);
 		}
 	}
-	if (m_left_this_frame) {
+	if (this_frame.left) {
 		lr_inputted = !lr_inputted;
 		// wallkick
 		if (m_can_player_wallkick(dir::right)) {
@@ -236,9 +242,9 @@ void world::step(sf::Time dt) {
 			m_climbing		  = true;
 			m_climbing_facing = dir::left;
 			m_yv			  = 0;
-		} else if (m_climbing && m_against_ladder(dir::right) && m_right_last_frame) {
+		} else if (m_climbing && m_against_ladder(dir::right) && last_frame.right) {
 			m_climbing = false;
-		} else if (!m_right_this_frame) {
+		} else if (!this_frame.right) {
 			// normal acceleration
 			if (m_xv > 0 && !on_ice) {
 				m_xv -= phys.x_decel * dt.asSeconds() *
@@ -270,7 +276,7 @@ void world::step(sf::Time dt) {
 		}
 	}
 
-	if (m_jump_this_frame) {
+	if (this_frame.jump) {
 		if (!m_jumping && !m_climbing && m_player_grounded_ago(sf::milliseconds(phys.coyote_millis)) && !m_tile_above_player()) {
 			m_yv = -phys.jump_v * gravity_sign;
 			// so that we can't jump twice :)
@@ -279,7 +285,7 @@ void world::step(sf::Time dt) {
 			resource::get().play_sound("jump");
 			// to prevent sticking
 			m_yp -= 0.01f * gravity_sign;
-		} else if (m_climbing && !m_jump_last_frame && m_can_player_wallkick(mirror(m_climbing_facing), false)) {
+		} else if (m_climbing && !last_frame.jump && m_can_player_wallkick(mirror(m_climbing_facing), false)) {
 			m_player_wallkick(mirror(m_climbing_facing));
 		}
 	} else {
@@ -291,12 +297,12 @@ void world::step(sf::Time dt) {
 	}
 
 	if (m_climbing) {	// up and down controls while climbing
-		if (m_up_this_frame) {
+		if (this_frame.up) {
 			m_yv -= phys.climb_ya * dt.asSeconds() * gravity_sign;
 			// to prevent sticking
 			if (m_player_grounded())
 				m_yp -= 0.01f * gravity_sign;
-		} else if (m_down_this_frame) {
+		} else if (this_frame.down) {
 			m_yv += phys.climb_ya * dt.asSeconds() * gravity_sign;
 		} else {
 			if (m_yv > (phys.climb_ya / 2.f) * dt.asSeconds()) {
@@ -448,18 +454,16 @@ http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platforme
 */
 
 void world::update(sf::Time dt) {
-	bool left_keyed	   = m_has_focus ? settings::get().key_down(key::LEFT) : false;
-	bool right_keyed   = m_has_focus ? settings::get().key_down(key::RIGHT) : false;
-	bool dash_keyed	   = m_has_focus ? settings::get().key_down(key::DASH) : false;
-	bool jump_keyed	   = m_has_focus ? settings::get().key_down(key::JUMP) : false;
-	bool up_keyed	   = m_has_focus ? settings::get().key_down(key::UP) : false;
-	bool down_keyed	   = m_has_focus ? settings::get().key_down(key::DOWN) : false;
-	m_left_this_frame  = left_keyed;
-	m_right_this_frame = right_keyed;
-	m_dash_this_frame  = dash_keyed;
-	m_jump_this_frame  = jump_keyed;
-	m_up_this_frame	   = up_keyed;
-	m_down_this_frame  = down_keyed;
+	if (m_playback.has_value() && m_cstep < m_playback->size()) {
+		this_frame = m_playback->get(m_cstep);
+	} else {
+		this_frame.left	 = m_has_focus ? settings::get().key_down(key::LEFT) : false;
+		this_frame.right = m_has_focus ? settings::get().key_down(key::RIGHT) : false;
+		this_frame.dash	 = m_has_focus ? settings::get().key_down(key::DASH) : false;
+		this_frame.jump	 = m_has_focus ? settings::get().key_down(key::JUMP) : false;
+		this_frame.up	 = m_has_focus ? settings::get().key_down(key::UP) : false;
+		this_frame.down	 = m_has_focus ? settings::get().key_down(key::DOWN) : false;
+	}
 
 	m_pmgr.update(dt);
 
@@ -476,7 +480,7 @@ void world::update(sf::Time dt) {
 		if (m_just_jumped()) {
 			return m_restart_world();
 		} else {
-			m_jump_last_frame = jump_keyed;
+			last_frame.jump = this_frame.jump;
 			return;
 		}
 	} else if (lost()) {
@@ -489,16 +493,16 @@ void world::update(sf::Time dt) {
 		if (m_just_jumped()) {
 			return m_restart_world();
 		} else {
-			m_jump_last_frame = jump_keyed;
+			last_frame.jump = this_frame.jump;
 			return;
 		}
 	}
 
 	// physics updates!
 	m_ctime += dt;
-	while (m_ctime > m_timestep) {
-		m_ctime -= m_timestep;
-		step(m_timestep);
+	while (m_ctime > replay::timestep) {
+		m_ctime -= replay::timestep;
+		step(replay::timestep);
 	}
 
 	// some debug info
@@ -524,12 +528,7 @@ void world::update(sf::Time dt) {
 	m_sync_player_position();
 
 	// update last frame keys
-	m_left_last_frame  = left_keyed;
-	m_right_last_frame = right_keyed;
-	m_jump_last_frame  = jump_keyed;
-	m_dash_last_frame  = dash_keyed;
-	m_up_last_frame	   = up_keyed;
-	m_down_last_frame  = down_keyed;
+	last_frame = this_frame;
 }
 
 void world::m_player_wallkick(dir d) {
@@ -675,7 +674,7 @@ void world::m_update_animation() {
 		m_player.set_animation("dash");
 	} else if (std::abs(m_xv) > 0.3f) {
 		if (m_on_ice()) {
-			if (m_left_this_frame || m_right_this_frame || m_dash_this_frame) {
+			if (this_frame.left || this_frame.right || this_frame.dash) {
 				m_player.set_animation("walk");
 			} else {
 				m_player.set_animation("stand");
@@ -837,7 +836,7 @@ bool world::m_player_grounded_ago(sf::Time t) const {
 }
 
 bool world::m_just_jumped() const {
-	return !m_jump_last_frame && m_jump_this_frame;
+	return !last_frame.jump && this_frame.jump;
 }
 
 bool world::m_player_oob() const {
@@ -852,8 +851,8 @@ bool world::m_against_ladder(dir d) const {
 }
 
 bool world::m_can_player_wallkick(dir d, bool keys_pressed) const {
-	bool keyed_last_frame = d == dir::left ? m_left_last_frame : m_right_last_frame;
-	bool keyed_this_frame = d == dir::left ? m_left_this_frame : m_right_this_frame;
+	bool keyed_last_frame = d == dir::left ? last_frame.left : last_frame.right;
+	bool keyed_this_frame = d == dir::left ? this_frame.left : this_frame.right;
 	bool just_keyed		  = !keyed_last_frame && keyed_this_frame;
 
 	return (!keys_pressed || just_keyed) && !m_player_grounded() &&

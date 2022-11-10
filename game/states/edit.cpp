@@ -8,6 +8,7 @@
 
 #include <cstring>
 #include <ctime>
+#include <ios>
 #include <stdexcept>
 
 #include "../debug.hpp"
@@ -38,6 +39,8 @@ edit::edit()
 	  m_stroke_map(resource::get().tex("assets/tiles.png"), 32, 32, 64),
 	  m_old_mouse_tile(-1, -1),
 	  m_last_placed(-1, -1) {
+
+	std::memset(m_replay_path_buffer, 0, 1000);
 
 	// propagate an initial resize
 	sf::Event rsz_evt;
@@ -72,6 +75,10 @@ edit::edit()
 edit::~edit() {
 	debug::get().setScale(1.f, 1.f);
 	debug::get().setPosition(0, 0);
+
+	if (m_test_playing()) {
+		m_toggle_test_play();
+	}
 }
 
 level& edit::m_level() {
@@ -637,6 +644,20 @@ void edit::m_gui_controls(fsm* sm) {
 		}
 		ImGui::EndPopup();
 	}
+	// replay file
+	if (ImGui::InputText("replay file path", m_replay_path_buffer, 1000, ImGuiInputTextFlags_EnterReturnsTrue)) {
+		std::ifstream file(m_replay_path_buffer, std::ios::ate | std::ios::binary);
+		std::streamsize size = file.tellg();
+		file.seekg(0, std::ios::beg);
+		std::vector<char> buf(size);
+		file.read(buf.data(), size);
+		replay rp;
+		rp.deserialize(buf.data(), buf.size());
+		if (m_test_playing()) {
+			m_toggle_test_play();
+		}
+		m_toggle_test_play(rp);
+	}
 }
 
 void edit::m_gui_block_picker(fsm* sm) {
@@ -743,7 +764,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 	ImGui::EndChildFrame();
 }
 
-void edit::m_toggle_test_play() {
+void edit::m_toggle_test_play(std::optional<replay> rpl) {
 	auto& music = resource::get().music("assets/sound/bg1_upbeat.wav");
 	if (!m_test_playing()) {
 		if (!m_level().valid()) {
@@ -752,12 +773,19 @@ void edit::m_toggle_test_play() {
 		}
 		m_level().map().set_editor_view(false);
 		m_info_msg = "";
-		m_test_play_world.reset(new world(m_level()));
+		m_test_play_world.reset(new world(m_level(), rpl));
 		auto& music = resource::get().music("assets/sound/bg1_upbeat.wav");
 		music.setLoop(true);
 		music.play();
 		m_update_transforms();
 	} else {
+		replay& rp = m_test_play_world->get_replay();
+		std::vector<char> buf(rp.serial_size());
+		rp.serialize(buf.data(), buf.capacity());
+		std::ofstream file("REPLAY.rpl", std::ios::out | std::ios::binary);
+		file.write(buf.data(), buf.size());
+		file.close();
+
 		m_test_play_world.reset();
 		m_level().map().set_editor_view(true);
 		music.stop();

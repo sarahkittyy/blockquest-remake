@@ -12,6 +12,7 @@
 #include "moving_tile.hpp"
 #include "particles.hpp"
 #include "player.hpp"
+#include "replay.hpp"
 #include "resource.hpp"
 #include "settings.hpp"
 #include "tilemap.hpp"
@@ -19,7 +20,7 @@
 // takes in a level and renders it, as well as handles input and logic and physics and all things game-y :3
 class world : public sf::Drawable, public sf::Transformable {
 public:
-	world(level l);
+	world(level l, std::optional<replay> replay = {});
 	~world();
 
 	void update(sf::Time dt);
@@ -28,6 +29,8 @@ public:
 
 	bool won() const;
 	bool lost() const;
+
+	replay& get_replay();
 
 private:
 	void draw(sf::RenderTarget&, sf::RenderStates) const;	// sfml draw fn
@@ -45,8 +48,7 @@ private:
 
 	level m_level;	 // the raw level data itself
 
-	sf::Time m_ctime		  = sf::Time::Zero;
-	const sf::Time m_timestep = sf::milliseconds(15);
+	sf::Time m_ctime = sf::Time::Zero;
 	// for interpolation
 	inline float dt_since_step() const {
 		return m_ctime.asSeconds();
@@ -101,19 +103,13 @@ private:
 	float m_yv = 0;	  // player y vel
 
 	// were these keys hit this frame?
-	bool m_left_this_frame	= false;
-	bool m_right_this_frame = false;
-	bool m_jump_this_frame	= false;
-	bool m_dash_this_frame	= false;
-	bool m_up_this_frame	= false;
-	bool m_down_this_frame	= false;
+	input_state this_frame;
 	// were these keys hit last frame?
-	bool m_left_last_frame	= false;
-	bool m_right_last_frame = false;
-	bool m_jump_last_frame	= false;
-	bool m_dash_last_frame	= false;
-	bool m_up_last_frame	= false;
-	bool m_down_last_frame	= false;
+	input_state last_frame;
+
+	replay m_replay;   // the state of all inputs, each frame
+	int m_cstep;	   // current step
+	std::optional<replay> m_playback;
 
 	bool m_touched_goal = false;
 
