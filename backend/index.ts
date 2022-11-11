@@ -5,6 +5,7 @@ import log from '@/log';
 
 import Auth from '@controllers/Auth';
 import Level from '@controllers/Level';
+import Replay from '@controllers/Replay';
 
 import { checkAuth, requireAuth } from '@util/tools';
 
@@ -29,6 +30,8 @@ app.post('/level/search', checkAuth(), Level.search);
 app.get('/level/:id/ping-download', Level.downloadPing);
 app.post('/level/:id(\\d+)/:vote(like|dislike)', requireAuth(0), Level.vote);
 app.post('/level/:id', checkAuth(), Level.getById);
+
+app.post('/replay/upload', requireAuth(0), Replay.upload);
 
 app.get('/me', requireAuth(0), (req: Request, res: Response) => {
 	return res.send(res.locals.token);

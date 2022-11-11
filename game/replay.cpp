@@ -46,7 +46,11 @@ void replay::set_created(std::time_t created) {
 }
 
 void replay::set_created_now() {
-	time(&m_h.created);
+	time(reinterpret_cast<std::time_t*>(&m_h.created));
+}
+
+void replay::set_level_id(int levelid) {
+	m_h.levelId = levelid;
 }
 
 const char* replay::get_user() const {
@@ -59,6 +63,10 @@ float replay::get_time() const {
 
 std::time_t replay::get_created() const {
 	return m_h.created;
+}
+
+int replay::get_level_id() const {
+	return m_h.levelId;
 }
 
 size_t replay::size() const {

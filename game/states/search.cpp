@@ -28,6 +28,10 @@ search::search()
 	m_order_selection	= sort_it != std::end(m_order_opts) ? std::distance(std::begin(m_order_opts), order_it) : 1;
 	m_authed_last_frame = auth::get().authed();
 	m_update_query();
+
+	auto& bg = resource::get().music("assets/sound/menu_chiptune.wav");
+	bg.setLoop(true);
+	if (bg.getStatus() != sf::Music::Playing) bg.play();
 }
 
 search::~search() {

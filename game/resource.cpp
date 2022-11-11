@@ -15,6 +15,7 @@ resource::resource()
 
 	load_sound("jump", "assets/sound/jump.flac");
 	load_sound("dash", "assets/sound/dash.flac");
+	load_sound("dash-tiny", "assets/sound/dash-tiny.flac");
 	load_sound("gameover", "assets/sound/gameover.flac");
 	load_sound("gravityflip", "assets/sound/gravityflip.flac");
 	load_sound("wallkick", "assets/sound/wallkick.flac");

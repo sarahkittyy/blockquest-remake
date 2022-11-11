@@ -49,9 +49,6 @@ sf::Rect<T> scale(sf::Rect<T> r, T f) {	  // scale a rectangle by a scalar
 
 sf::Vector2f normalize(sf::Vector2f in);
 
-// https://stackoverflow.com/a/21867132/19393887
-size_t base64_decode(const std::string& source, void* pdest, size_t dest_size);
-
 // for hashing sf::Vector2<T> instances
 template <class T>
 struct vector_hash {
@@ -79,5 +76,8 @@ bool ready(std::future<T>& future) {
 	using namespace std::chrono_literals;
 	return future.wait_for(-10ms) == std::future_status::ready;
 }
+
+char* base64_encode(char* plain);
+char* base64_decode(char* cipher);
 
 }

@@ -44,7 +44,6 @@ world::world(level l, std::optional<replay> rp)
 	m_space_to_retry.setPosition(m_tmap.total_size() / 2.f);
 	m_game_over.setPosition(m_tmap.total_size() / 2.f);
 
-
 	m_dash_sfx_thread = std::jthread([this](std::stop_token stoken) {
 		using namespace std::chrono_literals;
 		sf::Sound s(resource::get().sound_buffer("dash"));
@@ -454,7 +453,7 @@ http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platforme
 */
 
 void world::update(sf::Time dt) {
-	if (m_playback.has_value() && m_cstep < m_playback->size()) {
+	if (m_playback.has_value() && m_cstep < m_playback->size() && !lost() && !won()) {
 		this_frame = m_playback->get(m_cstep);
 	} else {
 		this_frame.left	 = m_has_focus ? settings::get().key_down(key::LEFT) : false;

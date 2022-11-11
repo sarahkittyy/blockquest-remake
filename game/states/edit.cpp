@@ -42,6 +42,10 @@ edit::edit()
 
 	std::memset(m_replay_path_buffer, 0, 1000);
 
+	auto& bgm = resource::get().music("assets/sound/menu_chiptune.wav");
+	bgm.setLoop(true);
+	if (bgm.getStatus() != sf::Music::Playing) bgm.play();
+
 	// propagate an initial resize
 	sf::Event rsz_evt;
 	rsz_evt.type		= sf::Event::Resized;
@@ -765,7 +769,8 @@ void edit::m_gui_block_picker(fsm* sm) {
 }
 
 void edit::m_toggle_test_play(std::optional<replay> rpl) {
-	auto& music = resource::get().music("assets/sound/bg1_upbeat.wav");
+	auto& gameplay_bg = resource::get().music("assets/sound/bg1_upbeat.wav");
+	auto& menu_bg = resource::get().music("assets/sound/menu_chiptune.wav");
 	if (!m_test_playing()) {
 		if (!m_level().valid()) {
 			m_info_msg = "Cannot start without a valid start & end position";
@@ -774,21 +779,27 @@ void edit::m_toggle_test_play(std::optional<replay> rpl) {
 		m_level().map().set_editor_view(false);
 		m_info_msg = "";
 		m_test_play_world.reset(new world(m_level(), rpl));
-		auto& music = resource::get().music("assets/sound/bg1_upbeat.wav");
-		music.setLoop(true);
-		music.play();
+		menu_bg.stop();
+		gameplay_bg.setLoop(true);
+		gameplay_bg.play();
 		m_update_transforms();
 	} else {
 		replay& rp = m_test_play_world->get_replay();
+		rp.set_created_now();
+		rp.set_time(rp.size() * 0.010f);
+		rp.set_user("debug");
+		rp.set_level_id(4);
 		std::vector<char> buf(rp.serial_size());
 		rp.serialize(buf.data(), buf.capacity());
-		std::ofstream file("REPLAY.rpl", std::ios::out | std::ios::binary);
+		std::ofstream file("misc/REPLAY.rpl", std::ios::out | std::ios::binary);
 		file.write(buf.data(), buf.size());
 		file.close();
 
 		m_test_play_world.reset();
 		m_level().map().set_editor_view(true);
-		music.stop();
+		gameplay_bg.stop();
+		menu_bg.setLoop(true);
+		menu_bg.play();
 	}
 }
 

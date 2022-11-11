@@ -51,9 +51,9 @@ std::future<auth::response> auth::signup(std::string email, std::string username
 					size_t first_sep = jwt.find_first_of('.');
 					size_t second_sep = jwt.find_first_of('.', first_sep + 1);
 					std::string payload_b64 = jwt.substr(first_sep + 1, second_sep - first_sep);
-					std::string payload_ascii;
-					payload_ascii.resize(500);
-					util::base64_decode(payload_b64, payload_ascii.data(), 500);
+					char* payload_ascii_bin = util::base64_decode(payload_b64.data());
+					std::string payload_ascii(payload_ascii_bin);
+					delete[] payload_ascii_bin;
 					nlohmann::json payload_json = nlohmann::json::parse(payload_ascii);
 					m_jwt = auth::jwt{
 						.exp = payload_json["exp"].get<std::time_t>(),
@@ -113,9 +113,9 @@ std::future<auth::response> auth::login(std::string email_or_username, std::stri
 					size_t first_sep = jwt.find_first_of('.');
 					size_t second_sep = jwt.find_first_of('.', first_sep + 1);
 					std::string payload_b64 = jwt.substr(first_sep + 1, second_sep - first_sep);
-					std::string payload_ascii;
-					payload_ascii.resize(500);
-					util::base64_decode(payload_b64, payload_ascii.data(), 500);
+					char* payload_ascii_bin = util::base64_decode(payload_b64.data());
+					std::string payload_ascii(payload_ascii_bin);
+					delete[] payload_ascii_bin;
 					nlohmann::json payload_json = nlohmann::json::parse(payload_ascii);
 					m_jwt = auth::jwt{
 						.exp = payload_json["exp"].get<std::time_t>(),
@@ -178,9 +178,9 @@ std::future<auth::response> auth::verify(int code) {
 					size_t first_sep = jwt.find_first_of('.');
 					size_t second_sep = jwt.find_first_of('.', first_sep + 1);
 					std::string payload_b64 = jwt.substr(first_sep + 1, second_sep - first_sep);
-					std::string payload_ascii;
-					payload_ascii.resize(500);
-					util::base64_decode(payload_b64, payload_ascii.data(), 500);
+					char* payload_ascii_bin = util::base64_decode(payload_b64.data());
+					std::string payload_ascii(payload_ascii_bin);
+					delete[] payload_ascii_bin;
 					nlohmann::json payload_json = nlohmann::json::parse(payload_ascii);
 					m_jwt = auth::jwt{
 						.exp = payload_json["exp"].get<std::time_t>(),

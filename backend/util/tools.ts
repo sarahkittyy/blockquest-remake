@@ -86,6 +86,101 @@ export function checkAuth() {
 	};
 }
 
+export interface IReplayHeader {
+	version: string;
+	levelId: number;
+	created: Date;
+	user: string;
+	time: number;
+}
+
+export type IReplayInputFrame = [number, number, number, number, number, number];
+
+export interface IReplayData {
+	header: IReplayHeader;
+	inputs: IReplayInputFrame[];
+	raw: Buffer;
+}
+
+export function decodeRawReplay(bin: Buffer | undefined): IReplayData | undefined {
+	if (!bin) return undefined;
+	try {
+		const version: string = [...bin.toString('ascii', 0, 12)]
+			.filter((v) => v.charCodeAt(0) != 0)
+			.join('');
+		const levelId: number = bin.readInt32LE(12);
+		const created: number = bin.readInt32LE(16);
+		const user: string = [...bin.toString('ascii', 20, 20 + 60)]
+			.filter((v) => v.charCodeAt(0) != 0)
+			.join('');
+		const time: number = bin.readFloatLE(80);
+		// bits 84+ are for the input data
+		// 3 bytes = 4 input states
+		const len = bin.byteLength;
+
+		const testBit = (byte: number, n: number) => byte & (1 << n);
+
+		const inputs: IReplayInputFrame[] = [];
+
+		for (let i = 84; i < len; i += 3) {
+			const bit1: number = bin[i];
+			const bit2: number = bin[i + 1];
+			const bit3: number = bin[i + 2];
+
+			const i1: IReplayInputFrame = [
+				testBit(bit1, 0),
+				testBit(bit1, 1),
+				testBit(bit1, 2),
+				testBit(bit1, 3),
+				testBit(bit1, 4),
+				testBit(bit1, 5),
+			];
+			const i2: IReplayInputFrame = [
+				testBit(bit1, 6),
+				testBit(bit1, 7),
+				testBit(bit2, 0),
+				testBit(bit2, 1),
+				testBit(bit2, 2),
+				testBit(bit2, 3),
+			];
+			const i3: IReplayInputFrame = [
+				testBit(bit2, 4),
+				testBit(bit2, 5),
+				testBit(bit2, 6),
+				testBit(bit2, 7),
+				testBit(bit3, 0),
+				testBit(bit3, 1),
+			];
+			const i4: IReplayInputFrame = [
+				testBit(bit3, 2),
+				testBit(bit3, 3),
+				testBit(bit3, 4),
+				testBit(bit3, 5),
+				testBit(bit3, 6),
+				testBit(bit3, 7),
+			];
+			inputs.push(i1, i2, i3, i4);
+		}
+		const inputTime = inputs.length * 0.01;
+		if (inputTime > time + 0.25 || inputTime < time - 0.25) {
+			return undefined;
+		}
+		return {
+			header: {
+				version,
+				levelId,
+				created: new Date(created * 1000),
+				user,
+				time,
+			},
+			inputs,
+			raw: bin,
+		};
+	} catch (e) {
+		return undefined;
+	}
+}
+
 export function toLevelResponse(
 	lvl: Level & { votes: UserLevelVote[]; author: User },
 	userId?: number

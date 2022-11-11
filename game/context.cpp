@@ -4,6 +4,7 @@
 #include "json.hpp"
 
 #include "api.hpp"
+#include "debug.hpp"
 #include "resource.hpp"
 #include "settings.hpp"
 
@@ -115,11 +116,16 @@ bool context::save_to_file(std::string path) const {
 }
 
 bool context::load_from_file(std::string path) {
-	std::ifstream file(path);
-	if (!file) return false;
-	load(std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()));
-	file.close();
-	return true;
+	try {
+		std::ifstream file(path);
+		if (!file) return false;
+		load(std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()));
+		file.close();
+		return true;
+	} catch (const std::exception& e) {
+		debug::log() << "error fetching " << path << ": " << e.what() << "\n";
+		return false;
+	}
 }
 
 void context::process_event(sf::Event e) {
