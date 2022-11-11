@@ -50,7 +50,7 @@ std::future<auth::response> auth::signup(std::string email, std::string username
 					std::string jwt = result["jwt"].get<std::string>();
 					size_t first_sep = jwt.find_first_of('.');
 					size_t second_sep = jwt.find_first_of('.', first_sep + 1);
-					std::string payload_b64 = jwt.substr(first_sep + 1, second_sep - first_sep);
+					std::string payload_b64 = jwt.substr(first_sep + 1, second_sep - first_sep - 1);
 					char* payload_ascii_bin = util::base64_decode(payload_b64.data());
 					std::string payload_ascii(payload_ascii_bin);
 					delete[] payload_ascii_bin;

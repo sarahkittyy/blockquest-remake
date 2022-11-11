@@ -9,6 +9,7 @@ import {
 	randPhrase,
 	randNumber,
 } from '@ngneat/falso';
+import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -48,15 +49,33 @@ async function fakeLevel(author: User) {
 	return level;
 }
 
+async function fakeScore(user: User, level: Level) {
+	const score = prisma.userLevelScore.create({
+		data: {
+			user: { connect: { id: user.id } },
+			level: { connect: { id: level.id } },
+			time: randNumber({ min: 0.1, max: 35, fraction: 2 }),
+			replay: randomBytes(100),
+			version: 'vSEEDED',
+		},
+	});
+	return score;
+}
+
 async function main() {
-	const userCount = Math.floor(Math.random() * 10) + 5;
+	const userCount = Math.floor(Math.random() * 8) + 5;
+	let levels = [];
 	for (let i = 0; i < userCount; ++i) {
-		const levelCount = Math.floor(Math.random() * 4);
+		const levelCount = Math.floor(Math.random() * 8) + 3;
 		const user = await fakeUser();
 		for (let j = 0; j < levelCount; ++j) {
 			const level = await fakeLevel(user);
-			await fakeVote(user, level);
+			levels.push(level);
 		}
+		levels.forEach(async (lvl) => {
+			await fakeScore(user, lvl);
+			await fakeVote(user, lvl);
+		});
 	}
 }
 

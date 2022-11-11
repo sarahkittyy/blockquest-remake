@@ -69,7 +69,7 @@ static char base46_map[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', '
 char* base64_encode(char* plain) {
 	char counts = 0;
 	char buffer[3];
-	char* cipher = new char[strlen(plain) * 4 / 3 + 4];
+	char* cipher = new char[strlen(plain) * 4 / 3 + 4 + 1]{ 0 };
 	int i = 0, c = 0;
 
 	for (i = 0; plain[i] != '\0'; i++) {
@@ -103,7 +103,7 @@ char* base64_encode(char* plain) {
 char* base64_decode(char* cipher) {
 	char counts = 0;
 	char buffer[4];
-	char* plain = new char[strlen(cipher) * 3 / 4];
+	char* plain = new char[strlen(cipher) * 3 / 4 + 1]{ 0 };
 	int i = 0, p = 0;
 
 	for (i = 0; cipher[i] != '\0'; i++) {

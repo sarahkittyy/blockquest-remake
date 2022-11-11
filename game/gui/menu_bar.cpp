@@ -154,7 +154,7 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 				}
 				ImGui::EndDisabled();
 				if (m_login_handle.ready() && m_login_handle.get().success) {
-					if (m_login_handle.get().confirmed) {
+					if (m_login_handle.get().confirmed.value_or(false)) {
 						m_close_auth_popup();
 					} else {
 						m_open_verify_popup();
@@ -190,7 +190,7 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 				}
 				ImGui::EndDisabled();
 				if (m_signup_handle.ready() && m_signup_handle.get().success) {
-					if (m_signup_handle.get().confirmed) {
+					if (m_signup_handle.get().confirmed.value_or(false)) {
 						m_close_auth_popup();
 					} else {
 						m_open_verify_popup();

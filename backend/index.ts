@@ -32,6 +32,7 @@ app.post('/level/:id(\\d+)/:vote(like|dislike)', requireAuth(0), Level.vote);
 app.post('/level/:id', checkAuth(), Level.getById);
 
 app.post('/replay/upload', requireAuth(0), Replay.upload);
+app.post('/replay/search/:levelId(\\d+)', checkAuth(), Replay.search);
 
 app.get('/me', requireAuth(0), (req: Request, res: Response) => {
 	return res.send(res.locals.token);

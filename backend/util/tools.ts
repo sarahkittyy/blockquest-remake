@@ -3,9 +3,10 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 import log from '@/log';
-import { User, Level, UserLevelVote } from '@prisma/client';
+import { User, Level, UserLevelVote, UserLevelScore } from '@prisma/client';
 import { prisma } from '@db/index';
 import { ILevelResponse } from '@/controllers/Level';
+import { IReplayResponse } from '@/controllers/Replay';
 
 export function isValidLevel(code: string): boolean {
 	const levelRegex = /^(?:[0-9]{3}|\/){1024}/g;
@@ -179,6 +180,18 @@ export function decodeRawReplay(bin: Buffer | undefined): IReplayData | undefine
 	} catch (e) {
 		return undefined;
 	}
+}
+
+export function toReplayResponse(replay: UserLevelScore & { user: User }): IReplayResponse {
+	return {
+		user: replay.user.name,
+		levelId: replay.levelId,
+		replay: replay.replay.toString('base64'),
+		time: replay.time,
+		version: replay.version,
+		createdAt: replay.createdAt.getTime() / 1000,
+		updatedAt: replay.updatedAt.getTime() / 1000,
+	};
 }
 
 export function toLevelResponse(
