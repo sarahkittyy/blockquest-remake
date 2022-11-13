@@ -176,13 +176,8 @@ void search::imdraw(fsm* sm) {
 
 					api::level& l = m_query_handle.get().levels[idx];
 
-					bool download;
-					m_gui_level_tile(l).imdraw(&download);
+					m_gui_level_tile(l).imdraw(sm);
 					ImGui::PopID();
-					if (download) {
-						api::get().ping_download(l.id);
-						sm->swap_state<states::edit>(l);
-					}
 					if (idx >= m_query_handle.get().levels.size() - 1) {
 						no_more_levels = true;
 						break;
@@ -197,8 +192,8 @@ void search::imdraw(fsm* sm) {
 	ImGui::End();
 }
 
-api::search_query& search::query() {
-	return context::get().search_query();
+api::level_search_query& search::query() {
+	return context::get().level_search_query();
 }
 
 ImGui::ApiLevelTile& search::m_gui_level_tile(api::level& lvl) {

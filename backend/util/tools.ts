@@ -195,7 +195,7 @@ export function toReplayResponse(replay: UserLevelScore & { user: User }): IRepl
 }
 
 export function toLevelResponse(
-	lvl: Level & { votes: UserLevelVote[]; author: User },
+	lvl: Level & { votes: UserLevelVote[]; author: User; scores: UserLevelScore[] },
 	userId?: number
 ): ILevelResponse {
 	const likes = likesCount(lvl.votes);
@@ -213,6 +213,9 @@ export function toLevelResponse(
 			})
 			.catch(log.warn);
 	}
+	const record = bestScore(lvl.scores);
+	const myScore: UserLevelScore | undefined =
+		userId != null ? userScore(lvl.scores, userId) : undefined;
 	return {
 		id: lvl.id,
 		code: lvl.code,
@@ -224,6 +227,8 @@ export function toLevelResponse(
 		downloads: lvl.downloads,
 		likes,
 		dislikes,
+		...(record != null && { record: record.time }),
+		...(myScore != undefined && { myRecord: myScore?.time }),
 		myVote: userId != null ? userVote(userId, lvl.votes) : undefined,
 	};
 }
@@ -242,6 +247,14 @@ export function dislikesCount(votes: UserLevelVote[]) {
 	return votes.reduce((sum: number, vote: UserLevelVote) => {
 		return vote.vote < 0 ? sum + 1 : sum;
 	}, 0);
+}
+
+export function bestScore(scores: UserLevelScore[]): UserLevelScore | undefined {
+	return scores.sort((a, b) => a.time - b.time)?.[0];
+}
+
+export function userScore(scores: UserLevelScore[], userId: number): UserLevelScore | undefined {
+	return scores.find((score) => score.userId === userId);
 }
 
 export function rating(votes: UserLevelVote[]) {

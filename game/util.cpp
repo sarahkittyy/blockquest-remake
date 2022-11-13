@@ -95,34 +95,38 @@ char* base64_encode(char* plain) {
 		cipher[c++] = '=';
 	}
 
-	cipher[c] = '\0'; /* string padding character */
+	cipher[c + 1] = '\0'; /* string padding character */
 	return cipher;
 }
 
-
-char* base64_decode(char* cipher) {
-	char counts = 0;
-	char buffer[4];
-	char* plain = new char[strlen(cipher) * 3 / 4 + 1]{ 0 };
-	int i = 0, p = 0;
-
-	for (i = 0; cipher[i] != '\0'; i++) {
-		char k;
-		for (k = 0; k < 64 && base46_map[k] != cipher[i]; k++)
-			;
-		buffer[counts++] = k;
-		if (counts == 4) {
-			plain[p++] = (buffer[0] << 2) + (buffer[1] >> 4);
-			if (buffer[2] != 64)
-				plain[p++] = (buffer[1] << 4) + (buffer[2] >> 2);
-			if (buffer[3] != 64)
-				plain[p++] = (buffer[2] << 6) + buffer[3];
-			counts = 0;
+size_t base64_decode(const std::string& source, void* pdest, size_t dest_size) {
+	static const BASE64_DEC_TABLE b64table;
+	if (!dest_size) return 0;
+	const size_t len = source.length();
+	int bc = 0, a = 0;
+	char* const pstart = static_cast<char*>(pdest);
+	char* pd		   = pstart;
+	char* const pend   = pd + dest_size;
+	for (size_t i = 0; i < len; ++i) {
+		const int n = b64table[source[i]];
+		if (n == -1) continue;
+		a |= (n & 63) << (18 - bc);
+		if ((bc += 6) > 18) {
+			*pd = a >> 16;
+			if (++pd >= pend) return pd - pstart;
+			*pd = a >> 8;
+			if (++pd >= pend) return pd - pstart;
+			*pd = a;
+			if (++pd >= pend) return pd - pstart;
+			bc = a = 0;
 		}
 	}
-
-	plain[p] = '\0'; /* string padding character */
-	return plain;
+	if (bc >= 8) {
+		*pd = a >> 16;
+		if (++pd >= pend) return pd - pstart;
+		if (bc >= 16) *(pd++) = a >> 8;
+	}
+	return pd - pstart;
 }
 
 }

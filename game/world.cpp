@@ -112,7 +112,7 @@ bool world::lost() const {
 }
 
 replay& world::get_replay() {
-	return m_replay;
+	return m_playback.has_value() ? *m_playback : m_replay;
 }
 
 void world::process_event(sf::Event e) {

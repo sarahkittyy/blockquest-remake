@@ -28,8 +28,8 @@ private:
 	ImGui::AppMenuBar m_menu_bar;	// app menu bar
 
 	// QUERY STUFF
-	api::search_query& query();		  // just fetches the query from context
-	api::search_query m_last_query;	  // holds the query that we send to the api
+	api::level_search_query& query();		// just fetches the query from context
+	api::level_search_query m_last_query;	// holds the query that we send to the api
 
 	const char* m_sort_opts[7];	  // api sortBy options
 	int m_sort_selection;
@@ -46,7 +46,7 @@ private:
 
 	bool m_authed_last_frame;	// tracks the auth status so we can trigger an event when authed
 
-	api_handle<api::search_response> m_query_handle;   // holds the active query future
+	api_handle<api::level_search_response> m_query_handle;	 // holds the active query future
 
 	// handles automatic loading & caching to prevent unnecessary draws
 	std::unordered_map<int, std::shared_ptr<ImGui::ApiLevelTile>> m_api_level_tile;

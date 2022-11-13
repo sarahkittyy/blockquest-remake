@@ -78,6 +78,8 @@ export interface ILevelResponse {
 	downloads: number;
 	likes: number;
 	dislikes: number;
+	record?: number;
+	myRecord?: number;
 	myVote?: 1 | 0 | -1;
 }
 
@@ -112,7 +114,7 @@ export default class Level {
 				update: {
 					vote: vote === 'like' ? 1 : -1,
 				},
-				include: { level: { include: { author: true, votes: true } } },
+				include: { level: { include: { author: true, votes: true, scores: true } } },
 			});
 			return res.status(200).send({
 				level: tools.toLevelResponse(voteModel.level, token.id),
@@ -189,7 +191,7 @@ export default class Level {
 		const token: tools.IAuthToken | undefined = res.locals.token;
 
 		const levels = await prisma.level.findMany({
-			take: opts.limit + 1,
+			take: opts.limit,
 			...(opts.cursor > 1 && {
 				skip: 1,
 				cursor: {
@@ -210,14 +212,21 @@ export default class Level {
 			include: {
 				author: true,
 				votes: true,
+				scores: true,
 			},
 		});
 
-		const lastLevel = levels?.[levels.length - 2];
+		if (levels.length === 0) {
+			return res.status(200).send({
+				levels: [],
+				cursor: -1,
+			});
+		}
+		const lastLevel = levels[levels.length - 1];
 
 		const ret: ISearchResponse = {
 			levels: levels.map((lvl) => tools.toLevelResponse(lvl, token?.id)),
-			cursor: lastLevel?.id && levels.length > opts.limit ? lastLevel.id : -1,
+			cursor: lastLevel?.id && levels.length >= opts.limit ? lastLevel.id : -1,
 		};
 
 		return res.status(200).send(ret);
@@ -250,7 +259,7 @@ export default class Level {
 						increment: 1,
 					},
 				},
-				include: { author: true, votes: true },
+				include: { author: true, votes: true, scores: true },
 			});
 			if (!level) {
 				return res.status(404).send({ error: `Level id "${id}" not found` });
@@ -339,7 +348,7 @@ export default class Level {
 					code,
 					updatedAt: new Date(),
 				},
-				include: { author: true, votes: true },
+				include: { author: true, votes: true, scores: true },
 			});
 			if (!updatedLevel)
 				return res.status(500).send({ error: 'Internal server error (NO_OVERWRITE_LEVEL)' });
@@ -358,7 +367,7 @@ export default class Level {
 				title,
 				description,
 			},
-			include: { author: true, votes: true },
+			include: { author: true, votes: true, scores: true },
 		});
 
 		if (!newLevel) {

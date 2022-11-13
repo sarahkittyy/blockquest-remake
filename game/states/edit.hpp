@@ -19,6 +19,7 @@ class edit : public state {
 public:
 	edit();
 	edit(api::level lvl);
+	edit(api::level lvl, replay rpl);
 	~edit();
 
 	void update(fsm* sm, sf::Time dt);
@@ -40,8 +41,9 @@ private:
 	std::deque<std::vector<tilemap::diff>> m_redo_queue;   // redo queue
 	const int UNDO_MAX = 100;							   // maximum amount of undos
 
-	level m_cursor;		// the level that just renders the cursor
-	tilemap m_border;	// a completely static map used to render a border of blocks
+	level m_cursor;							 // the level that just renders the cursor
+	std::optional<replay> m_loaded_replay;	 // the currently loaded replay file
+	tilemap m_border;						 // a completely static map used to render a border of blocks
 
 	float m_level_size;	  // x/y pixel size of the level
 
@@ -53,7 +55,6 @@ private:
 	const char* m_cursor_description(cursor_type c) const;
 
 	char m_import_buffer[8192];
-	char m_replay_path_buffer[1000];
 
 	// buffers for level uploading
 	char m_title_buffer[50];
@@ -98,7 +99,7 @@ private:
 
 	bool m_test_playing() const;
 	std::unique_ptr<world> m_test_play_world;
-	void m_toggle_test_play(std::optional<replay> rpl = {});
+	void m_toggle_test_play();
 
 	std::string m_info_msg;
 

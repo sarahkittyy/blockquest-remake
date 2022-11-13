@@ -2,7 +2,8 @@
 
 #include <cmath>
 #include <cstring>
-#include "api.hpp"
+
+#include "util.hpp"
 
 #define CHECK_BIT(v, p) ((v) & (1 << (p)))
 
@@ -11,6 +12,15 @@ const sf::Time replay::timestep = sf::milliseconds(10);
 replay::replay() {
 	m_frames.reserve(100);
 	reset();
+}
+
+replay::replay(api::replay rpl)
+	: replay() {
+	std::string replayb64 = rpl.replay;
+	std::string replay;
+	replay.resize(replayb64.size() * 1.2f);
+	size_t replay_sz = util::base64_decode(replayb64, replay.data(), replay.capacity());
+	deserialize(replay.data(), replay_sz);
 }
 
 void replay::m_expand() {

@@ -36,6 +36,12 @@ api::level api::level_from_json(nlohmann::json lvl) {
 	if (lvl.contains("myVote")) {
 		l.myVote = lvl["myVote"].get<int>();
 	}
+	if (lvl.contains("record")) {
+		l.record = lvl["record"].get<float>();
+	}
+	if (lvl.contains("myRecord")) {
+		l.myRecord = lvl["myRecord"].get<float>();
+	}
 	return l;
 }
 
@@ -53,11 +59,15 @@ nlohmann::json api::level_to_json(api::level lvl) {
 	ret["dislikes"]	   = lvl.dislikes;
 	if (lvl.myVote)
 		ret["myVote"] = *lvl.myVote;
+	if (lvl.record)
+		ret["record"] = *lvl.record;
+	if (lvl.myRecord)
+		ret["myRecord"] = *lvl.myRecord;
 	return ret;
 }
 
-std::future<api::search_response> api::search_levels(api::search_query q) {
-	return std::async([this, q]() -> api::search_response {
+std::future<api::level_search_response> api::search_levels(api::level_search_query q) {
+	return std::async([this, q]() -> api::level_search_response {
 		try {
 			nlohmann::json body = q;
 			body["limit"]		= q.rows * q.cols;
@@ -67,11 +77,57 @@ std::future<api::search_response> api::search_levels(api::search_query q) {
 			if (auto res = m_cli.Post("/level/search", body.dump(), "application/json")) {
 				nlohmann::json result = nlohmann::json::parse(res->body);
 				if (res->status == 200) {
-					search_response rsp;
+					level_search_response rsp;
 					rsp.cursor	= result["cursor"].get<int>();
 					rsp.success = true;
 					for (auto &level_json : result["levels"]) {
 						rsp.levels.push_back(level_from_json(level_json));
+					}
+					return rsp;
+				} else {
+					if (result.contains("error")) {
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error";
+					}
+				}
+			} else {
+				throw "Could not connect to server";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.error	 = e
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.error	 = "Unknown error."
+			};
+		}
+	});
+}
+
+std::future<api::replay_search_response> api::search_replays(int levelId, api::replay_search_query q) {
+	return std::async([this, q, levelId]() -> api::replay_search_response {
+		try {
+			nlohmann::json body = q;
+			auth::get().add_jwt_to_body(body);
+			debug::log() << body.dump() << "\n";
+
+			if (auto res = m_cli.Post("/replay/search/" + std::to_string(levelId), body.dump(), "application/json")) {
+				nlohmann::json result = nlohmann::json::parse(res->body);
+				if (res->status == 200) {
+					replay_search_response rsp;
+					rsp.cursor	= result["cursor"].get<int>();
+					rsp.success = true;
+					for (auto &replay_json : result["scores"]) {
+						rsp.scores.push_back(replay_json.get<api::replay>());
 					}
 					return rsp;
 				} else {
@@ -342,7 +398,7 @@ std::future<api::update_response> api::is_up_to_date() {
 	});
 }
 
-bool api::search_query::operator==(const search_query &other) const {
+bool api::level_search_query::operator==(const level_search_query &other) const {
 	return rows == other.rows &&
 		   cols == other.cols &&
 		   query == other.query &&
@@ -352,6 +408,16 @@ bool api::search_query::operator==(const search_query &other) const {
 		   order == other.order;
 }
 
-bool api::search_query::operator!=(const search_query &other) const {
+bool api::level_search_query::operator!=(const level_search_query &other) const {
+	return !(other == *this);
+}
+
+bool api::replay_search_query::operator==(const replay_search_query &other) const {
+	return sortBy == other.sortBy &&
+		   order == other.order &&
+		   limit == other.limit;
+}
+
+bool api::replay_search_query::operator!=(const replay_search_query &other) const {
 	return !(other == *this);
 }

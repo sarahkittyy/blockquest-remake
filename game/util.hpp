@@ -78,6 +78,5 @@ bool ready(std::future<T>& future) {
 }
 
 char* base64_encode(char* plain);
-char* base64_decode(char* cipher);
-
+size_t base64_decode(const std::string& source, void* pdest, size_t dest_size);
 }

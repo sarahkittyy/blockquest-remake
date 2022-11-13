@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <cstdlib>
 
+#include "api.hpp"
+
 struct input_state {
 	bool left  = false;
 	bool right = false;
@@ -16,6 +18,7 @@ struct input_state {
 class replay {
 public:
 	replay();
+	replay(api::replay rpl);   // load from api replay data
 
 	void reset();
 	void push(input_state s);

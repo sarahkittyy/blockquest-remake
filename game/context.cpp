@@ -10,16 +10,19 @@
 
 context::context()
 	: m_editor_level(32, 32),
-	  m_query({ .cursor			  = -1,
-				.rows			  = 4,
-				.cols			  = 4,
-				.query			  = "",
-				.matchTitle		  = true,
-				.matchDescription = true,
-				.matchAuthor	  = false,
-				.matchSelf		  = false,
-				.sortBy			  = "id",
-				.order			  = "desc" }),
+	  m_level_query({ .cursor			= -1,
+					  .rows				= 4,
+					  .cols				= 4,
+					  .query			= "",
+					  .matchTitle		= true,
+					  .matchDescription = true,
+					  .matchAuthor		= false,
+					  .matchSelf		= false,
+					  .sortBy			= "id",
+					  .order			= "desc" }),
+	  m_replay_query({ .cursor = -1,
+					   .sortBy = "time",
+					   .order  = "asc" }),
 	  m_sfx_volume(50.f),
 	  m_music_volume(50.f) {
 	load_from_file("bq-r.json");
@@ -51,8 +54,8 @@ std::string context::save() const {
 		j["editor_level"] = m_editor_level.map().save();
 	}
 
-	auto& q	   = m_query;
-	j["query"] = q;
+	j["level_query"]  = m_level_query;
+	j["replay_query"] = m_replay_query;
 
 	j["screen_size"]["x"] = resource::get().window().getSize().x;
 	j["screen_size"]["y"] = resource::get().window().getSize().y;
@@ -82,8 +85,12 @@ void context::load(std::string data) {
 		m_editor_level.map().load(j["editor_level"]);
 	}
 
-	if (j.contains("query")) {
-		j["query"].get_to(m_query);
+	if (j.contains("level_query")) {
+		j["level_query"].get_to(m_level_query);
+	}
+
+	if (j.contains("replay_query")) {
+		j["replay_query"].get_to(m_replay_query);
 	}
 
 	if (j.contains("screen_size")) {
@@ -139,12 +146,20 @@ void context::process_event(sf::Event e) {
 	}
 }
 
-api::search_query& context::search_query() {
-	return m_query;
+api::level_search_query& context::level_search_query() {
+	return m_level_query;
 }
 
-const api::search_query& context::search_query() const {
-	return m_query;
+const api::level_search_query& context::level_search_query() const {
+	return m_level_query;
+}
+
+api::replay_search_query& context::replay_search_query() {
+	return m_replay_query;
+}
+
+const api::replay_search_query& context::replay_search_query() const {
+	return m_replay_query;
 }
 
 context& context::get() {

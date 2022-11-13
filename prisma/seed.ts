@@ -55,7 +55,10 @@ async function fakeScore(user: User, level: Level) {
 			user: { connect: { id: user.id } },
 			level: { connect: { id: level.id } },
 			time: randNumber({ min: 0.1, max: 35, fraction: 2 }),
-			replay: randomBytes(100),
+			replay: Buffer.from(
+				'djEuNS4xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIwjAcRVEURVEURVEURVEURVEURVEURRAEQZCmaZqmaZqmaZqmaZqmaZqmaZqmaZqmaZqmaRAEQRAEAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEQRAEQRAEQRAEQRAEAQAA',
+				'base64'
+			),
 			version: 'vSEEDED',
 		},
 	});

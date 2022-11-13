@@ -26,7 +26,20 @@ public:
 		int downloads;
 		int likes;
 		int dislikes;
+		std::optional<float> record;
+		std::optional<float> myRecord;
 		std::optional<int> myVote;
+	};
+
+	struct replay {
+		std::string user;
+		int levelId;
+		float time;
+		std::string version;
+		std::string replay;
+		std::time_t createdAt;
+		std::time_t updatedAt;
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, user, levelId, time, version, replay, createdAt, updatedAt);
 	};
 
 	struct level_response {
@@ -36,7 +49,7 @@ public:
 		std::optional<api::level> level;
 	};
 
-	struct search_query {
+	struct level_search_query {
 		int cursor			  = -1;
 		int rows			  = 4;
 		int cols			  = 4;
@@ -47,12 +60,12 @@ public:
 		bool matchSelf		  = false;
 		std::string sortBy	  = "likes";
 		std::string order	  = "desc";
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::search_query, cursor, rows, cols, query, matchTitle, matchDescription, matchAuthor, matchSelf, sortBy, order);
-		bool operator==(const search_query& other) const;
-		bool operator!=(const search_query& other) const;
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::level_search_query, cursor, rows, cols, query, matchTitle, matchDescription, matchAuthor, matchSelf, sortBy, order);
+		bool operator==(const level_search_query& other) const;
+		bool operator!=(const level_search_query& other) const;
 	};
 
-	struct search_response {
+	struct level_search_response {
 		bool success;
 		std::optional<std::string> error;
 
@@ -78,9 +91,31 @@ public:
 		std::optional<api::level> level;
 	};
 
+	struct replay_search_query {
+		int cursor = -1;
+		int limit  = 10;
+
+		std::string sortBy = "time";
+		std::string order  = "asc";
+
+		bool operator==(const replay_search_query& other) const;
+		bool operator!=(const replay_search_query& other) const;
+
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay_search_query, cursor, limit, sortBy, order);
+	};
+
+	struct replay_search_response {
+		bool success;
+		std::optional<std::string> error;
+		std::vector<api::replay> scores;
+		int cursor;
+	};
+
 	std::future<level_response> upload_level(::level l, const char* title, const char* description, bool override = false);
 	std::future<level_response> download_level(int id);
 	std::future<vote_response> vote_level(api::level lvl, vote v);
+
+	std::future<api::replay_search_response> search_replays(int levelId, api::replay_search_query q);
 
 	// get the current app version
 	const char* version() const;
@@ -88,7 +123,7 @@ public:
 	// is this application up-to-date
 	std::future<update_response> is_up_to_date();
 
-	std::future<search_response> search_levels(search_query q);
+	std::future<level_search_response> search_levels(level_search_query q);
 
 	// sends a download ping to be run when we fetch a level
 	void ping_download(int id);

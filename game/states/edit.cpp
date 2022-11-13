@@ -25,6 +25,12 @@ edit::edit(api::level lvl)
 	m_load_api_level(lvl);
 }
 
+edit::edit(api::level lvl, replay rpl)
+	: edit() {
+	m_loaded_replay = rpl;
+	m_load_api_level(lvl);
+}
+
 edit::edit()
 	: m_menu_bar(),
 	  m_cursor(),
@@ -39,8 +45,6 @@ edit::edit()
 	  m_stroke_map(resource::get().tex("assets/tiles.png"), 32, 32, 64),
 	  m_old_mouse_tile(-1, -1),
 	  m_last_placed(-1, -1) {
-
-	std::memset(m_replay_path_buffer, 0, 1000);
 
 	auto& bgm = resource::get().music("assets/sound/menu_chiptune.wav");
 	bgm.setLoop(true);
@@ -475,9 +479,17 @@ void edit::m_gui_level_info(fsm* sm) {
 	ImGui::TextWrapped("Title: %s", md.title.c_str());
 	ImGui::TextWrapped("Author: %s", md.author.c_str());
 	ImGui::TextWrapped("Downloads: %d", md.downloads);
+	if (md.record) {
+		ImGui::TextWrapped("World record: %.2fs", *md.record);
+	}
+	if (md.myRecord) {
+		ImGui::TextWrapped("Your best: %.2fs", *md.myRecord);
+	}
 	ImGui::TextWrapped("Likes: %d", md.likes);
 	ImGui::TextWrapped("Dislikes: %d", md.dislikes);
-	ImGui::TextWrapped("Ratio: %.2f", md.likes / std::min<float>(md.likes + md.dislikes, 1));
+	if (md.likes > 0 || md.dislikes > 0) {
+		ImGui::TextWrapped("Ratio: %.2f", float(md.likes - md.dislikes) / float(md.likes + md.dislikes));
+	}
 	char date_fmt[100];
 	tm* date_tm = std::localtime(&md.createdAt);
 	std::strftime(date_fmt, 100, "%D %r", date_tm);
@@ -598,7 +610,17 @@ void edit::m_gui_controls(fsm* sm) {
 		ImGui::EndPopup();
 	}
 	///////////////// UPLOAD LOGIC END ////////////////////////
-		
+	ImGui::Separator();
+	if (m_loaded_replay) {
+		ImGui::Text("Replay: %.2f by %s", m_loaded_replay->get_time(), m_loaded_replay->get_user());
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/erase.png"), "Unload###UL")) {
+			m_loaded_replay.reset();
+		}
+		ImGui::SameLine();
+	} else {
+		ImGui::Text("No replay loaded");
+	}
+
 	if (ImGui::BeginPopup("Clear###Confirm")) {
 		ImGui::Text("Are you sure you want to erase the whole level?");
 		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/yes.png"), "Yes")) {
@@ -647,20 +669,6 @@ void edit::m_gui_controls(fsm* sm) {
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
-	}
-	// replay file
-	if (ImGui::InputText("replay file path", m_replay_path_buffer, 1000, ImGuiInputTextFlags_EnterReturnsTrue)) {
-		std::ifstream file(m_replay_path_buffer, std::ios::ate | std::ios::binary);
-		std::streamsize size = file.tellg();
-		file.seekg(0, std::ios::beg);
-		std::vector<char> buf(size);
-		file.read(buf.data(), size);
-		replay rp;
-		rp.deserialize(buf.data(), buf.size());
-		if (m_test_playing()) {
-			m_toggle_test_play();
-		}
-		m_toggle_test_play(rp);
 	}
 }
 
@@ -768,7 +776,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 	ImGui::EndChildFrame();
 }
 
-void edit::m_toggle_test_play(std::optional<replay> rpl) {
+void edit::m_toggle_test_play() {
 	auto& gameplay_bg = resource::get().music("assets/sound/bg1_upbeat.wav");
 	auto& menu_bg = resource::get().music("assets/sound/menu_chiptune.wav");
 	if (!m_test_playing()) {
@@ -778,23 +786,12 @@ void edit::m_toggle_test_play(std::optional<replay> rpl) {
 		}
 		m_level().map().set_editor_view(false);
 		m_info_msg = "";
-		m_test_play_world.reset(new world(m_level(), rpl));
+		m_test_play_world.reset(new world(m_level(), m_loaded_replay));
 		menu_bg.stop();
 		gameplay_bg.setLoop(true);
 		gameplay_bg.play();
 		m_update_transforms();
 	} else {
-		replay& rp = m_test_play_world->get_replay();
-		rp.set_created_now();
-		rp.set_time(rp.size() * 0.010f);
-		rp.set_user("debug");
-		rp.set_level_id(4);
-		std::vector<char> buf(rp.serial_size());
-		rp.serialize(buf.data(), buf.capacity());
-		std::ofstream file("misc/REPLAY.rpl", std::ios::out | std::ios::binary);
-		file.write(buf.data(), buf.size());
-		file.close();
-
 		m_test_play_world.reset();
 		m_level().map().set_editor_view(true);
 		gameplay_bg.stop();

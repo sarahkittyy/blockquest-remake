@@ -130,7 +130,7 @@ export default class Replay {
 		}
 
 		const scores = await prisma.userLevelScore.findMany({
-			take: opts.limit + 1,
+			take: opts.limit,
 			...(opts.cursor > 1 && {
 				skip: 1,
 				cursor: {
@@ -148,11 +148,17 @@ export default class Replay {
 			},
 		});
 
-		const lastScore = scores?.[scores.length - 2];
+		if (scores.length === 0) {
+			return res.status(200).send({
+				scores: [],
+				cursor: -1,
+			});
+		}
+		const lastScore = scores[scores.length - 1];
 
 		return res.status(200).send({
 			scores: scores.map((score) => tools.toReplayResponse(score)),
-			cursor: lastScore?.id && scores.length > opts.limit ? lastScore.id : -1,
+			cursor: lastScore?.id && scores.length >= opts.limit ? lastScore.id : -1,
 		});
 	}
 }
