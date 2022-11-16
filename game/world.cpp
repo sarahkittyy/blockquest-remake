@@ -30,19 +30,24 @@ world::world(level l, std::optional<replay> rp)
 
 	m_game_clear.setTexture(resource::get().tex("assets/gui/victory.png"));
 	m_space_to_retry.setTexture(resource::get().tex("assets/gui/retry.png"));
+	m_fadeout.setFillColor(sf::Color(127, 127, 127, 0));
+	m_fadeout.setSize(m_tmap.total_size());
 	m_game_clear.setOrigin(m_game_clear.getLocalBounds().width / 2.f, m_game_clear.getLocalBounds().height);
 	m_space_to_retry.setOrigin(m_space_to_retry.getLocalBounds().width / 2.f, 0);
 
 	m_game_over.setTexture(resource::get().tex("assets/gui/defeat.png"));
 	m_game_over.setOrigin(m_game_over.getLocalBounds().width / 2.f, m_game_over.getLocalBounds().height);
+	m_fadeout.setOrigin(m_fadeout.getLocalBounds().width / 2.f, m_fadeout.getLocalBounds().height / 2.f);
 
 	m_game_clear.setScale(4, 4);
 	m_space_to_retry.setScale(4, 4);
 	m_game_over.setScale(4, 4);
+	m_fadeout.setScale(4, 4);
 
 	m_game_clear.setPosition(m_tmap.total_size() / 2.f);
 	m_space_to_retry.setPosition(m_tmap.total_size() / 2.f);
 	m_game_over.setPosition(m_tmap.total_size() / 2.f);
+	m_fadeout.setPosition(m_tmap.total_size() / 2.f);
 
 	m_dash_sfx_thread = std::jthread([this](std::stop_token stoken) {
 		using namespace std::chrono_literals;
@@ -101,6 +106,7 @@ void world::m_restart_world() {
 	m_ctime			 = sf::Time::Zero;
 	m_replay.reset();
 	m_cstep = 0;
+	m_fadeout.setFillColor(sf::Color(0, 0, 0, 0));
 }
 
 bool world::won() const {
@@ -476,6 +482,7 @@ void world::update(sf::Time dt) {
 		opacity.a	= m_end_alpha;
 		m_space_to_retry.setColor(opacity);
 		m_game_clear.setColor(opacity);
+		m_fadeout.setFillColor(sf::Color(220, 220, 220, m_end_alpha / 2.f));
 		if (m_just_jumped()) {
 			return m_restart_world();
 		} else {
@@ -489,6 +496,7 @@ void world::update(sf::Time dt) {
 		opacity.a	= m_end_alpha;
 		m_space_to_retry.setColor(opacity);
 		m_game_over.setColor(opacity);
+		m_fadeout.setFillColor(sf::Color(0, 0, 0, m_end_alpha / 2.f));
 		if (m_just_jumped()) {
 			return m_restart_world();
 		} else {
@@ -764,9 +772,11 @@ void world::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 		t.draw(m_player, s);
 	t.draw(m_pmgr, s);
 	if (won()) {
+		t.draw(m_fadeout, s);
 		t.draw(m_game_clear, s);
 		t.draw(m_space_to_retry, s);
 	} else if (lost()) {
+		t.draw(m_fadeout, s);
 		t.draw(m_game_over, s);
 		t.draw(m_space_to_retry, s);
 	}

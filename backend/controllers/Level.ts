@@ -26,6 +26,7 @@ const SortableFields = [
 	'id',
 	'downloads',
 	'likes',
+	'dislikes',
 	'createdAt',
 	'updatedAt',
 	'title',

@@ -33,6 +33,7 @@ private:
 	char m_username[50];
 	char m_password[50];
 	char m_email[150];
+	char m_user_email[150];
 	int m_v_code;
 
 	api_handle<auth::response> m_login_handle;

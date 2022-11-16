@@ -29,6 +29,7 @@ AppMenuBar::AppMenuBar()
 	std::memset(m_username, 0, 50);
 	std::memset(m_password, 0, 50);
 	std::memset(m_email, 0, 150);
+	std::memset(m_user_email, 0, 150);
 }
 
 void AppMenuBar::process_event(sf::Event e) {
@@ -139,12 +140,12 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 					ImGui::TextWrapped("%s", m_login_handle.get().error->c_str());
 					ImGui::PopStyleColor();
 				}
-				if (ImGui::InputText("Username / Email###UserEmail", m_email, 150, iflags_enter)) {
+				if (ImGui::InputText("Username / Email###UserEmail", m_user_email, 150, iflags_enter)) {
 					ImGui::SetKeyboardFocusHere(0);
 				}
 				if (ImGui::InputText("Password###Pword", m_password, 50, ImGuiInputTextFlags_Password | iflags_enter)) {
 					if (!m_login_handle.fetching())
-						m_login_handle.reset(auth::get().login(m_email, m_password));
+						m_login_handle.reset(auth::get().login(m_user_email, m_password));
 				}
 				ImGui::BeginDisabled(m_login_handle.fetching());
 				const char* submit_text = m_login_handle.fetching() ? "Submitting...###LoginSubmit" : "Submit###LoginSubmit";
@@ -366,6 +367,7 @@ void AppMenuBar::m_close_auth_popup() {
 	std::memset(m_username, 0, 50);
 	std::memset(m_password, 0, 50);
 	std::memset(m_email, 0, 150);
+	std::memset(m_user_email, 0, 150);
 
 	ImGui::CloseCurrentPopup();
 }

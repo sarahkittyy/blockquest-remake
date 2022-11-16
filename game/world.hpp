@@ -61,6 +61,7 @@ private:
 
 	// messages shown on defeat
 	sf::Sprite m_game_over;
+	sf::RectangleShape m_fadeout;
 
 	// PLAYER DATA //
 

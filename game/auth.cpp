@@ -53,7 +53,7 @@ std::future<auth::response> auth::signup(std::string email, std::string username
 					std::string payload_b64 = jwt.substr(first_sep + 1, second_sep - first_sep - 1);
 					std::string payload_ascii;
 					payload_ascii.resize(500);
-					util::base64_decode(payload_b64, payload_b64.data(), 500);
+					util::base64_decode(payload_b64, payload_ascii.data(), 500);
 					nlohmann::json payload_json = nlohmann::json::parse(payload_ascii);
 					m_jwt = auth::jwt{
 						.exp = payload_json["exp"].get<std::time_t>(),
@@ -77,6 +77,12 @@ std::future<auth::response> auth::signup(std::string email, std::string username
 			} else {
 				throw "Could not connect to server.";
 			}
+		} catch (nlohmann::json::parse_error& e) {
+			debug::log() << e.what() << "\n";
+			return {
+				.success = false,
+				.error ="Invalid server response (contact the developer!)"
+			};
 		} catch (const char* e) {
 			return {
 				.success = false,
@@ -139,6 +145,12 @@ std::future<auth::response> auth::login(std::string email_or_username, std::stri
 			} else {
 				throw "Could not connect to server.";
 			}
+		} catch (nlohmann::json::parse_error& e) {
+			debug::log() << e.what() << "\n";
+			return {
+				.success = false,
+				.error ="Invalid server response (contact the developer!)"
+			};
 		} catch (const char* e) {
 			return {
 				.success = false,
