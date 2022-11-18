@@ -450,6 +450,9 @@ void world::step(sf::Time dt) {
 		m_dashing	   = false;
 		m_player.setScale(m_player.getScale().x, m_flip_gravity ? -1 : 1);
 	}
+
+	// update last frame keys
+	last_frame = this_frame;
 }
 
 /*
@@ -537,9 +540,6 @@ void world::update(sf::Time dt) {
 	// update the player's animation
 	m_update_animation();
 	m_sync_player_position();
-
-	// update last frame keys
-	last_frame = this_frame;
 }
 
 void world::m_player_wallkick(dir d) {
