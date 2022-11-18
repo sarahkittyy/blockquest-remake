@@ -51,7 +51,7 @@ export interface IReplayResponse {
 	levelId: number;
 	time: number;
 	version: string;
-	replay: string;
+	raw: string;
 	createdAt: number;
 	updatedAt: number;
 }

@@ -186,7 +186,7 @@ export function toReplayResponse(replay: UserLevelScore & { user: User }): IRepl
 	return {
 		user: replay.user.name,
 		levelId: replay.levelId,
-		replay: replay.replay.toString('base64'),
+		raw: replay.replay.toString('base64'),
 		time: replay.time,
 		version: replay.version,
 		createdAt: replay.createdAt.getTime() / 1000,

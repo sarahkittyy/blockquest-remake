@@ -37,10 +37,10 @@ public:
 		int levelId;
 		float time;
 		std::string version;
-		std::string replay;
+		std::string raw;
 		std::time_t createdAt;
 		std::time_t updatedAt;
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, user, levelId, time, version, replay, createdAt, updatedAt);
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, user, levelId, time, version, raw, createdAt, updatedAt);
 	};
 
 	struct level_response {
