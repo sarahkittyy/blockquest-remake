@@ -4,6 +4,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
+#include "ImGuiFileDialog.h"
 #include "gui/menu_bar.hpp"
 
 #include <cstring>
@@ -157,6 +158,10 @@ void edit::update(fsm* sm, sf::Time dt) {
 		sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
 		!m_test_playing() &&
 		m_level().map().in_bounds(mouse_tile)) {
+		// metadata check
+		if (m_level().has_metadata() && !m_is_current_level_ours())
+			m_level().clear_metadata();
+
 		// set the tile
 		switch (m_cursor_type) {
 		case PENCIL: {
@@ -422,11 +427,21 @@ void edit::imdraw(fsm* sm) {
 	ImGui::End();
 
 	if (m_level().has_metadata()) {
+		// level info
 		ImGui::SetNextWindowPos(ImVec2(wsz.x - 300, wsz.y / 2.f), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowSize(ImVec2(300, 500), ImGuiCond_Once);
 		ImGui::Begin("Level Info");
 		m_gui_level_info(sm);
 		ImGui::End();
+
+		// victory  
+		if (m_test_play_world && m_test_play_world->won() && !m_test_play_world->has_playback()) {
+			ImGui::SetNextWindowPos(ImVec2(wsz.x / 2.f - 150, wsz.y / 2.f + 75), ImGuiCond_Appearing);
+			ImGui::SetNextWindowSize(ImVec2(300, 250), ImGuiCond_Appearing);
+			ImGui::Begin("Replay");
+			m_gui_replay_submit(sm);
+			ImGui::End();
+		}
 	}
 
 }
@@ -460,6 +475,79 @@ void edit::m_clear_level() {
 	std::memset(m_title_buffer, 0, 50);
 	std::memset(m_description_buffer, 0, 50);
 	m_id = 0;
+}
+
+void edit::m_gui_replay_submit(fsm* sm) {
+	m_upload_replay_handle.poll();
+
+	auto& md = m_level().get_metadata();
+	replay& rp = m_test_play_world->get_replay();
+	bool authed = auth::get().authed();
+	bool can_submit = !m_upload_replay_handle.fetching() && authed && ((md.myRecord && *md.myRecord >= rp.get_time()) || !md.myRecord);
+	
+	sf::Vector2f wsz(resource::get().window().getSize());
+	
+	if (!m_upload_replay_handle.fetching() && m_upload_replay_handle.ready()) {
+		auto& res = m_upload_replay_handle.get();
+		if (!res.success) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
+			ImGui::TextWrapped("%s", res.error->c_str());
+			ImGui::PopStyleColor();
+		} else {
+			if (m_level().has_metadata()) {
+				auto& md = m_level().get_metadata();
+				md.record = res.newBest;
+				if (*md.myRecord >= rp.get_time()) {
+					md.myRecord = rp.get_time();
+				}
+			}
+
+			m_toggle_test_play();
+		}
+	}
+
+	if (md.record)
+		ImGui::TextWrapped("Time: %.2f (WR: %.2f)", rp.get_time(), *md.record);
+	else
+		ImGui::TextWrapped("Time: %.2f", rp.get_time());
+
+	if (md.myRecord)
+		ImGui::TextWrapped("Your record: %.2f", md.myRecord.value());
+
+	ImGui::TextWrapped("Inputs: %lu", rp.size());
+
+	std::string submit_label = std::string(m_upload_replay_handle.fetching() ? "Submitting..." : "Submit") + "###SubmitRecord";
+	ImGui::BeginDisabled(!can_submit);
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/upload.png"), submit_label.c_str())) {
+		rp.set_created_now();
+		rp.set_level_id(md.id);
+		rp.set_user(auth::get().username().c_str());
+		m_upload_replay_handle.reset(api::get().upload_replay(rp));
+	}
+	ImGui::SameLine();
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/download.png"), "Download###DownloadRecord")) {
+		ImGuiFileDialog::Instance()->OpenDialog("DownloadReplayDialog", "Download Replay", ".rpl", ".", 1, nullptr, ImGuiFileDialogFlags_Modal);
+	}
+	if (ImGuiFileDialog::Instance()->Display("DownloadReplayDialog", ImGuiWindowFlags_NoCollapse, wsz * 0.5f)) {
+		if (ImGuiFileDialog::Instance()->IsOk()) {
+			std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
+			rp.set_created_now();
+			rp.set_level_id(md.id);
+			rp.set_user(auth::get().username().c_str());
+			rp.save_to_file(path);
+		}
+		ImGuiFileDialog::Instance()->Close();
+	}
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && !can_submit) {
+		if (m_upload_replay_handle.fetching())
+			ImGui::SetTooltip("Submitting...");
+		else if (!authed)
+			ImGui::SetTooltip("Log in to submit times!");
+		else
+			ImGui::SetTooltip("Cannot submit slower record.");
+	}
+
+	ImGui::EndDisabled();
 }
 
 void edit::m_gui_menu(fsm* sm) {
@@ -502,8 +590,9 @@ void edit::m_gui_level_info(fsm* sm) {
 }
 
 void edit::m_gui_controls(fsm* sm) {
+	sf::Vector2f wsz(resource::get().window().getSize());
 	ImTextureID icon  = !m_test_playing() ? resource::get().imtex("assets/gui/play.png") : resource::get().imtex("assets/gui/stop.png");
-	std::string label = !m_test_playing() ? "Test Play" : "Edit";
+	std::string label = !m_test_playing() ? "Play" : "Edit";
 	if (ImGui::ImageButtonWithText(icon, label.c_str())) {
 		m_toggle_test_play();
 	}
@@ -619,6 +708,18 @@ void edit::m_gui_controls(fsm* sm) {
 		ImGui::SameLine();
 	} else {
 		ImGui::Text("No replay loaded");
+	}
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/folder.png"), "Load Replay File###LoadReplay")) {
+		ImGuiFileDialog::Instance()->OpenDialog("ChooseReplayFile", "Choose Replay File", ".rpl", ".", 1, nullptr, ImGuiFileDialogFlags_Modal);
+	}
+	if (ImGuiFileDialog::Instance()->Display("ChooseReplayFile", ImGuiWindowFlags_NoResize, wsz * 0.5f)) {
+		if (ImGuiFileDialog::Instance()->IsOk()) {
+			auto path = ImGuiFileDialog::Instance()->GetFilePathName();
+			replay rp;
+			rp.load_from_file(path);
+			m_loaded_replay = rp;
+		}
+		ImGuiFileDialog::Instance()->Close();
 	}
 
 	if (ImGui::BeginPopup("Clear###Confirm")) {
@@ -793,6 +894,7 @@ void edit::m_toggle_test_play() {
 		m_update_transforms();
 	} else {
 		m_test_play_world.reset();
+		m_upload_replay_handle.reset();
 		m_level().map().set_editor_view(true);
 		gameplay_bg.stop();
 		menu_bg.setLoop(true);

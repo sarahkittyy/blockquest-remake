@@ -117,6 +117,10 @@ bool world::lost() const {
 	return m_dead;
 }
 
+bool world::has_playback() const {
+	return m_playback.has_value();
+}
+
 replay& world::get_replay() {
 	return m_playback.has_value() ? *m_playback : m_replay;
 }

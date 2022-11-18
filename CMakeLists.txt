@@ -27,7 +27,9 @@ set(CMAKE_CXX_STANDARD 20)
 file(GLOB_RECURSE sources "game/*.cpp")
 file(GLOB imgui_sources "lib/imgui/*.cpp")
 
-set(includes game/ lib/imgui/ lib/http lib/nlohmann lib/ ${OPENSSL_INCLUDE_DIR})
+set(filedialog_sources "lib/ImGuiFileDialog/ImGuiFileDialog.cpp")
+
+set(includes game/ lib/imgui/ lib/http lib/nlohmann lib/ImGuiFileDialog lib/ ${OPENSSL_INCLUDE_DIR})
 set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL OpenSSL::SSL OpenSSL::Crypto)
 set(flags -DCPPHTTPLIB_OPENSSL_SUPPORT)
 
@@ -42,11 +44,12 @@ if(APP_VERSION)
 endif()
 
 if(WIN32)
+	list(APPEND includes lib/ImGuiFileDialog/dirent)
 	set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc")
-	add_executable(bq-r WIN32 ${sources} ${imgui_sources} ${APP_ICON_RESOURCE_WINDOWS})
+	add_executable(bq-r WIN32 ${sources} ${imgui_sources} ${filedialog_sources} ${APP_ICON_RESOURCE_WINDOWS})
 	list(APPEND libs sfml-main)
 else()
-	add_executable(bq-r ${sources} ${imgui_sources} ${APP_ICON_RESOURCE_WINDOWS})
+	add_executable(bq-r ${sources} ${imgui_sources} ${filedialog_sources} ${APP_ICON_RESOURCE_WINDOWS})
 endif()
 
 target_compile_options(bq-r PUBLIC ${flags})

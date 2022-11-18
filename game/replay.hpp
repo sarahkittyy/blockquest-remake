@@ -26,7 +26,6 @@ public:
 	input_state get(int step) const;
 
 	void set_user(const char* user);
-	void set_time(float time);
 	void set_created(std::time_t created);
 	void set_created_now();
 	void set_level_id(int levelid);
@@ -51,6 +50,12 @@ public:
 	// attempts to serialize to the buffer, returns false if not big enough
 	bool serialize(char* buf, size_t buf_sz) const;
 	void deserialize(char* buf, size_t buf_sz);
+
+	std::string serialize_b64() const;
+	void deserialize_b64(std::string b64);
+
+	void save_to_file(std::string path) const;
+	void load_from_file(std::string path);
 
 	static const sf::Time timestep;
 

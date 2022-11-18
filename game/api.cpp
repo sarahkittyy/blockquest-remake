@@ -3,6 +3,7 @@
 #include "auth.hpp"
 #include "debug.hpp"
 #include "level.hpp"
+#include "replay.hpp"
 #include "settings.hpp"
 
 #include <cstdlib>
@@ -113,12 +114,56 @@ std::future<api::level_search_response> api::search_levels(api::level_search_que
 	});
 }
 
+std::future<api::replay_upload_response> api::upload_replay(::replay rp) {
+	return std::async([this, rp]() -> api::replay_upload_response {
+		try {
+			nlohmann::json body;
+			body["replay"] = rp.serialize_b64();
+			if (!debug::get().ndebug()) rp.save_to_file("misc/last_posted.rpl");
+			auth::get().add_jwt_to_body(body);
+
+			if (auto res = m_cli.Post("/replay/upload", body.dump(), "application/json")) {
+				nlohmann::json result = nlohmann::json::parse(res->body);
+				if (res->status == 200) {
+					replay_upload_response rsp;
+					rsp.success = true;
+					if (result.contains("newBest"))
+						rsp.newBest = result["newBest"].get<float>();
+					return rsp;
+				} else {
+					if (result.contains("error")) {
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error";
+					}
+				}
+			} else {
+				throw "Could not connect to server";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.error	 = e
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.error	 = "Unknown error."
+			};
+		}
+	});
+}
+
 std::future<api::replay_search_response> api::search_replays(int levelId, api::replay_search_query q) {
 	return std::async([this, q, levelId]() -> api::replay_search_response {
 		try {
 			nlohmann::json body = q;
 			auth::get().add_jwt_to_body(body);
-			debug::log() << body.dump() << "\n";
 
 			if (auto res = m_cli.Post("/replay/search/" + std::to_string(levelId), body.dump(), "application/json")) {
 				nlohmann::json result = nlohmann::json::parse(res->body);

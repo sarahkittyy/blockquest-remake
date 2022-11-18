@@ -9,6 +9,7 @@
 #include "json.hpp"
 
 class level;
+class replay;
 
 /* singleton class for making queries to the api */
 class api {
@@ -111,11 +112,18 @@ public:
 		int cursor;
 	};
 
+	struct replay_upload_response {
+		bool success;
+		std::optional<std::string> error;
+		std::optional<float> newBest;
+	};
+
 	std::future<level_response> upload_level(::level l, const char* title, const char* description, bool override = false);
 	std::future<level_response> download_level(int id);
 	std::future<vote_response> vote_level(api::level lvl, vote v);
 
 	std::future<api::replay_search_response> search_replays(int levelId, api::replay_search_query q);
+	std::future<api::replay_upload_response> upload_replay(::replay rp);
 
 	// get the current app version
 	const char* version() const;

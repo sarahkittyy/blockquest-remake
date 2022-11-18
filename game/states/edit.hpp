@@ -64,6 +64,7 @@ private:
 	// future & status of level upload
 	api_handle<api::level_response> m_upload_handle;
 	api_handle<api::level_response> m_download_handle;
+	api_handle<api::replay_upload_response> m_upload_replay_handle;
 
 	// can we upload the level currently on display
 	bool m_is_current_level_ours() const;
@@ -110,6 +111,7 @@ private:
 	void m_gui_block_picker(fsm* sm);
 	void m_gui_level_info(fsm* sm);
 	void m_gui_menu(fsm* sm);
+	void m_gui_replay_submit(fsm* sm);
 };
 
 }

@@ -65,38 +65,32 @@ static char base46_map[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', '
 							 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
 							 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
 							 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/' };
+static std::string cvt =
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-char* base64_encode(char* plain) {
-	char counts = 0;
-	char buffer[3];
-	char* cipher = new char[strlen(plain) * 4 / 3 + 4 + 1]{ 0 };
-	int i = 0, c = 0;
+	// 22223333333333444444444455
+	// 67890123456789012345678901
+	"abcdefghijklmnopqrstuvwxyz"
 
-	for (i = 0; plain[i] != '\0'; i++) {
-		buffer[counts++] = plain[i];
-		if (counts == 3) {
-			cipher[c++] = base46_map[buffer[0] >> 2];
-			cipher[c++] = base46_map[((buffer[0] & 0x03) << 4) + (buffer[1] >> 4)];
-			cipher[c++] = base46_map[((buffer[1] & 0x0f) << 2) + (buffer[2] >> 6)];
-			cipher[c++] = base46_map[buffer[2] & 0x3f];
-			counts		= 0;
+	// 555555556666
+	// 234567890123
+	"0123456789+/";
+
+std::string base64_encode(const std::vector<char>& data) {
+	std::string ret;
+	int val	 = 0;
+	int valb = -6;
+	for (unsigned char c : data) {
+		val = (val << 8) + c;
+		valb += 8;
+		while (valb >= 0) {
+			ret.push_back(cvt[(val >> valb) & 0x3F]);
+			valb -= 6;
 		}
 	}
-
-	if (counts > 0) {
-		cipher[c++] = base46_map[buffer[0] >> 2];
-		if (counts == 1) {
-			cipher[c++] = base46_map[(buffer[0] & 0x03) << 4];
-			cipher[c++] = '=';
-		} else {   // if counts == 2
-			cipher[c++] = base46_map[((buffer[0] & 0x03) << 4) + (buffer[1] >> 4)];
-			cipher[c++] = base46_map[(buffer[1] & 0x0f) << 2];
-		}
-		cipher[c++] = '=';
-	}
-
-	cipher[c + 1] = '\0'; /* string padding character */
-	return cipher;
+	if (valb > -6) ret.push_back(cvt[((val << 8) >> (valb + 8)) & 0x3F]);
+	while (ret.size() % 4) ret.push_back('=');
+	return ret;
 }
 
 size_t base64_decode(const std::string& source, void* pdest, size_t dest_size) {

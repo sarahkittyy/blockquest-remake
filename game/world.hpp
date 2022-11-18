@@ -32,6 +32,8 @@ public:
 
 	replay& get_replay();
 
+	bool has_playback() const;
+
 private:
 	void draw(sf::RenderTarget&, sf::RenderStates) const;	// sfml draw fn
 

@@ -16,11 +16,7 @@ replay::replay() {
 
 replay::replay(api::replay rpl)
 	: replay() {
-	std::string replayb64 = rpl.replay;
-	std::string replay;
-	replay.resize(replayb64.size() * 1.2f);
-	size_t replay_sz = util::base64_decode(replayb64, replay.data(), replay.capacity());
-	deserialize(replay.data(), replay_sz);
+	deserialize_b64(rpl.replay);
 }
 
 void replay::m_expand() {
@@ -30,6 +26,7 @@ void replay::m_expand() {
 void replay::reset() {
 	std::memset((void*)(&m_h), 0, sizeof(header));
 	std::strcpy(m_h.version, api::get().version());
+	m_frames.clear();
 }
 
 void replay::push(input_state s) {
@@ -45,10 +42,6 @@ input_state replay::get(int step) const {
 
 void replay::set_user(const char* user) {
 	strcpy(m_h.user, user);
-}
-
-void replay::set_time(float time) {
-	m_h.time = time;
 }
 
 void replay::set_created(std::time_t created) {
@@ -68,7 +61,7 @@ const char* replay::get_user() const {
 }
 
 float replay::get_time() const {
-	return m_h.time;
+	return size() * timestep.asSeconds();
 }
 
 std::time_t replay::get_created() const {
@@ -93,8 +86,10 @@ bool replay::serialize(char* buf, size_t buf_sz) const {
 	if (buf_sz < serial_size()) {
 		return false;
 	}
+	replay::header h = m_h;
+	h.time			 = get_time();
 	// serialize the header first
-	std::memcpy(buf, (void*)(&m_h), sizeof(header));
+	std::memcpy(buf, (void*)(&h), sizeof(header));
 	buf += sizeof(header);
 	// 4 input_states = 24 bits = 3 bytes
 	char bit1, bit2, bit3;
@@ -187,4 +182,39 @@ void replay::deserialize(char* buf, size_t buf_sz) {
 		push(i3);
 		push(i4);
 	}
+}
+
+std::string replay::serialize_b64() const {
+	std::vector<char> buf;
+	buf.resize(serial_size());
+	serialize(buf.data(), serial_size());
+	return util::base64_encode(buf);
+}
+
+void replay::deserialize_b64(std::string b64) {
+	std::string replay;
+	replay.resize(b64.size() * 1.2f);
+	size_t replay_sz = util::base64_decode(b64, replay.data(), replay.capacity());
+	deserialize(replay.data(), replay_sz);
+}
+
+void replay::save_to_file(std::string path) const {
+	char* buf = new char[serial_size()];
+	serialize(buf, serial_size());
+	std::ofstream file(path, std::ios::out | std::ios::binary);
+	if (!file) throw std::runtime_error("Could not open " + path + " for write.");
+	file.write(buf, serial_size());
+	file.close();
+}
+
+void replay::load_from_file(std::string path) {
+	std::ifstream file(path, std::ios::ate | std::ios::binary | std::ios::in);
+	if (!file) throw std::runtime_error("Could not open " + path + " for reading.");
+	std::streamsize sz = file.tellg();
+	file.seekg(0, std::ios::beg);
+	char* buf = new char[sz];
+	file.read(buf, sz);
+	file.close();
+	deserialize(buf, sz);
+	delete[] buf;
 }

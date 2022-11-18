@@ -77,6 +77,6 @@ bool ready(std::future<T>& future) {
 	return future.wait_for(-10ms) == std::future_status::ready;
 }
 
-char* base64_encode(char* plain);
+std::string base64_encode(const std::vector<char>& data);
 size_t base64_decode(const std::string& source, void* pdest, size_t dest_size);
 }
