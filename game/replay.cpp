@@ -16,7 +16,7 @@ replay::replay() {
 
 replay::replay(api::replay rpl)
 	: replay() {
-	deserialize_b64(rpl.replay);
+	deserialize_b64(rpl.raw);
 }
 
 void replay::m_expand() {
