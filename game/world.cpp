@@ -958,9 +958,9 @@ sf::FloatRect world::m_get_player_right_aabb(float x, float y) const {
 sf::FloatRect world::m_get_player_x_aabb(float x, float y) const {
 	sf::FloatRect aabb = m_get_player_aabb(x, y);
 	sf::FloatRect ret;
-	ret.left   = aabb.left;
+	ret.left   = aabb.left + 0.001f;
 	ret.top	   = aabb.top + 0.1f;
-	ret.width  = aabb.width;
+	ret.width  = aabb.width - 0.001f;
 	ret.height = aabb.height - 0.2f;
 
 	return ret;

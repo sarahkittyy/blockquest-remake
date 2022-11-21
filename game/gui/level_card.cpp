@@ -85,7 +85,7 @@ void ApiLevelTile::m_gui_leaderboard_popup(fsm* sm) {
 				ImGui::TextWrapped("%s", res.error->c_str());
 				ImGui::PopStyleColor();
 			} else {
-				if (ImGui::BeginTable("###Scores", 4, ImGuiTableFlags_Borders)) {
+				if (ImGui::BeginTable("###Scores", 5, ImGuiTableFlags_Borders)) {
 					ImGui::TableNextRow();
 					ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color(0xC8AD7FFF)));
 					ImGui::TableNextColumn();
@@ -94,6 +94,8 @@ void ApiLevelTile::m_gui_leaderboard_popup(fsm* sm) {
 					ImGui::Text("Time");
 					ImGui::TableNextColumn();
 					ImGui::Text("Submitted");
+					ImGui::TableNextColumn();
+					ImGui::Text("Version");
 					ImGui::TableNextColumn();
 					ImGui::Text("Replay");
 					ImGui::PopStyleColor();
@@ -110,6 +112,8 @@ void ApiLevelTile::m_gui_leaderboard_popup(fsm* sm) {
 						tm* date_tm = std::localtime(&score.updatedAt);
 						std::strftime(date_fmt, 100, "%D %r", date_tm);
 						ImGui::Text("%s", date_fmt);
+						ImGui::TableNextColumn();
+						ImGui::Text("%s", score.version.c_str());
 						ImGui::TableNextColumn();
 						if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/download.png"), "Replay")) {
 							sm->swap_state<states::edit>(m_lvl, replay(score));
