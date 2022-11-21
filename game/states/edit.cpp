@@ -118,9 +118,11 @@ void edit::m_update_transforms() {
 	m_map.setPosition(win_sz.x / 2.f, 0);
 	m_map.setScale(scale, scale);
 
-	debug::get().setPosition(m_map.getPosition() - m_map.getOrigin() * 2.f);
-	debug::get().move(16 * scale, 0);
-	debug::get().setScale(m_map.getScale());
+	debug::log() << scale << "\n";
+
+	debug::get().setOrigin(m_rt.getSize().x / 2.f, -24 / scale);
+	debug::get().setPosition(win_sz.x / 2.f + 64 * scale, 0);
+	debug::get().setScale(scale, scale);
 }
 
 void edit::process_event(sf::Event e) {

@@ -182,11 +182,6 @@ void world::step(sf::Time dt) {
 		m_dashing = false;
 	}
 
-	debug::get() << "dashing = " << m_dashing << "\n";
-	debug::get() << "grounded = " << grounded << "\n";
-	debug::get() << "climbing = " << m_climbing << "\n";
-	debug::get() << "won = " << won() << "\n";
-
 	float air_control_factor	  = grounded ? 1 : (m_dashing && this_frame.dash ? phys.dash_air_control : phys.air_control);
 	float ground_control_factor	  = m_dashing && grounded ? 0 : 1;
 	float wallkick_control_factor = m_is_wallkick_locked() ? 0 : 1;
@@ -350,18 +345,6 @@ void world::step(sf::Time dt) {
 
 	float cx = initial_x, cy = initial_y;
 
-	debug::get().box(util::scale<float>(m_get_player_top_aabb(cx, cy), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_bottom_aabb(cx, cy), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_left_aabb(cx, cy), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_right_aabb(cx, cy), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_top_ghost_aabb(cx, cy), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_bottom_ghost_aabb(cx, cy), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_left_ghost_aabb(cx, cy), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_right_ghost_aabb(cx, cy), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_aabb(cx, cy), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_x_aabb(cx, cy), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_y_aabb(cx, cy), m_player.size().x));
-
 	// subdivide the movement into x and y steps
 	for (float t = 0; t < 1.0f && !m_dead; t += 0.1f) {
 		if (!x_collided) {
@@ -518,6 +501,24 @@ void world::update(sf::Time dt) {
 		m_ctime -= replay::timestep;
 		step(replay::timestep);
 	}
+
+	// debug::get().box(util::scale<float>(m_get_player_top_aabb(m_xp, m_yp), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_bottom_aabb(m_xp, m_yp), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_left_aabb(m_xp, m_yp), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_right_aabb(m_xp, m_yp), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_top_ghost_aabb(m_xp, m_yp), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_bottom_ghost_aabb(m_xp, m_yp), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_left_ghost_aabb(m_xp, m_yp), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_right_ghost_aabb(m_xp, m_yp), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_aabb(m_xp, m_yp), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_x_aabb(m_xp, m_yp), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_y_aabb(m_xp, m_yp), m_player.size().x));
+
+
+	debug::get() << "dashing = " << m_dashing << "\n";
+	debug::get() << "airborne = " << m_time_airborne.asSeconds() << "\n";
+	debug::get() << "climbing = " << m_climbing << "\n";
+	debug::get() << "won = " << won() << "\n";
 
 	// some debug info
 	debug::get() << "dt = " << dt.asMilliseconds() << "ms\n";
@@ -883,7 +884,7 @@ world::dir world::m_facing() const {
 }
 
 sf::Vector2f world::m_player_size() const {
-	return { 0.6f, 0.8f };
+	return { 0.6f, 0.7f };
 }
 
 sf::FloatRect world::m_get_player_aabb(float x, float y) const {
@@ -987,7 +988,7 @@ sf::FloatRect world::m_get_player_ghost_aabb(float x, float y, dir d) const {
 
 sf::FloatRect world::m_get_player_top_ghost_aabb(float x, float y) const {
 	sf::FloatRect aabb = m_get_player_top_aabb(x, y);
-	aabb.top -= 0.2f;
+	aabb.top -= 0.3f;
 	return aabb;
 }
 

@@ -77,7 +77,6 @@ std::vector<std::pair<sf::Vector2f, moving_tile>> moving_tile_manager::intersect
 
 void moving_tile_manager::update(sf::Time dt) {
 	// for every tile...
-	debug::get() << "blob ct " << m_blobs.size() << "\n";
 	for (int i = 0; i < m_blobs.size(); ++i) {
 		moving_blob& b = m_blobs[i];
 		// intended next position
@@ -345,7 +344,6 @@ void moving_blob::m_sync_tiles() {
 		tile.m_yv		  = m_yv;
 		tile.m_t.m_x	  = tile.m_xp;
 		tile.m_t.m_y	  = tile.m_yp;
-		debug::get() << "i = " << i << " " << tpos << "\n";
 	}
 }
 

@@ -147,7 +147,7 @@ std::vector<std::pair<sf::Vector2f, tile>> tilemap::intersects(sf::FloatRect aab
 				t = get(x, y);
 			}
 			sf::FloatRect tile_aabb(x, y, 1, 1);
-			// add non-empty ones that intersect to the listex_t
+			// add non-empty ones that intersect to the list
 			if (t != tile::empty && tile_aabb.intersects(aabb)) {
 				ret.push_back(std::make_pair(sf::Vector2f(x, y), t));
 			}

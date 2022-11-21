@@ -85,7 +85,7 @@ private:
 		float x_decel			= 60.0f;
 		float jump_v			= 16.5f;
 		float grav				= 60.f;
-		float shorthop_factor	= 0.5f;
+		float shorthop_factor	= 0.4f;
 		float air_control		= 0.4f;
 		float dash_xv_max		= 20.f;
 		float dash_x_accel		= 120.f;
