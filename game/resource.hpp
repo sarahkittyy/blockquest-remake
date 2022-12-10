@@ -4,6 +4,7 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 
 // holds, manages, and caches resources (sounds, textures, etc)
@@ -19,8 +20,14 @@ public:
 	// imgui texture id given the path
 	ImTextureID imtex(std::string path);
 
-	// fetch the music object at the given file path
-	sf::Music& music(std::string path);
+	// load music from path & name it
+	void load_music(std::string name, std::string path);
+	// sets the current music to loop. if already playing, does nothing
+	void play_music(std::string name);
+	// stops all music
+	void stop_music();
+	// pulls the volume from context and updates the playing music with it
+	void reload_music_volume();
 
 	// retrieve the app window handle
 	sf::RenderWindow& window();
@@ -39,6 +46,7 @@ private:
 	std::unordered_map<std::string, sf::Font> m_fonts;
 
 	std::unordered_map<std::string, sf::Music> m_music;
+	std::optional<std::string> m_playing;
 
 	sf::RenderWindow m_window;
 

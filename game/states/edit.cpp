@@ -47,9 +47,7 @@ edit::edit()
 	  m_old_mouse_tile(-1, -1),
 	  m_last_placed(-1, -1) {
 
-	auto& bgm = resource::get().music("assets/sound/menu_chiptune.wav");
-	bgm.setLoop(true);
-	if (bgm.getStatus() != sf::Music::Playing) bgm.play();
+	resource::get().play_music("menu_bg");
 
 	// propagate an initial resize
 	sf::Event rsz_evt;
@@ -880,8 +878,6 @@ void edit::m_gui_block_picker(fsm* sm) {
 }
 
 void edit::m_toggle_test_play() {
-	auto& gameplay_bg = resource::get().music("assets/sound/bg1_upbeat.wav");
-	auto& menu_bg = resource::get().music("assets/sound/menu_chiptune.wav");
 	if (!m_test_playing()) {
 		if (!m_level().valid()) {
 			m_info_msg = "Cannot start without a valid start & end position";
@@ -890,17 +886,13 @@ void edit::m_toggle_test_play() {
 		m_level().map().set_editor_view(false);
 		m_info_msg = "";
 		m_test_play_world.reset(new world(m_level(), m_loaded_replay));
-		menu_bg.stop();
-		gameplay_bg.setLoop(true);
-		gameplay_bg.play();
+		resource::get().play_music("game_bg");
 		m_update_transforms();
 	} else {
 		m_test_play_world.reset();
 		m_upload_replay_handle.reset();
 		m_level().map().set_editor_view(true);
-		gameplay_bg.stop();
-		menu_bg.setLoop(true);
-		menu_bg.play();
+		resource::get().play_music("menu_bg");
 	}
 }
 

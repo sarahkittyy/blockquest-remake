@@ -29,9 +29,7 @@ search::search()
 	m_authed_last_frame = auth::get().authed();
 	m_update_query();
 
-	auto& bg = resource::get().music("assets/sound/menu_chiptune.wav");
-	bg.setLoop(true);
-	if (bg.getStatus() != sf::Music::Playing) bg.play();
+	resource::get().play_music("menu_bg");
 }
 
 search::~search() {

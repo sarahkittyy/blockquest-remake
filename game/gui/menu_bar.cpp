@@ -227,15 +227,8 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 		}
 		ImGui::EndTable();
 		// volume controls
-		ImGui::SliderFloat("Music", &context::get().music_volume(), 0, 100, "%.1f", ImGuiSliderFlags_AlwaysClamp);
-		auto& m = resource::get().music("assets/sound/bg1_upbeat.wav");
-		if (ImGui::IsItemClicked()) {
-			m.setLoop(true);
-			if (m.getStatus() != sf::Music::Playing) {
-				m.play();
-			}
-		} else if (!ImGui::IsItemHovered()) {
-			m.stop();
+		if (ImGui::SliderFloat("Music", &context::get().music_volume(), 0, 100, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
+			resource::get().reload_music_volume();
 		}
 		if (ImGui::SliderFloat("SFX", &context::get().sfx_volume(), 0, 100, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
 			resource::get().play_sound("gameover");

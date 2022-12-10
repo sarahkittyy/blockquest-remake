@@ -3,7 +3,8 @@
 #include "context.hpp"
 
 resource::resource()
-	: m_window(sf::VideoMode(1600, 928 + 24), "BlockQuest Remake") {
+	: m_window(sf::VideoMode(1600, 928 + 24), "BlockQuest Remake"),
+	  m_playing() {
 
 	if (sf::VideoMode::getDesktopMode().width < 1600) {
 		m_window.setSize({ 1366, 768 + 26 });
@@ -19,6 +20,9 @@ resource::resource()
 	load_sound("gravityflip", "assets/sound/gravityflip.flac");
 	load_sound("wallkick", "assets/sound/wallkick.flac");
 	load_sound("victory", "assets/sound/victory.flac");
+
+	load_music("menu_bg", "assets/sound/menu_chiptune.wav");
+	load_music("game_bg", "assets/sound/bg1_upbeat.wav");
 }
 
 resource& resource::get() {
@@ -45,13 +49,35 @@ sf::Font& resource::font(std::string path) {
 	return m_fonts[path];
 }
 
-sf::Music& resource::music(std::string path) {
-	if (!m_music.contains(path)) {
-		m_music[path].openFromFile(path);
+void resource::load_music(std::string name, std::string path) {
+	if (!m_music.contains(name)) {
+		m_music[name].openFromFile(path);
 	}
-	sf::Music& m = m_music[path];
-	m.setVolume(context::get().music_volume());
-	return m_music[path];
+	sf::Music& m = m_music[name];
+	m.setLoop(true);
+}
+
+void resource::play_music(std::string name) {
+	if (m_playing && *m_playing == name) {
+		return;
+	}
+	stop_music();
+	m_music[name].setVolume(context::get().music_volume());
+	m_music[name].play();
+	m_playing = name;
+}
+
+void resource::stop_music() {
+	if (m_playing) {
+		m_music[*m_playing].stop();
+		m_playing = std::nullopt;
+	}
+}
+
+void resource::reload_music_volume() {
+	if (m_playing) {
+		m_music[*m_playing].setVolume(context::get().music_volume());
+	}
 }
 
 sf::RenderWindow& resource::window() {
