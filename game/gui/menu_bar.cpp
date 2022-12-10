@@ -213,7 +213,7 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 	}
 	if (ImGui::BeginPopupModal("Settings###Settings", nullptr, modal_flags)) {
 		ImGui::BeginTable("###Buttons", 2);
-		for (key k = key::LEFT; k <= key::DOWN; k = key(int(k) + 1)) {
+		for (key k = key::LEFT; k <= key::RESTART; k = key(int(k) + 1)) {
 			ImGui::PushID(int(k));
 			ImGui::TableNextColumn();
 			ImGui::Text("%s", key_name(k));

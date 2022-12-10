@@ -36,7 +36,7 @@ set(flags -DCPPHTTPLIB_OPENSSL_SUPPORT)
 if(NOT CMAKE_BUILD_TYPE MATCHES Debug)
 	list(APPEND flags -DNDEBUG -DSERVER_URL="https://bq-r.sushicat.rocks")
 else()
-	list(APPEND flags -DSERVER_URL="http://localhost:3000")
+	list(APPEND flags -DNO_VERIFY_CERTS -DSERVER_URL="http://localhost:3000")
 endif()
 
 if(APP_VERSION)

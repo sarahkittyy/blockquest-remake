@@ -32,6 +32,8 @@ app::app(int argc, char** argv) {
 		}
 	}
 
+	debug::log() << settings::get().server_url() << "\n";
+
 	m_fsm.swap_state<states::search>();
 
 #ifndef NDEBUG

@@ -11,7 +11,8 @@ enum key {
 	JUMP,
 	DASH,
 	UP,
-	DOWN
+	DOWN,
+	RESTART
 };
 
 const char* key_name(sf::Keyboard::Key k);

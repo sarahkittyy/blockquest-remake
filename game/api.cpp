@@ -14,6 +14,9 @@
 api::api()
 	: m_cli(settings::get().server_url()),
 	  m_gh_cli("https://api.github.com") {
+#ifdef NO_VERIFY_CERTS
+	m_cli.enable_server_certificate_verification(false);
+#endif
 }
 
 api &api::get() {
@@ -40,6 +43,9 @@ api::level api::level_from_json(nlohmann::json lvl) {
 	if (lvl.contains("record")) {
 		l.record = lvl["record"].get<float>();
 	}
+
+	float x = 5.2f;
+	unsigned char y = x;
 	if (lvl.contains("myRecord")) {
 		l.myRecord = lvl["myRecord"].get<float>();
 	}
@@ -74,7 +80,6 @@ std::future<api::level_search_response> api::search_levels(api::level_search_que
 			body["limit"]		= q.rows * q.cols;
 			auth::get().add_jwt_to_body(body);
 			debug::log() << body.dump() << "\n";
-
 			if (auto res = m_cli.Post("/level/search", body.dump(), "application/json")) {
 				nlohmann::json result = nlohmann::json::parse(res->body);
 				if (res->status == 200) {
@@ -93,6 +98,7 @@ std::future<api::level_search_response> api::search_levels(api::level_search_que
 					}
 				}
 			} else {
+				debug::log() << httplib::to_string(res.error()) << "\n";
 				throw "Could not connect to server";
 			}
 		} catch (const char *e) {

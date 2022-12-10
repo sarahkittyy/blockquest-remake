@@ -6,6 +6,9 @@
 
 auth::auth()
 	: m_cli(settings::get().server_url()) {
+#ifdef NO_VERIFY_CERTS
+	m_cli.enable_server_certificate_verification(false);
+#endif
 }
 
 auth& auth::get() {

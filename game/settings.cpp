@@ -12,6 +12,7 @@ settings::settings()
 		  { key::DOWN, sf::Keyboard::Down },
 		  { key::JUMP, sf::Keyboard::Space },
 		  { key::DASH, sf::Keyboard::Down },
+		  { key::RESTART, sf::Keyboard::R },
 	  }) {
 }
 
@@ -28,7 +29,9 @@ std::string settings::server_url() const {
 }
 
 void settings::set_key_map(std::unordered_map<key, sf::Keyboard::Key> map) {
-	m_keys = map;
+	for (auto& [key, v] : map) {
+		set_key(key, v);
+	}
 }
 
 std::unordered_map<key, sf::Keyboard::Key> settings::get_key_map() const {
@@ -182,7 +185,8 @@ const char* key_name(key k) {
 		"Jump",
 		"Dash",
 		"Up",
-		"Down"
+		"Down",
+		"Restart"
 	};
 	return names[k];
 }

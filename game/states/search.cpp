@@ -47,6 +47,10 @@ void search::update(fsm* sm, sf::Time dt) {
 	m_authed_last_frame = auth::get().authed();
 }
 
+void search::process_event(sf::Event e) {
+	m_menu_bar.process_event(e);
+}
+
 void search::imdraw(fsm* sm) {
 	m_menu_bar.imdraw(m_menu_info);
 

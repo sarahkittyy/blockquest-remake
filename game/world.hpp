@@ -106,9 +106,11 @@ private:
 	float m_yv = 0;	  // player y vel
 
 	// were these keys hit this frame?
-	input_state this_frame;
+	input_state m_this_frame;
 	// were these keys hit last frame?
-	input_state last_frame;
+	input_state m_last_frame;
+
+	bool m_restarted = false;	// did the player just restart
 
 	replay m_replay;   // the state of all inputs, each frame
 	int m_cstep;	   // current step

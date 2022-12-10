@@ -23,6 +23,7 @@ public:
 
 	void update(fsm* sm, sf::Time dt);
 	void imdraw(fsm* sm);
+	void process_event(sf::Event e);
 
 private:
 	ImGui::AppMenuBar m_menu_bar;	// app menu bar
