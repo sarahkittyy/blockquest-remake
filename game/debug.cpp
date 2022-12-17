@@ -20,7 +20,7 @@ debug& debug::log() {
 }
 
 void debug::imdraw(sf::Time dt) {
-	if (ndebug()) return;
+	if (!m_open) return;
 	if (m_last_dt == sf::Time::Zero) {
 		m_last_dt = dt;
 	} else {
@@ -40,14 +40,17 @@ void debug::imdraw(sf::Time dt) {
 	ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
 	char title[100];
 	std::snprintf(title, 100, "Debug Tools - %06.2f FPS###Debug", 1.f / m_last_dt.asSeconds());
-	ImGui::Begin(title, &m_open, flags);
+	if (ImGui::Begin(title, &m_open, flags)) {
+		m_displaying = true;
 
-	ImGui::Checkbox("Toggle debug draw", &m_draw_debug);
-	ImGui::Checkbox("Show demo window", &m_demo_open);
+		ImGui::Checkbox("Toggle debug draw", &m_draw_debug);
+		ImGui::Checkbox("Show demo window", &m_demo_open);
 
-	ImGui::TextWrapped("%s", m_data.str().c_str());
-	ImGui::TextWrapped("\n-- LOGS --\n%s", m_log.str().c_str());
-
+		ImGui::TextWrapped("%s", m_data.str().c_str());
+		ImGui::TextWrapped("\n-- LOGS --\n%s", m_log.str().c_str());
+	} else {
+		m_displaying = false;
+	}
 	ImGui::End();
 }
 

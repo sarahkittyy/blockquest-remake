@@ -16,11 +16,11 @@ public:
 	static debug& get();
 	static debug& log();
 
-	constexpr bool ndebug() const {
+	bool ndebug() const {
 #ifdef NDEBUG
 		return true;
 #else
-		return false;
+		return !m_displaying;
 #endif
 	}
 
@@ -76,6 +76,7 @@ private:
 	std::vector<std::pair<sf::FloatRect, sf::Color>> m_boxes;	// draw boxes for visualization
 
 	bool m_open		  = true;
+	bool m_displaying = true;
 	bool m_draw_debug = false;
 	bool m_log_mode	  = false;
 	bool m_demo_open  = false;
