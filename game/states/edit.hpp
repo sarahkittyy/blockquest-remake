@@ -100,6 +100,7 @@ private:
 
 	bool m_test_playing() const;
 	std::unique_ptr<world> m_test_play_world;
+	sf::Text m_timer_text;
 	void m_toggle_test_play();
 
 	std::string m_info_msg;

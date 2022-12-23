@@ -56,6 +56,15 @@ edit::edit()
 	rsz_evt.size.height = resource::get().window().getSize().y;
 	process_event(rsz_evt);
 
+	m_timer_text.setFont(resource::get().font("assets/gui/unlearned.ttf"));
+	m_timer_text.setCharacterSize(48);
+	m_timer_text.setFillColor(sf::Color::Black);
+	m_timer_text.setOutlineThickness(0);
+	m_timer_text.setScale(2.f, 2.f);
+	m_timer_text.setString("00:00");
+	m_timer_text.setOrigin(m_timer_text.getLocalBounds().width / 2.f, 0);
+	m_timer_text.setPosition(34 * 64 / 2.f, 20.f);
+
 	m_rt.create(34 * 64, 32 * 64);
 	m_map.setTexture(m_rt.getTexture());
 
@@ -212,6 +221,12 @@ void edit::update(fsm* sm, sf::Time dt) {
 
 	if (m_test_playing()) {
 		m_test_play_world->update(dt);
+		float time = m_test_play_world->get_replay().get_time();
+		int whole  = std::floor(time);
+		int rest   = std::floor((time - whole) * 100.f);
+		std::ostringstream ss;
+		ss << whole << "." << rest;
+		m_timer_text.setString(ss.str());
 	}
 
 	// DRAW
@@ -223,6 +238,7 @@ void edit::update(fsm* sm, sf::Time dt) {
 		m_rt.draw(m_cursor);
 	} else {
 		m_rt.draw(*m_test_play_world);
+		m_rt.draw(m_timer_text);
 	}
 	m_rt.display();
 }
@@ -577,7 +593,7 @@ void edit::m_gui_level_info(fsm* sm) {
 		ImGui::TextWrapped("World record: %.2fs by %s", md.record->time, md.record->user.c_str());
 	}
 	if (md.myRecord) {
-		ImGui::TextWrapped("Your best: %.2fs by %s", md.myRecord->time, md.myRecord->user.c_str());
+		ImGui::TextWrapped("Your best: %.2fs", md.myRecord->time);
 	}
 	ImGui::TextWrapped("Likes: %d", md.likes);
 	ImGui::TextWrapped("Dislikes: %d", md.dislikes);
