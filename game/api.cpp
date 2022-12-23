@@ -276,6 +276,49 @@ std::future<api::level_response> api::download_level(int id) {
 	});
 }
 
+std::future<api::level_response> api::quickplay_level() {
+	return std::async([this]() -> api::level_response {
+		try {
+			if (auto res = m_cli.Get("/level/quickplay")) {
+				nlohmann::json result = nlohmann::json::parse(res->body);
+				if (res->status == 200) {
+					return {
+						.success = true,
+						.code	 = 200,
+						.level	 = level_from_json(result["level"]),
+					};
+				} else {
+					if (result.contains("error")) {
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error";
+					}
+				}
+			} else {
+				throw "Could not connect to server";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.code	 = -1,
+				.error	 = e
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.code	 = -1,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.code	 = -1,
+				.error	 = "Unknown error."
+			};
+		}
+	});
+}
+
 std::future<api::level_response> api::upload_level(::level l, const char *title, const char *description, bool override) {
 	return std::async([this, l, title, description, override]() -> api::level_response {
 		if (!auth::get().authed()) {

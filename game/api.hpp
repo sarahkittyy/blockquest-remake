@@ -129,6 +129,7 @@ public:
 
 	std::future<level_response> upload_level(::level l, const char* title, const char* description, bool override = false);
 	std::future<level_response> download_level(int id);
+	std::future<level_response> quickplay_level();
 	std::future<vote_response> vote_level(api::level lvl, vote v);
 
 	std::future<api::replay_search_response> search_replays(int levelId, api::replay_search_query q);

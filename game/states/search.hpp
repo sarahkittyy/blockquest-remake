@@ -48,6 +48,7 @@ private:
 	bool m_authed_last_frame;	// tracks the auth status so we can trigger an event when authed
 
 	api_handle<api::level_search_response> m_query_handle;	 // holds the active query future
+	api_handle<api::level_response> m_quickplay_handle;
 
 	// handles automatic loading & caching to prevent unnecessary draws
 	std::unordered_map<int, std::shared_ptr<ImGui::ApiLevelTile>> m_api_level_tile;

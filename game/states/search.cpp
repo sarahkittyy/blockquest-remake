@@ -84,6 +84,23 @@ void search::imdraw(fsm* sm) {
 		// sm->swap_state<states::edit>();
 	}
 	ImGui::EndDisabled();
+	m_quickplay_handle.poll();
+
+	ImGui::BeginDisabled(m_quickplay_handle.fetching());
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/dice.png"), "Random Level")) {
+		m_quickplay_handle.reset(api::get().quickplay_level());
+	}
+	ImGui::EndDisabled();
+	if (!m_quickplay_handle.fetching() && m_quickplay_handle.ready()) {
+		auto res = m_quickplay_handle.get();
+		if (!res.success) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
+			ImGui::TextWrapped("%s", m_quickplay_handle.get().error->c_str());
+			ImGui::PopStyleColor();
+		} else {
+			sm->swap_state<states::edit>(*res.level);
+		}
+	}
 
 	sf::Vector2f sz(ImGui::CalcTextSize(api::get().version()));
 	sf::Vector2f nwsz = ImGui::GetWindowSize();

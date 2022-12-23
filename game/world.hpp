@@ -23,8 +23,8 @@ public:
 	world(level l, std::optional<replay> replay = {});
 	~world();
 
-	void update(sf::Time dt);
-	void step(sf::Time dt);	  // handles physics stuff
+	bool update(sf::Time dt);	// true if stepped
+	void step(sf::Time dt);		// handles physics stuff
 	void process_event(sf::Event e);
 
 	bool won() const;

@@ -448,7 +448,7 @@ http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platforme
 - Move player to the new position. With this new position, step the other coordinate, if still not done.
 */
 
-void world::update(sf::Time dt) {
+bool world::update(sf::Time dt) {
 	if (m_playback.has_value() && m_cstep < m_playback->size() && !lost() && !won()) {
 		m_this_frame = m_playback->get(m_cstep);
 	} else {
@@ -482,10 +482,11 @@ void world::update(sf::Time dt) {
 		m_game_clear.setColor(opacity);
 		m_fadeout.setFillColor(sf::Color(220, 220, 220, m_end_alpha / 2.f));
 		if (m_just_jumped()) {
-			return m_restart_world();
+			m_restart_world();
+			return false;
 		} else {
 			m_last_frame.jump = m_this_frame.jump;
-			return;
+			return false;
 		}
 	} else if (lost()) {
 		sf::Color opacity = m_space_to_retry.getColor();
@@ -496,18 +497,21 @@ void world::update(sf::Time dt) {
 		m_game_over.setColor(opacity);
 		m_fadeout.setFillColor(sf::Color(0, 0, 0, m_end_alpha / 2.f));
 		if (m_just_jumped()) {
-			return m_restart_world();
+			m_restart_world();
+			return false;
 		} else {
 			m_last_frame.jump = m_this_frame.jump;
-			return;
+			return false;
 		}
 	}
 
 	// physics updates!
 	m_ctime += dt;
+	bool stepped = false;
 	while (m_ctime > replay::timestep) {
 		m_ctime -= replay::timestep;
 		step(replay::timestep);
+		stepped = true;
 	}
 
 	// debug::get().box(util::scale<float>(m_get_player_top_aabb(m_xp, m_yp), m_player.size().x));
@@ -549,6 +553,8 @@ void world::update(sf::Time dt) {
 	// update the player's animation
 	m_update_animation();
 	m_sync_player_position();
+
+	return stepped;
 }
 
 void world::m_player_wallkick(dir d) {

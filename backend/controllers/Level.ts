@@ -290,6 +290,31 @@ export default class Level {
 		}
 	}
 
+	static async getQuickplay(req: Request, res: Response) {
+		try {
+			const levelIds = await prisma.level.findMany({
+				select: {
+					id: true,
+				},
+			});
+			const { id } = levelIds[Math.floor(Math.random() * levelIds.length)];
+			const level = await prisma.level.findUnique({
+				where: { id },
+				...LevelQueryInclude,
+			});
+			if (!level) {
+				return res.status(500).send({ error: `Quickplay fetch failed.` });
+			}
+			return res.status(200).send({
+				level: tools.toLevelResponse(level),
+			});
+		} catch (e) {
+			return res.status(500).send({
+				error: 'Internal server error (NO_FETCH_LEVEL)',
+			});
+		}
+	}
+
 	/**
 	 * upload a level to the server
 	 *

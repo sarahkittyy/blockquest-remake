@@ -63,7 +63,7 @@ edit::edit()
 	m_timer_text.setScale(2.f, 2.f);
 	m_timer_text.setString("00:00");
 	m_timer_text.setOrigin(m_timer_text.getLocalBounds().width / 2.f, 0);
-	m_timer_text.setPosition(34 * 64 / 2.f, 20.f);
+	m_timer_text.setPosition(34 * 64 / 2.f, 16.f);
 
 	m_rt.create(34 * 64, 32 * 64);
 	m_map.setTexture(m_rt.getTexture());
@@ -220,13 +220,15 @@ void edit::update(fsm* sm, sf::Time dt) {
 	}
 
 	if (m_test_playing()) {
-		m_test_play_world->update(dt);
-		float time = m_test_play_world->get_replay().get_time();
-		int whole  = std::floor(time);
-		int rest   = std::floor((time - whole) * 100.f);
-		std::ostringstream ss;
-		ss << whole << "." << rest;
-		m_timer_text.setString(ss.str());
+		bool stepped = m_test_play_world->update(dt);
+		if (stepped) {
+			float time = m_test_play_world->get_replay().get_time();
+			int whole  = std::floor(time);
+			int rest   = std::floor((time - whole) * 100.f);
+			std::ostringstream ss;
+			ss << whole << "." << rest;
+			m_timer_text.setString(ss.str());
+		}
 	}
 
 	// DRAW
@@ -581,6 +583,23 @@ void edit::m_gui_menu(fsm* sm) {
 		//return sm->swap_state<states::search>();
 	}
 	ImGui::EndDisabled();
+
+	m_quickplay_handle.poll();
+	ImGui::BeginDisabled(m_quickplay_handle.fetching());
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/dice.png"), "Random Level")) {
+		m_quickplay_handle.reset(api::get().quickplay_level());
+	}
+	ImGui::EndDisabled();
+	if (!m_quickplay_handle.fetching() && m_quickplay_handle.ready()) {
+		auto res = m_quickplay_handle.get();
+		if (!res.success) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
+			ImGui::TextWrapped("%s", m_quickplay_handle.get().error->c_str());
+			ImGui::PopStyleColor();
+		} else {
+			sm->swap_state<states::edit>(*res.level);
+		}
+	}
 }
 
 void edit::m_gui_level_info(fsm* sm) {

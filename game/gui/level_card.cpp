@@ -100,14 +100,12 @@ void ApiLevelTile::m_gui_leaderboard_popup(fsm* sm) {
 					ImGui::Text("Replay");
 					ImGui::PopStyleColor();
 					if (res.scores.size()) {
-						api::replay wr = std::reduce(res.scores.begin(), res.scores.end(), res.scores[0],
-													 [](api::replay& a, api::replay& b) {
-														 if (a.time <= b.time) {
-															 return a;
-														 } else {
-															 return b;
-														 }
-													 });
+						api::replay wr = res.scores[0];
+						for (auto& score : res.scores) {
+							if (score.time < wr.time) {
+								wr = score;
+							}
+						}
 						for (int i = 0; i < res.scores.size(); ++i) {
 							ImGui::PushID(i);
 							ImGui::TableNextRow();
