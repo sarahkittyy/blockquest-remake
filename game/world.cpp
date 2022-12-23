@@ -512,15 +512,15 @@ void world::update(sf::Time dt) {
 
 	// debug::get().box(util::scale<float>(m_get_player_top_aabb(m_xp, m_yp), m_player.size().x));
 	// debug::get().box(util::scale<float>(m_get_player_bottom_aabb(m_xp, m_yp), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_left_aabb(m_xp, m_yp), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_right_aabb(m_xp, m_yp), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_top_ghost_aabb(m_xp, m_yp), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_bottom_ghost_aabb(m_xp, m_yp), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_left_ghost_aabb(m_xp, m_yp), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_right_ghost_aabb(m_xp, m_yp), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_aabb(m_xp, m_yp), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_x_aabb(m_xp, m_yp), m_player.size().x));
-	// debug::get().box(util::scale<float>(m_get_player_y_aabb(m_xp, m_yp), m_player.size().x));
+	//  debug::get().box(util::scale<float>(m_get_player_left_aabb(m_xp, m_yp), m_player.size().x));
+	//  debug::get().box(util::scale<float>(m_get_player_right_aabb(m_xp, m_yp), m_player.size().x));
+	//  debug::get().box(util::scale<float>(m_get_player_top_ghost_aabb(m_xp, m_yp), m_player.size().x));
+	//  debug::get().box(util::scale<float>(m_get_player_bottom_ghost_aabb(m_xp, m_yp), m_player.size().x));
+	//  debug::get().box(util::scale<float>(m_get_player_left_ghost_aabb(m_xp, m_yp), m_player.size().x));
+	//  debug::get().box(util::scale<float>(m_get_player_right_ghost_aabb(m_xp, m_yp), m_player.size().x));
+	//  debug::get().box(util::scale<float>(m_get_player_aabb(m_xp, m_yp), m_player.size().x));
+	//  debug::get().box(util::scale<float>(m_get_player_x_aabb(m_xp, m_yp), m_player.size().x));
+	debug::get().box(util::scale<float>(m_get_player_y_ghost_aabb(m_xp, m_yp), m_player.size().x));
 
 
 	debug::get() << "dashing = " << m_dashing << "\n";
@@ -905,6 +905,7 @@ sf::FloatRect world::m_get_player_aabb(float x, float y) const {
 
 	if (m_flip_gravity) {
 		ret.top -= ((1 - m_player_size().y) / 1.2f);
+		ret.height += ((1 - m_player_size().y) / 1.2f);
 	}
 
 	return ret;
