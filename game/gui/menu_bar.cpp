@@ -233,6 +233,10 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 		if (ImGui::SliderFloat("SFX", &context::get().sfx_volume(), 0, 100, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
 			resource::get().play_sound("gameover");
 		}
+		// fps limit control
+		if (ImGui::SliderInt("Max FPS", &context::get().fps_limit(), 0, 360, "%d", ImGuiSliderFlags_AlwaysClamp)) {
+			resource::get().window().setFramerateLimit(context::get().fps_limit());
+		}
 		// close button
 		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/back.png"), "Done")) {
 			m_listening_key = {};

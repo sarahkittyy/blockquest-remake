@@ -16,6 +16,12 @@ class api {
 public:
 	static api& get();
 
+	struct level_record {
+		std::string user;
+		float time;
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::level_record, user, time);
+	};
+
 	struct level {
 		int id;
 		std::string author;
@@ -27,8 +33,9 @@ public:
 		int downloads;
 		int likes;
 		int dislikes;
-		std::optional<float> record;
-		std::optional<float> myRecord;
+		std::optional<level_record> record;
+		std::optional<level_record> myRecord;
+		int records;
 		std::optional<int> myVote;
 	};
 
@@ -41,6 +48,8 @@ public:
 		std::time_t createdAt;
 		std::time_t updatedAt;
 		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, user, levelId, time, version, raw, createdAt, updatedAt);
+		bool operator==(const replay& other) const;
+		bool operator!=(const replay& other) const;
 	};
 
 	struct level_response {

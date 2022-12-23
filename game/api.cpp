@@ -41,13 +41,16 @@ api::level api::level_from_json(nlohmann::json lvl) {
 		l.myVote = lvl["myVote"].get<int>();
 	}
 	if (lvl.contains("record")) {
-		l.record = lvl["record"].get<float>();
+		l.record = lvl["record"].get<level_record>();
+	}
+	if (lvl.contains("records")) {
+		l.records = lvl["records"].get<int>();
 	}
 
-	float x = 5.2f;
+	float x			= 5.2f;
 	unsigned char y = x;
 	if (lvl.contains("myRecord")) {
-		l.myRecord = lvl["myRecord"].get<float>();
+		l.myRecord = lvl["myRecord"].get<level_record>();
 	}
 	return l;
 }
@@ -70,6 +73,7 @@ nlohmann::json api::level_to_json(api::level lvl) {
 		ret["record"] = *lvl.record;
 	if (lvl.myRecord)
 		ret["myRecord"] = *lvl.myRecord;
+	ret["records"] = lvl.records;
 	return ret;
 }
 
@@ -292,16 +296,7 @@ std::future<api::level_response> api::upload_level(::level l, const char *title,
 				nlohmann::json result = nlohmann::json::parse(res->body);
 				if (res->status == 200) {
 					nlohmann::json level = result["level"];
-					api::level l{
-						.id			 = level["id"].get<int>(),
-						.author		 = level["author"],
-						.code		 = level["code"],
-						.title		 = level["title"],
-						.description = level["description"],
-						.createdAt	 = level["createdAt"].get<std::time_t>(),
-						.updatedAt	 = level["updatedAt"].get<std::time_t>(),
-						.downloads	 = level["downloads"].get<int>()
-					};
+					api::level l		 = level_from_json(level);
 					return {
 						.success = true,
 						.code	 = 200,
@@ -447,6 +442,19 @@ std::future<api::update_response> api::is_up_to_date() {
 			};
 		}
 	});
+}
+
+bool api::replay::operator==(const api::replay &other) const {
+	return other.createdAt == createdAt &&	 //
+		   other.updatedAt == updatedAt &&
+		   other.levelId == levelId &&
+		   other.time == time &&
+		   other.user == user &&
+		   other.version == version;
+}
+
+bool api::replay::operator!=(const api::replay &other) const {
+	return !(*this == other);
 }
 
 bool api::level_search_query::operator==(const level_search_query &other) const {

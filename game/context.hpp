@@ -23,6 +23,9 @@ public:
 	bool save_to_file(std::string path) const;
 	bool load_from_file(std::string path);
 
+	int& fps_limit();
+	const int& fps_limit() const;
+
 	api::level_search_query& level_search_query();
 	const api::level_search_query& level_search_query() const;
 
@@ -42,4 +45,5 @@ private:
 	api::replay_search_query m_replay_query;
 	float m_sfx_volume;
 	float m_music_volume;
+	int m_fps_limit;
 };

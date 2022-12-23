@@ -24,7 +24,8 @@ context::context()
 					   .sortBy = "time",
 					   .order  = "asc" }),
 	  m_sfx_volume(50.f),
-	  m_music_volume(50.f) {
+	  m_music_volume(50.f),
+	  m_fps_limit(120) {
 	load_from_file("bq-r.json");
 }
 
@@ -42,6 +43,14 @@ float& context::music_volume() {
 
 float& context::sfx_volume() {
 	return m_sfx_volume;
+}
+
+int& context::fps_limit() {
+	return m_fps_limit;
+}
+
+const int& context::fps_limit() const {
+	return m_fps_limit;
 }
 
 std::string context::save() const {
@@ -62,6 +71,8 @@ std::string context::save() const {
 
 	j["screen_pos"]["x"] = resource::get().window().getPosition().x;
 	j["screen_pos"]["y"] = resource::get().window().getPosition().y;
+
+	j["fps_limit"] = m_fps_limit;
 
 	j["controls"] = settings::get().get_key_map();
 
@@ -91,6 +102,10 @@ void context::load(std::string data) {
 
 	if (j.contains("replay_query")) {
 		j["replay_query"].get_to(m_replay_query);
+	}
+
+	if (j.contains("fps_limit")) {
+		j["fps_limit"].get_to(m_fps_limit);
 	}
 
 	if (j.contains("screen_size")) {

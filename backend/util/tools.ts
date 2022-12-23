@@ -15,6 +15,10 @@ export function isValidLevel(code: string): boolean {
 	return true;
 }
 
+export interface UserLevelScoreRunner extends UserLevelScore {
+	user: User;
+}
+
 export interface IAuthToken {
 	username: string;
 	id: number;
@@ -182,7 +186,7 @@ export function decodeRawReplay(bin: Buffer | undefined): IReplayData | undefine
 	}
 }
 
-export function toReplayResponse(replay: UserLevelScore & { user: User }): IReplayResponse {
+export function toReplayResponse(replay: UserLevelScoreRunner & { user: User }): IReplayResponse {
 	return {
 		user: replay.user.name,
 		levelId: replay.levelId,
@@ -195,7 +199,11 @@ export function toReplayResponse(replay: UserLevelScore & { user: User }): IRepl
 }
 
 export function toLevelResponse(
-	lvl: Level & { votes: UserLevelVote[]; author: User; scores: UserLevelScore[] },
+	lvl: Level & {
+		votes: UserLevelVote[];
+		author: User;
+		scores: Array<UserLevelScoreRunner>;
+	},
 	userId?: number
 ): ILevelResponse {
 	const likes = likesCount(lvl.votes);
@@ -213,8 +221,9 @@ export function toLevelResponse(
 			})
 			.catch(log.warn);
 	}
+
 	const record = bestScore(lvl.scores);
-	const myScore: UserLevelScore | undefined =
+	const myScore: UserLevelScoreRunner | undefined =
 		userId != null ? userScore(lvl.scores, userId) : undefined;
 	return {
 		id: lvl.id,
@@ -227,8 +236,19 @@ export function toLevelResponse(
 		downloads: lvl.downloads,
 		likes,
 		dislikes,
-		...(record != null && { record: record.time }),
-		...(myScore != undefined && { myRecord: myScore?.time }),
+		...(record != null && {
+			record: {
+				time: record.time,
+				user: record.user.name,
+			},
+		}),
+		...(myScore != undefined && {
+			myRecord: {
+				time: myScore.time,
+				user: myScore.user.name,
+			},
+		}),
+		records: lvl.scores.length,
 		myVote: userId != null ? userVote(userId, lvl.votes) : undefined,
 	};
 }
@@ -243,17 +263,33 @@ export function likesCount(votes: UserLevelVote[]) {
 	}, 0);
 }
 
+export async function getUserById(id: number): Promise<User> {
+	try {
+		const user: User | undefined = await prisma.user.findUnique({
+			where: {
+				id,
+			},
+		});
+		return user;
+	} catch (e) {
+		return undefined;
+	}
+}
+
 export function dislikesCount(votes: UserLevelVote[]) {
 	return votes.reduce((sum: number, vote: UserLevelVote) => {
 		return vote.vote < 0 ? sum + 1 : sum;
 	}, 0);
 }
 
-export function bestScore(scores: UserLevelScore[]): UserLevelScore | undefined {
+export function bestScore(scores: UserLevelScoreRunner[]): UserLevelScoreRunner | undefined {
 	return scores.sort((a, b) => a.time - b.time)?.[0];
 }
 
-export function userScore(scores: UserLevelScore[], userId: number): UserLevelScore | undefined {
+export function userScore(
+	scores: UserLevelScoreRunner[],
+	userId: number
+): UserLevelScoreRunner | undefined {
 	return scores.find((score) => score.userId === userId);
 }
 

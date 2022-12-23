@@ -478,12 +478,13 @@ void edit::m_clear_level() {
 }
 
 void edit::m_gui_replay_submit(fsm* sm) {
+	if (!m_test_play_world) return;
 	m_upload_replay_handle.poll();
 
 	auto& md = m_level().get_metadata();
 	replay& rp = m_test_play_world->get_replay();
 	bool authed = auth::get().authed();
-	bool can_submit = !m_upload_replay_handle.fetching() && authed && ((md.myRecord && *md.myRecord >= rp.get_time()) || !md.myRecord);
+	bool can_submit = !m_upload_replay_handle.fetching() && authed && ((md.myRecord && md.myRecord->time >= rp.get_time()) || !md.myRecord);
 	
 	sf::Vector2f wsz(resource::get().window().getSize());
 	
@@ -495,24 +496,29 @@ void edit::m_gui_replay_submit(fsm* sm) {
 			ImGui::PopStyleColor();
 		} else {
 			if (m_level().has_metadata()) {
+				// old level records
 				auto& md = m_level().get_metadata();
-				md.record = res.newBest;
-				if (*md.myRecord >= rp.get_time()) {
-					md.myRecord = rp.get_time();
+				md.myRecord = {
+					.user = auth::get().username(),
+					.time = std::min<float>(md.myRecord ? md.myRecord->time : 99.9999f, rp.get_time())
+				};
+				// if our new record is better than the wr, we have the new wr
+				if (md.myRecord->time < *res.newBest) {
+					md.record = md.myRecord;
 				}
 			}
 
-			m_toggle_test_play();
+			return m_toggle_test_play();
 		}
 	}
 
 	if (md.record)
-		ImGui::TextWrapped("Time: %.2f (WR: %.2f)", rp.get_time(), *md.record);
+		ImGui::TextWrapped("Time: %.2f (WR: %.2fs by %s)", rp.get_time(), md.record->time, md.record->user.c_str());
 	else
 		ImGui::TextWrapped("Time: %.2f", rp.get_time());
 
 	if (md.myRecord)
-		ImGui::TextWrapped("Your record: %.2f", md.myRecord.value());
+		ImGui::TextWrapped("Your record: %.2f", md.myRecord->time);
 
 	ImGui::TextWrapped("Inputs: %lu", rp.size());
 
@@ -568,10 +574,10 @@ void edit::m_gui_level_info(fsm* sm) {
 	ImGui::TextWrapped("Author: %s", md.author.c_str());
 	ImGui::TextWrapped("Downloads: %d", md.downloads);
 	if (md.record) {
-		ImGui::TextWrapped("World record: %.2fs", *md.record);
+		ImGui::TextWrapped("World record: %.2fs by %s", md.record->time, md.record->user.c_str());
 	}
 	if (md.myRecord) {
-		ImGui::TextWrapped("Your best: %.2fs", *md.myRecord);
+		ImGui::TextWrapped("Your best: %.2fs by %s", md.myRecord->time, md.myRecord->user.c_str());
 	}
 	ImGui::TextWrapped("Likes: %d", md.likes);
 	ImGui::TextWrapped("Dislikes: %d", md.dislikes);

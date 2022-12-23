@@ -34,6 +34,18 @@ const SortableFields = [
 ] as const;
 const SortDirections = ['asc', 'desc'] as const;
 
+const LevelQueryInclude = {
+	include: {
+		author: true,
+		votes: true,
+		scores: {
+			include: {
+				user: true,
+			},
+		},
+	},
+};
+
 /* options for searching through levels */
 export class ISearchOptions {
 	@IsOptional()
@@ -79,8 +91,15 @@ export interface ILevelResponse {
 	downloads: number;
 	likes: number;
 	dislikes: number;
-	record?: number;
-	myRecord?: number;
+	record?: {
+		user: string;
+		time: number;
+	};
+	myRecord?: {
+		user: string;
+		time: number;
+	};
+	records: number;
 	myVote?: 1 | 0 | -1;
 }
 
@@ -115,7 +134,7 @@ export default class Level {
 				update: {
 					vote: vote === 'like' ? 1 : -1,
 				},
-				include: { level: { include: { author: true, votes: true, scores: true } } },
+				include: { level: { ...LevelQueryInclude } },
 			});
 			return res.status(200).send({
 				level: tools.toLevelResponse(voteModel.level, token.id),
@@ -210,11 +229,7 @@ export default class Level {
 			orderBy: {
 				[opts.sortBy]: opts.order,
 			},
-			include: {
-				author: true,
-				votes: true,
-				scores: true,
-			},
+			...LevelQueryInclude,
 		});
 
 		if (levels.length === 0) {
@@ -226,7 +241,7 @@ export default class Level {
 		const lastLevel = levels[levels.length - 1];
 
 		const ret: ISearchResponse = {
-			levels: levels.map((lvl) => tools.toLevelResponse(lvl, token?.id)),
+			levels: await Promise.all(levels.map((lvl) => tools.toLevelResponse(lvl, token?.id))),
 			cursor: lastLevel?.id && levels.length >= opts.limit ? lastLevel.id : -1,
 		};
 
@@ -260,7 +275,7 @@ export default class Level {
 						increment: 1,
 					},
 				},
-				include: { author: true, votes: true, scores: true },
+				...LevelQueryInclude,
 			});
 			if (!level) {
 				return res.status(404).send({ error: `Level id "${id}" not found` });
@@ -349,7 +364,7 @@ export default class Level {
 					code,
 					updatedAt: new Date(),
 				},
-				include: { author: true, votes: true, scores: true },
+				...LevelQueryInclude,
 			});
 			if (!updatedLevel)
 				return res.status(500).send({ error: 'Internal server error (NO_OVERWRITE_LEVEL)' });
@@ -368,7 +383,7 @@ export default class Level {
 				title,
 				description,
 			},
-			include: { author: true, votes: true, scores: true },
+			...LevelQueryInclude,
 		});
 
 		if (!newLevel) {

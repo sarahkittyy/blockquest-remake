@@ -99,26 +99,50 @@ void ApiLevelTile::m_gui_leaderboard_popup(fsm* sm) {
 					ImGui::TableNextColumn();
 					ImGui::Text("Replay");
 					ImGui::PopStyleColor();
-					for (int i = 0; i < res.scores.size(); ++i) {
-						ImGui::PushID(i);
-						ImGui::TableNextRow();
-						auto& score = res.scores[i];
-						ImGui::TableNextColumn();
-						ImGui::Text("%s", score.user.c_str());
-						ImGui::TableNextColumn();
-						ImGui::Text("%.2f", score.time);
-						ImGui::TableNextColumn();
-						char date_fmt[100];
-						tm* date_tm = std::localtime(&score.updatedAt);
-						std::strftime(date_fmt, 100, "%D %r", date_tm);
-						ImGui::Text("%s", date_fmt);
-						ImGui::TableNextColumn();
-						ImGui::Text("%s", score.version.c_str());
-						ImGui::TableNextColumn();
-						if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/download.png"), "Replay")) {
-							sm->swap_state<states::edit>(m_lvl, replay(score));
+					if (res.scores.size()) {
+						api::replay wr = std::reduce(res.scores.begin(), res.scores.end(), res.scores[0],
+													 [](api::replay& a, api::replay& b) {
+														 if (a.time <= b.time) {
+															 return a;
+														 } else {
+															 return b;
+														 }
+													 });
+						for (int i = 0; i < res.scores.size(); ++i) {
+							ImGui::PushID(i);
+							ImGui::TableNextRow();
+							auto& score = res.scores[i];
+							ImGui::TableNextColumn();
+							if (score.user == m_lvl.author) {
+								ImGui::Image(resource::get().imtex("assets/gui/create.png"), sf::Vector2f(16, 16));
+								if (ImGui::IsItemHovered()) {
+									ImGui::SetTooltip("Level Creator");
+								}
+								ImGui::SameLine();
+							}
+							if (score == wr) {
+								ImGui::Image(resource::get().imtex("assets/gui/crown.png"), sf::Vector2f(16, 16));
+								if (ImGui::IsItemHovered()) {
+									ImGui::SetTooltip("World Record");
+								}
+								ImGui::SameLine();
+							}
+							ImGui::Text("%s", score.user.c_str());
+							ImGui::TableNextColumn();
+							ImGui::Text("%.2f", score.time);
+							ImGui::TableNextColumn();
+							char date_fmt[100];
+							tm* date_tm = std::localtime(&score.updatedAt);
+							std::strftime(date_fmt, 100, "%D %r", date_tm);
+							ImGui::Text("%s", date_fmt);
+							ImGui::TableNextColumn();
+							ImGui::Text("%s", score.version.c_str());
+							ImGui::TableNextColumn();
+							if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/download.png"), "Replay")) {
+								sm->swap_state<states::edit>(m_lvl, replay(score));
+							}
+							ImGui::PopID();
 						}
-						ImGui::PopID();
 					}
 					ImGui::EndTable();
 				}
@@ -148,19 +172,22 @@ void ApiLevelTile::imdraw(fsm* sm) {
 	ImGui::PushStyleColor(ImGuiCol_Text, 0xFB8CABFF);
 	ImGui::Text("%s (%s) #%d", m_lvl.title.c_str(), m_lvl.author.c_str(), m_lvl.id);
 	ImGui::PopStyleColor();
+	ImVec2 ip = ImGui::GetCursorScreenPos();
 	ImGui::Image(m_map_tex);
-
-	// download btn
-	std::string download_label = std::to_string(m_lvl.downloads) + "###DL";
-	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/download.png"), download_label.c_str())) {
-		api::get().ping_download(m_lvl.id);
-		sm->swap_state<states::edit>(m_lvl);
+	if (ImGui::IsItemHovered()) {
+		ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+		ImGui::GetWindowDrawList()->AddImage(resource::get().imtex("assets/gui/download_large.png"), ip, ImVec2(ip.x + 256, ip.y + 256));
+		if (ImGui::IsMouseClicked(0)) {
+			api::get().ping_download(m_lvl.id);
+			sm->swap_state<states::edit>(m_lvl);
+		}
 	}
-	ImGui::SameLine();
+
 	// leaderboard btn
 	std::ostringstream leaderboard_label;
 	if (m_lvl.record) {
-		leaderboard_label << "WR: " << std::fixed << std::setprecision(2) << m_lvl.record.value() << "s";
+		leaderboard_label << "WR: " << std::fixed << std::setprecision(2)
+						  << m_lvl.record->time << "s by " << m_lvl.record->user;
 	} else {
 		leaderboard_label << "No WR yet";
 	}
@@ -169,17 +196,19 @@ void ApiLevelTile::imdraw(fsm* sm) {
 		m_update_query();
 		ImGui::OpenPopup("###Leaderboard");
 	}
-	m_gui_leaderboard_popup(sm);
-	// likes/dislikes
+
+	// likes/dislikes/downloads/records
 	ImVec2 x16(16, 16);
 	ImVec2 uv0(0, 0), uv1(1, 1);
-	int fp				 = 4;
-	ImVec4 bg			 = ImVec4(1, 0, 0, 0);
-	std::string likes	 = std::to_string(m_lvl.likes) + "###LIKES";
-	std::string dislikes = std::to_string(m_lvl.dislikes) + "###DISLIKES";
-	ImU32 likes_tcol	 = ImGui::GetColorU32(sf::Color::Green);
-	ImU32 dislikes_tcol	 = ImGui::GetColorU32(sf::Color::Red);
-	bool authed			 = auth::get().authed();
+	int fp				  = 4;
+	ImVec4 bg			  = ImVec4(1, 0, 0, 0);
+	std::string likes	  = std::to_string(m_lvl.likes) + "###LIKES";
+	std::string dislikes  = std::to_string(m_lvl.dislikes) + "###DISLIKES";
+	std::string downloads = std::to_string(m_lvl.downloads) + "###DOWNLOADS";
+	std::string records	  = std::to_string(m_lvl.records) + "###RECORDS";
+	ImU32 likes_tcol	  = ImGui::GetColorU32(sf::Color::Green);
+	ImU32 dislikes_tcol	  = ImGui::GetColorU32(sf::Color::Red);
+	bool authed			  = auth::get().authed();
 	ImGui::PushStyleColor(ImGuiCol_Text, likes_tcol);
 	ImGui::BeginDisabled(m_vote_handle.fetching() || m_lvl.myVote.value_or(0) == 1 || !authed);
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/heart.png"), likes.c_str(), x16, uv0, uv1, fp, bg)) {
@@ -206,6 +235,26 @@ void ApiLevelTile::imdraw(fsm* sm) {
 		ImGui::SetTooltip(m_lvl.myVote.value_or(0) == -1 ? "Disliked!" : "Dislike");
 	}
 
+	ImGui::SameLine();
+
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/download.png"), downloads.c_str(), x16, uv0, uv1, fp, bg)) {
+		api::get().ping_download(m_lvl.id);
+		sm->swap_state<states::edit>(m_lvl);
+	}
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+		ImGui::SetTooltip("Total downloads");
+	}
+
+	ImGui::SameLine();
+
+	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/trophy.png"), records.c_str(), x16, uv0, uv1, fp, bg)) {
+		m_update_query();
+		ImGui::OpenPopup("###Leaderboard");
+	}
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+		ImGui::SetTooltip("Scores posted");
+	}
+
 	m_vote_handle.poll();
 	m_lb_handle.poll();
 	if (m_vote_handle.ready()) {
@@ -217,6 +266,8 @@ void ApiLevelTile::imdraw(fsm* sm) {
 			m_vote_handle.reset();
 		}
 	}
+
+	m_gui_leaderboard_popup(sm);
 
 	// extra info
 
