@@ -64,6 +64,7 @@ private:
 	// future & status of level upload
 	api_handle<api::level_response> m_upload_handle;
 	api_handle<api::level_response> m_download_handle;
+	api_handle<api::level_response> m_quickplay_handle;
 	api_handle<api::replay_upload_response> m_upload_replay_handle;
 
 	// can we upload the level currently on display

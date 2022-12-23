@@ -27,6 +27,7 @@ app.post('/verify/:code', requireAuth(0, false), Auth.Verify);
 
 app.post('/level/upload/:confirm?', requireAuth(0), Level.upload);
 app.post('/level/search', checkAuth(), Level.search);
+app.get('/level/quickplay', Level.getQuickplay);
 app.get('/level/:id/ping-download', Level.downloadPing);
 app.post('/level/:id(\\d+)/:vote(like|dislike)', requireAuth(0), Level.vote);
 app.post('/level/:id', checkAuth(), Level.getById);
