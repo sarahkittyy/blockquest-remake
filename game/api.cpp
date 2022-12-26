@@ -34,6 +34,7 @@ api::level api::level_from_json(nlohmann::json lvl) {
 		.createdAt	 = lvl["createdAt"].get<std::time_t>(),
 		.updatedAt	 = lvl["updatedAt"].get<std::time_t>(),
 		.downloads	 = lvl["downloads"].get<int>(),
+		.comments	 = lvl["comments"].get<int>(),
 		.likes		 = lvl["likes"].get<int>(),
 		.dislikes	 = lvl["dislikes"].get<int>(),
 	};
@@ -65,6 +66,7 @@ nlohmann::json api::level_to_json(api::level lvl) {
 	ret["createdAt"]   = lvl.createdAt;
 	ret["updatedAt"]   = lvl.updatedAt;
 	ret["downloads"]   = lvl.downloads;
+	ret["comments"]	   = lvl.comments;
 	ret["likes"]	   = lvl.likes;
 	ret["dislikes"]	   = lvl.dislikes;
 	if (lvl.myVote)
@@ -124,6 +126,50 @@ std::future<api::level_search_response> api::search_levels(api::level_search_que
 	});
 }
 
+std::future<api::comment_response> api::post_comment(int levelId, std::string comment) {
+	return std::async([this, levelId, comment]() -> api::comment_response {
+		try {
+			nlohmann::json body;
+			body["comment"] = comment;
+			auth::get().add_jwt_to_body(body);
+
+			if (auto res = m_cli.Post("/comments/new/" + std::to_string(levelId), body.dump(), "application/json")) {
+				nlohmann::json result = nlohmann::json::parse(res->body);
+				if (res->status == 200) {
+					comment_response rsp;
+					rsp.success = true;
+					rsp.code	= res->status;
+					rsp.comment = result["comment"].get<api::comment>();
+					return rsp;
+				} else {
+					if (result.contains("error")) {
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error";
+					}
+				}
+			} else {
+				throw "Could not connect to server";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.error	 = e
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.error	 = "Unknown error."
+			};
+		}
+	});
+}
+
 std::future<api::replay_upload_response> api::upload_replay(::replay rp) {
 	return std::async([this, rp]() -> api::replay_upload_response {
 		try {
@@ -139,6 +185,51 @@ std::future<api::replay_upload_response> api::upload_replay(::replay rp) {
 					rsp.success = true;
 					if (result.contains("newBest"))
 						rsp.newBest = result["newBest"].get<float>();
+					return rsp;
+				} else {
+					if (result.contains("error")) {
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error";
+					}
+				}
+			} else {
+				throw "Could not connect to server";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.error	 = e
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.error	 = "Unknown error."
+			};
+		}
+	});
+}
+
+std::future<api::comment_search_response> api::get_comments(int levelId, api::comment_search_query q) {
+	return std::async([this, q, levelId]() -> api::comment_search_response {
+		try {
+			nlohmann::json body = q;
+			auth::get().add_jwt_to_body(body);
+
+			if (auto res = m_cli.Post("/comments/level/" + std::to_string(levelId), body.dump(), "application/json")) {
+				nlohmann::json result = nlohmann::json::parse(res->body);
+				if (res->status == 200) {
+					comment_search_response rsp;
+					rsp.cursor	= result["cursor"].get<int>();
+					rsp.success = true;
+					for (auto &comment_json : result["comments"]) {
+						rsp.comments.push_back(comment_json.get<api::comment>());
+					}
 					return rsp;
 				} else {
 					if (result.contains("error")) {
@@ -497,6 +588,16 @@ bool api::replay::operator==(const api::replay &other) const {
 }
 
 bool api::replay::operator!=(const api::replay &other) const {
+	return !(*this == other);
+}
+
+bool api::comment_search_query::operator==(const api::comment_search_query &other) const {
+	return limit == other.limit &&
+		   sortBy == other.sortBy &&
+		   order == other.order;
+}
+
+bool api::comment_search_query::operator!=(const api::comment_search_query &other) const {
 	return !(*this == other);
 }
 

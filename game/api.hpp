@@ -31,6 +31,7 @@ public:
 		std::time_t createdAt;
 		std::time_t updatedAt;
 		int downloads;
+		int comments;
 		int likes;
 		int dislikes;
 		std::optional<level_record> record;
@@ -50,6 +51,48 @@ public:
 		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, user, levelId, time, version, raw, createdAt, updatedAt);
 		bool operator==(const replay& other) const;
 		bool operator!=(const replay& other) const;
+	};
+
+	struct user_stub {
+		int id;
+		std::string name;
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::user_stub, id, name);
+	};
+
+	struct comment {
+		user_stub user;
+		int id;
+		int levelId;
+		std::string text;
+		std::time_t createdAt;
+		std::time_t updatedAt;
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::comment, user, id, levelId, text, createdAt, updatedAt);
+	};
+
+	struct comment_response {
+		bool success;
+		int code;
+		std::optional<api::comment> comment;
+		std::optional<std::string> error;
+	};
+
+	struct comment_search_query {
+		int cursor		   = -1;
+		int limit		   = 10;
+		std::string sortBy = "id";
+		std::string order  = "desc";
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::comment_search_query, cursor, limit, sortBy, order);
+		bool operator==(const comment_search_query& other) const;
+		bool operator!=(const comment_search_query& other) const;
+	};
+
+	struct comment_search_response {
+		bool success;
+		int code;
+		std::optional<std::string> error;
+
+		std::vector<api::comment> comments;
+		int cursor;
 	};
 
 	struct level_response {
@@ -131,6 +174,9 @@ public:
 	std::future<level_response> download_level(int id);
 	std::future<level_response> quickplay_level();
 	std::future<vote_response> vote_level(api::level lvl, vote v);
+
+	std::future<api::comment_response> post_comment(int levelId, std::string comment);
+	std::future<api::comment_search_response> get_comments(int levelId, api::comment_search_query q);
 
 	std::future<api::replay_search_response> search_replays(int levelId, api::replay_search_query q);
 	std::future<api::replay_upload_response> upload_replay(::replay rp);

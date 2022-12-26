@@ -43,6 +43,11 @@ const LevelQueryInclude = {
 				user: true,
 			},
 		},
+		_count: {
+			select: {
+				comments: true,
+			},
+		},
 	},
 };
 
@@ -100,6 +105,7 @@ export interface ILevelResponse {
 		time: number;
 	};
 	records: number;
+	comments: number;
 	myVote?: 1 | 0 | -1;
 }
 
@@ -241,7 +247,7 @@ export default class Level {
 		const lastLevel = levels[levels.length - 1];
 
 		const ret: ISearchResponse = {
-			levels: await Promise.all(levels.map((lvl) => tools.toLevelResponse(lvl, token?.id))),
+			levels: levels.map((lvl) => tools.toLevelResponse(lvl, token?.id)),
 			cursor: lastLevel?.id && levels.length >= opts.limit ? lastLevel.id : -1,
 		};
 

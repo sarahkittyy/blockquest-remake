@@ -32,6 +32,9 @@ public:
 	api::replay_search_query& replay_search_query();
 	const api::replay_search_query& replay_search_query() const;
 
+	api::comment_search_query& comment_search_query();
+	const api::comment_search_query& comment_search_query() const;
+
 	float& music_volume();
 	float& sfx_volume();
 
@@ -43,6 +46,7 @@ private:
 	level m_editor_level;
 	api::level_search_query m_level_query;
 	api::replay_search_query m_replay_query;
+	api::comment_search_query m_comment_query;
 	float m_sfx_volume;
 	float m_music_volume;
 	int m_fps_limit;

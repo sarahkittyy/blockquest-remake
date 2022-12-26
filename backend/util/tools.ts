@@ -3,10 +3,11 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 import log from '@/log';
-import { User, Level, UserLevelVote, UserLevelScore } from '@prisma/client';
+import { User, Level, UserLevelVote, UserLevelScore, UserLevelComment } from '@prisma/client';
 import { prisma } from '@db/index';
 import { ILevelResponse } from '@/controllers/Level';
 import { IReplayResponse } from '@/controllers/Replay';
+import { ICommentResponse } from '@/controllers/Comment';
 
 export function isValidLevel(code: string): boolean {
 	const levelRegex = /^(?:[0-9]{3}|\/){1024}/g;
@@ -17,6 +18,19 @@ export function isValidLevel(code: string): boolean {
 
 export interface UserLevelScoreRunner extends UserLevelScore {
 	user: User;
+}
+
+export interface UserLevelCommentPoster extends UserLevelComment {
+	user: User;
+}
+
+export interface LevelMetadataIncluded extends Level {
+	votes: UserLevelVote[];
+	author: User;
+	scores: Array<UserLevelScoreRunner>;
+	_count: {
+		comments: number;
+	};
 }
 
 export interface IAuthToken {
@@ -186,7 +200,21 @@ export function decodeRawReplay(bin: Buffer | undefined): IReplayData | undefine
 	}
 }
 
-export function toReplayResponse(replay: UserLevelScoreRunner & { user: User }): IReplayResponse {
+export function toCommentResponse(comment: UserLevelCommentPoster): ICommentResponse {
+	return {
+		comment: comment.comment,
+		createdAt: comment.createdAt.getTime() / 1000,
+		updatedAt: comment.updatedAt.getTime() / 1000,
+		id: comment.id,
+		levelId: comment.levelId,
+		user: {
+			id: comment.userId,
+			name: comment.user.name,
+		},
+	};
+}
+
+export function toReplayResponse(replay: UserLevelScoreRunner): IReplayResponse {
 	return {
 		user: replay.user.name,
 		levelId: replay.levelId,
@@ -198,14 +226,7 @@ export function toReplayResponse(replay: UserLevelScoreRunner & { user: User }):
 	};
 }
 
-export function toLevelResponse(
-	lvl: Level & {
-		votes: UserLevelVote[];
-		author: User;
-		scores: Array<UserLevelScoreRunner>;
-	},
-	userId?: number
-): ILevelResponse {
+export function toLevelResponse(lvl: LevelMetadataIncluded, userId?: number): ILevelResponse {
 	const likes = likesCount(lvl.votes);
 	const dislikes = dislikesCount(lvl.votes);
 	if (lvl.likes !== likes || lvl.dislikes !== dislikes) {
@@ -249,6 +270,7 @@ export function toLevelResponse(
 			},
 		}),
 		records: lvl.scores.length,
+		comments: lvl._count.comments,
 		myVote: userId != null ? userVote(userId, lvl.votes) : undefined,
 	};
 }

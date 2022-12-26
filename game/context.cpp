@@ -23,10 +23,15 @@ context::context()
 	  m_replay_query({ .cursor = -1,
 					   .sortBy = "time",
 					   .order  = "asc" }),
+	  m_comment_query({ .cursor = -1,
+						.limit	= 10,
+						.sortBy = "createdAt",
+						.order	= "desc" }),
 	  m_sfx_volume(50.f),
 	  m_music_volume(50.f),
 	  m_fps_limit(120) {
 	load_from_file("bq-r.json");
+	resource::get().window().setFramerateLimit(m_fps_limit);
 }
 
 level& context::editor_level() {
@@ -63,8 +68,9 @@ std::string context::save() const {
 		j["editor_level"] = m_editor_level.map().save();
 	}
 
-	j["level_query"]  = m_level_query;
-	j["replay_query"] = m_replay_query;
+	j["level_query"]   = m_level_query;
+	j["replay_query"]  = m_replay_query;
+	j["comment_query"] = m_comment_query;
 
 	j["screen_size"]["x"] = resource::get().window().getSize().x;
 	j["screen_size"]["y"] = resource::get().window().getSize().y;
@@ -102,6 +108,10 @@ void context::load(std::string data) {
 
 	if (j.contains("replay_query")) {
 		j["replay_query"].get_to(m_replay_query);
+	}
+
+	if (j.contains("comment_query")) {
+		j["comment_query"].get_to(m_comment_query);
 	}
 
 	if (j.contains("fps_limit")) {
@@ -175,6 +185,14 @@ api::replay_search_query& context::replay_search_query() {
 
 const api::replay_search_query& context::replay_search_query() const {
 	return m_replay_query;
+}
+
+api::comment_search_query& context::comment_search_query() {
+	return m_comment_query;
+}
+
+const api::comment_search_query& context::comment_search_query() const {
+	return m_comment_query;
 }
 
 context& context::get() {

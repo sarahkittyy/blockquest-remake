@@ -1,4 +1,4 @@
-import { PrismaClient, User, Level, UserLevelVote } from '@prisma/client';
+import { PrismaClient, User, Level, UserLevelVote, UserLevelComment } from '@prisma/client';
 import {
 	randUserName,
 	randPassword,
@@ -8,6 +8,8 @@ import {
 	randText,
 	randPhrase,
 	randNumber,
+	randCatchPhrase,
+	randRecentDate,
 } from '@ngneat/falso';
 import { randomBytes } from 'crypto';
 
@@ -24,6 +26,17 @@ async function fakeUser(): Promise<User> {
 		},
 	});
 	return user;
+}
+
+async function fakeComment(user: User, level: Level): Promise<UserLevelComment> {
+	return await prisma.userLevelComment.create({
+		data: {
+			comment: randCatchPhrase(),
+			levelId: level.id,
+			userId: user.id,
+			createdAt: randRecentDate(),
+		},
+	});
 }
 
 async function fakeVote(user: User, level: Level): Promise<UserLevelVote> {
@@ -67,10 +80,12 @@ async function fakeScore(user: User, level: Level) {
 
 async function main() {
 	const userCount = Math.floor(Math.random() * 8) + 5;
-	let levels = [];
+	let levels: Level[] = [];
+	let users: User[] = [];
 	for (let i = 0; i < userCount; ++i) {
 		const levelCount = Math.floor(Math.random() * 8) + 3;
 		const user = await fakeUser();
+		users.push(user);
 		for (let j = 0; j < levelCount; ++j) {
 			const level = await fakeLevel(user);
 			levels.push(level);
@@ -80,6 +95,14 @@ async function main() {
 			await fakeVote(user, lvl);
 		});
 	}
+	users.forEach(async (user) => {
+		levels.forEach(async (level) => {
+			const ct = Math.floor(Math.random() * 3);
+			for (let i = 0; i < ct; ++i) {
+				await fakeComment(user, level);
+			}
+		});
+	});
 }
 
 main()
