@@ -202,7 +202,7 @@ export function decodeRawReplay(bin: Buffer | undefined): IReplayData | undefine
 
 export function toCommentResponse(comment: UserLevelCommentPoster): ICommentResponse {
 	return {
-		comment: comment.comment,
+		text: comment.comment,
 		createdAt: comment.createdAt.getTime() / 1000,
 		updatedAt: comment.updatedAt.getTime() / 1000,
 		id: comment.id,

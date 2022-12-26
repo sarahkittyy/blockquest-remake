@@ -13,7 +13,7 @@ export interface ICommentResponse {
 	};
 	id: number;
 	levelId: number;
-	comment: string;
+	text: string;
 	createdAt: number;
 	updatedAt: number;
 }
