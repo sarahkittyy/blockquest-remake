@@ -460,7 +460,7 @@ bool world::update(sf::Time dt) {
 		m_this_frame.down  = m_has_focus ? settings::get().key_down(key::DOWN) : false;
 	}
 
-	if (settings::get().key_down(key::RESTART)) {
+	if (settings::get().key_down(key::RESTART) && !ImGui::GetIO().WantCaptureKeyboard) {
 		if (!m_restarted)
 			m_restart_world();
 		m_restarted = true;
@@ -481,14 +481,14 @@ bool world::update(sf::Time dt) {
 		m_space_to_retry.setColor(opacity);
 		m_game_clear.setColor(opacity);
 		m_fadeout.setFillColor(sf::Color(220, 220, 220, m_end_alpha / 2.f));
-		if (m_just_jumped()) {
+		if (m_just_jumped() && !ImGui::GetIO().WantCaptureKeyboard) {
 			m_restart_world();
 			return false;
 		} else {
 			m_last_frame.jump = m_this_frame.jump;
 			return false;
 		}
-	} else if (lost()) {
+	} else if (lost() && !ImGui::GetIO().WantCaptureKeyboard) {
 		sf::Color opacity = m_space_to_retry.getColor();
 		m_end_alpha += 255.f * dt.asSeconds();
 		m_end_alpha = std::min(255.f, m_end_alpha);
