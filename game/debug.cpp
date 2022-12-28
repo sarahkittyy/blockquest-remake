@@ -20,6 +20,7 @@ debug& debug::log() {
 }
 
 void debug::imdraw(sf::Time dt) {
+	if (ndebug()) return;
 	if (!m_open) return;
 	if (m_last_dt == sf::Time::Zero) {
 		m_last_dt = dt;
