@@ -33,7 +33,7 @@ set(includes game/ lib/imgui/ lib/http lib/nlohmann lib/ImGuiFileDialog lib/ ${O
 set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL OpenSSL::SSL OpenSSL::Crypto)
 set(flags -DCPPHTTPLIB_OPENSSL_SUPPORT)
 
-if(NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
 	list(APPEND flags -DNDEBUG -DSERVER_URL="https://bq-r.sushicat.rocks")
 else()
 	list(APPEND flags -DNO_VERIFY_CERTS -DSERVER_URL="http://localhost:3000")
