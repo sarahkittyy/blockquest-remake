@@ -56,11 +56,11 @@ edit::edit()
 	rsz_evt.size.height = resource::get().window().getSize().y;
 	process_event(rsz_evt);
 
-	m_timer_text.setFont(resource::get().font("assets/gui/unlearned.ttf"));
-	m_timer_text.setCharacterSize(48);
+	m_timer_text.setFont(resource::get().font("assets/verdana.ttf"));
+	m_timer_text.setCharacterSize(24);
 	m_timer_text.setFillColor(sf::Color::Black);
-	m_timer_text.setOutlineThickness(0);
-	m_timer_text.setScale(2.f, 2.f);
+	m_timer_text.setOutlineThickness(1);
+	m_timer_text.setOutlineColor(sf::Color(0x964B00));
 	m_timer_text.setString("00:00");
 	m_timer_text.setOrigin(m_timer_text.getLocalBounds().width / 2.f, 0);
 	m_timer_text.setPosition(34 * 64 / 2.f, 16.f);
@@ -222,7 +222,7 @@ void edit::update(fsm* sm, sf::Time dt) {
 	if (m_test_playing()) {
 		bool stepped = m_test_play_world->update(dt);
 		if (stepped) {
-			float time = m_test_play_world->get_replay().get_time();
+			float time = m_test_play_world->get_timer().asSeconds();
 			int whole  = std::floor(time);
 			int rest   = std::floor((time - whole) * 100.f);
 			std::ostringstream ss;

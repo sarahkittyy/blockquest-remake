@@ -31,6 +31,8 @@ public:
 	bool lost() const;
 
 	replay& get_replay();
+	// returns how long it's been since the start of gameplay / replay playback
+	sf::Time get_timer() const;
 
 	bool has_playback() const;
 

@@ -122,7 +122,11 @@ bool world::has_playback() const {
 }
 
 replay& world::get_replay() {
-	return m_playback.has_value() ? *m_playback : m_replay;
+	return has_playback() ? *m_playback : m_replay;
+}
+
+sf::Time world::get_timer() const {
+	return sf::seconds(replay::timestep.asSeconds() * float(m_cstep));
 }
 
 void world::process_event(sf::Event e) {
