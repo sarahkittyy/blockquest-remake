@@ -2,6 +2,7 @@
 
 #include "gui/image_text_button.hpp"
 
+#include "auth.hpp"
 #include "context.hpp"
 #include "fsm.hpp"
 #include "replay.hpp"
@@ -154,6 +155,13 @@ void leaderboard_modal::imdraw(fsm* sm) {
 								ImGui::Image(resource::get().imtex("assets/gui/crown.png"), sf::Vector2f(16, 16));
 								if (ImGui::IsItemHovered()) {
 									ImGui::SetTooltip("World Record");
+								}
+								ImGui::SameLine();
+							}
+							if (auth::get().authed() && auth::get().username() == score.user) {
+								ImGui::Image(resource::get().imtex("assets/gui/play.png"), sf::Vector2f(16, 16));
+								if (ImGui::IsItemHovered()) {
+									ImGui::SetTooltip("Your Score");
 								}
 								ImGui::SameLine();
 							}
