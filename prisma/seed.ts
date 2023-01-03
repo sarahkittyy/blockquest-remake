@@ -3,15 +3,31 @@ import {
 	randUserName,
 	randPassword,
 	randEmail,
-	randAlphaNumeric,
-	randTextRange,
 	randText,
 	randPhrase,
 	randNumber,
 	randCatchPhrase,
 	randRecentDate,
 } from '@ngneat/falso';
-import { randomBytes } from 'crypto';
+import bcrypt from 'bcrypt';
+
+const sampleLevel =
+	'////////////////////////////////////////////////////////////////020/062062//020/////020///064064///020////////////////////////////////////////////////////////////////////////////////////////////////010//////////////////////020020020020020020020020020020//////////////////////020////////////////////////////030//020/////080/////////////080/000/////////020/////063/////////////063/020020020020020020////020/////063/////////////063//////020////020/////063/////////////063//////020////020/////063/////////////063//////020050050050050020/////063/////////////063/////////////////063/////////////063/////////////////063/////////////063080080080080080080080080080080080080080080080080080063/////////////063063063063063063063063063063063063063063063063063063063////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////';
+const sampleScore = {
+	replay:
+		'djEuNS4xAAAAAAAARgAAAG53s2NzYXJhaGtpdHR5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB7FO4/hmEYhiEIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgmEQRVEURVEURVEUhmEYhmEIgiAIgiAIgiAIgmEYhmEYhmEYhmEYhmEYhmEYhmEYhmEYhmEYhiEIgiAAAAAAAAAAAAAAAAAAAAAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIggAA',
+	time: 1.860000014305115,
+};
+
+export async function saltAndHash(password: string): Promise<string | undefined> {
+	try {
+		const salt = await bcrypt.genSalt(10);
+		const hash = await bcrypt.hash(password, salt);
+		return hash;
+	} catch (e) {
+		return undefined;
+	}
+}
 
 const prisma = new PrismaClient();
 
@@ -52,7 +68,7 @@ async function fakeVote(user: User, level: Level): Promise<UserLevelVote> {
 async function fakeLevel(author: User) {
 	const level = await prisma.level.create({
 		data: {
-			code: randTextRange({ min: 1024, max: 4000 }),
+			code: sampleLevel,
 			title: randText({ charCount: 15 }),
 			description: randPhrase(),
 			author: { connect: { id: author.id } },
@@ -67,12 +83,9 @@ async function fakeScore(user: User, level: Level) {
 		data: {
 			user: { connect: { id: user.id } },
 			level: { connect: { id: level.id } },
-			time: randNumber({ min: 0.1, max: 35, fraction: 2 }),
-			replay: Buffer.from(
-				'djEuNS4xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIwjAcRVEURVEURVEURVEURVEURVEURRAEQZCmaZqmaZqmaZqmaZqmaZqmaZqmaZqmaZqmaRAEQRAEAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEQRAEQRAEQRAEQRAEAQAA',
-				'base64'
-			),
-			version: 'vSEEDED',
+			time: sampleScore.time,
+			replay: Buffer.from(sampleScore.replay, 'base64'),
+			version: 'vSeeded',
 		},
 	});
 	return score;
@@ -102,6 +115,17 @@ async function main() {
 				await fakeComment(user, level);
 			}
 		});
+	});
+
+	// test account
+	await prisma.user.create({
+		data: {
+			name: 'dev',
+			password: (await saltAndHash('dev')) ?? 'UNDEFINED',
+			email: 'dev@dev',
+			confirmed: true,
+			tier: 0,
+		},
 	});
 }
 
