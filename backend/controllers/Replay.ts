@@ -73,7 +73,7 @@ export default class Replay {
 					levelId: data.header.levelId,
 				},
 			});
-			if (score == undefined) {
+			if (score == undefined || data.header.time <= score.time) {
 				score = await prisma.userLevelScore.create({
 					data: {
 						user: { connect: { id: token.id } },
@@ -83,18 +83,6 @@ export default class Replay {
 						version: data.header.version,
 					},
 				});
-			} else if (data.header.time <= score.time) {
-				score = await prisma.userLevelScore.update({
-					where: {
-						userId_levelId: { userId: token.id, levelId: data.header.levelId },
-					},
-					data: {
-						replay: buf,
-						time: data.header.time,
-						version: data.header.version,
-					},
-				});
-			} else {
 			}
 			return res.status(200).send({ newBest: score.time });
 		} catch (e) {

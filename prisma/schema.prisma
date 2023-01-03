@@ -79,5 +79,5 @@ model UserLevelScore {
 	version		String		@db.VarChar(10)
 	replay		Bytes
 
-	@@id([userId, levelId])
+	@@id([id, userId, levelId])
 }
