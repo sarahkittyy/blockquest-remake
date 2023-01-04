@@ -63,7 +63,7 @@ std::string context::save() const {
 
 	if (m_editor_level.has_metadata()) {
 		auto md					   = m_editor_level.get_metadata();
-		j["editor_level_metadata"] = api::level_to_json(md);
+		j["editor_level_metadata"] = md;
 	} else {
 		j["editor_level"] = m_editor_level.map().save();
 	}
@@ -92,7 +92,7 @@ void context::load(std::string data) {
 	nlohmann::json j = nlohmann::json::parse(data);
 
 	if (j.contains("editor_level_metadata")) {
-		api::level md = api::level_from_json(j["editor_level_metadata"]);
+		api::level md = j["editor_level_metadata"].get<api::level>();
 		if (md.code.empty()) {
 			md.code = j.value("editor_level", "");
 		}

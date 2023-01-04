@@ -15,13 +15,15 @@
 
 #include "api_handle.hpp"
 
+#include "gui/user_modal.hpp"
+
 namespace ImGui {
 
 class AppMenuBar {
 public:
 	AppMenuBar();
 
-	void imdraw(std::string& info_msg);
+	void imdraw(std::string& info_msg, fsm* sm);
 	void process_event(sf::Event e);
 
 private:
@@ -40,6 +42,8 @@ private:
 	api_handle<auth::response> m_signup_handle;
 	api_handle<auth::response> m_verify_handle;
 	api_handle<auth::reverify_response> m_reverify_handle;
+
+	std::unique_ptr<user_modal> m_self_modal;
 
 	bool m_auth_unresolved() const;	  // are the login/signup futures / statues all reset properly?
 	void m_open_verify_popup();

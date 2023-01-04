@@ -170,6 +170,32 @@ public:
 		std::optional<float> newBest;
 	};
 
+	struct user_stat_counts {
+		int levels;
+		int votes;
+		int comments;
+		int scores;
+		int records;
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::user_stat_counts, levels, votes, comments, scores, records);
+	};
+
+	struct user_stats {
+		int id;
+		std::string username;
+		std::time_t createdAt;
+		int tier;
+		user_stat_counts count;
+		std::optional<replay> recentScore;
+		std::optional<level> recentScoreLevel;
+		std::optional<level> recentLevel;
+	};
+
+	struct user_stats_response {
+		bool success;
+		std::optional<std::string> error;
+		std::optional<user_stats> stats;
+	};
+
 	std::future<level_response> upload_level(::level l, const char* title, const char* description, bool override = false);
 	std::future<level_response> download_level(int id);
 	std::future<level_response> quickplay_level();
@@ -180,6 +206,8 @@ public:
 
 	std::future<api::replay_search_response> search_replays(int levelId, api::replay_search_query q);
 	std::future<api::replay_upload_response> upload_replay(::replay rp);
+
+	std::future<api::user_stats_response> fetch_user_stats(int id);
 
 	// get the current app version
 	const char* version() const;
@@ -192,9 +220,6 @@ public:
 	// sends a download ping to be run when we fetch a level
 	void ping_download(int id);
 
-	static api::level level_from_json(nlohmann::json lvl);
-	static nlohmann::json level_to_json(api::level lvl);
-
 private:
 	api();
 	api(const api& other) = delete;
@@ -203,3 +228,8 @@ private:
 	httplib::Client m_cli;
 	httplib::Client m_gh_cli;
 };
+
+void to_json(nlohmann::json& j, const api::level& l);
+void from_json(const nlohmann::json& j, api::level& l);
+void to_json(nlohmann::json& j, const api::user_stats& s);
+void from_json(const nlohmann::json& j, api::user_stats& s);

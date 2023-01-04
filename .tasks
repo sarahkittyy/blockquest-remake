@@ -15,4 +15,4 @@ command=env SERVER_URL=https://bq-r.sushicat.rocks ./start-authed.sh
 [run]
 
 # this script is gitignored because it's my own login info :p
-command=./start-authed.sh
+command=env BQR_USERNAME=dev BQR_PASSWORD=dev ./build/bq-r

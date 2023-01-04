@@ -34,7 +34,7 @@ const SortableFields = [
 ] as const;
 const SortDirections = ['asc', 'desc'] as const;
 
-const LevelQueryInclude = {
+export const LevelQueryInclude = {
 	include: {
 		author: true,
 		votes: true,

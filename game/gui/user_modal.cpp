@@ -1,0 +1,126 @@
+#include "user_modal.hpp"
+
+#include "fsm.hpp"
+#include "resource.hpp"
+
+user_modal::user_modal(int id)
+	: m_id(id) {
+}
+
+user_modal::~user_modal() {
+}
+
+void user_modal::m_fetch() {
+	if (m_stats_handle.fetching()) return;
+	m_stats_handle.reset(api::get().fetch_user_stats(m_id));
+}
+
+void user_modal::open() {
+	m_fetch();
+	ImGui::OpenPopup("###UserStats");
+}
+
+void user_modal::imdraw(fsm* sm) {
+	m_stats_handle.poll();
+	bool dummy				= true;
+	std::string modal_title = "Stats###UserStats";
+	ImGuiWindowFlags flags	= ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings;
+
+	if (m_stats_handle.ready()) {
+		api::user_stats_response rsp = m_stats_handle.get();
+		if (rsp.success) {
+			modal_title = rsp.stats->username + " #" + std::to_string(m_id) + " " + modal_title;
+			if (rsp.stats->recentLevel)
+				m_recent_level_tile.reset(new ImGui::ApiLevelTile(*rsp.stats->recentLevel));
+			if (rsp.stats->recentScore && rsp.stats->recentScoreLevel)
+				m_recent_score_tile.reset(new ImGui::ApiLevelTile(*rsp.stats->recentScoreLevel));
+		}
+	} else {
+		if (m_recent_level_tile)
+			m_recent_level_tile.reset();
+	}
+
+	ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_Always);
+	if (ImGui::BeginPopupModal(modal_title.c_str(), &dummy, flags)) {
+		if (!m_stats_handle.ready()) {
+			ImGui::Text("Loading...");
+		} else if (!m_stats_handle.get().success) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
+			ImGui::TextWrapped("%s", m_stats_handle.get().error->c_str());
+			ImGui::PopStyleColor();
+		} else {
+			api::user_stats stats = *m_stats_handle.get().stats;
+
+			ImGui::Image(resource::get().imtex("assets/gui/play.png"), ImVec2(16, 16));
+			ImGui::SameLine();
+			ImGui::TextColored(sf::Color::Cyan, "%s #%d", stats.username.c_str(), stats.id);
+
+			ImGui::Image(resource::get().imtex("assets/gui/create.png"), ImVec2(16, 16));
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Has created %d levels", stats.count.levels);
+			}
+			ImGui::SameLine();
+			ImGui::Text("%d", stats.count.levels);
+			ImGui::SameLine();
+
+			ImGui::Image(resource::get().imtex("assets/gui/upload.png"), ImVec2(16, 16));
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Has posted %d comments", stats.count.comments);
+			}
+			ImGui::SameLine();
+			ImGui::Text("%d", stats.count.comments);
+			ImGui::SameLine();
+
+			ImGui::Image(resource::get().imtex("assets/gui/trophy.png"), ImVec2(16, 16));
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Has submitted %d records", stats.count.scores);
+			}
+			ImGui::SameLine();
+			ImGui::Text("%d", stats.count.scores);
+			ImGui::SameLine();
+
+			ImGui::Image(resource::get().imtex("assets/gui/heart.png"), ImVec2(16, 16));
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Has liked/disliked %d levels", stats.count.votes);
+			}
+			ImGui::SameLine();
+			ImGui::Text("%d", stats.count.votes);
+			ImGui::SameLine();
+
+			ImGui::Image(resource::get().imtex("assets/gui/crown.png"), ImVec2(16, 16));
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Holds %d world records", stats.count.records);
+			}
+			ImGui::SameLine();
+			ImGui::Text("%d", stats.count.records);
+
+			if (ImGui::BeginTable("###Recencies", 2, ImGuiTableFlags_Borders)) {
+				ImGui::TableNextRow();
+				ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color(0xC8AD7FFF)));
+				ImGui::TableNextColumn();
+				ImGui::Text("Most recent level");
+				ImGui::TableNextColumn();
+				ImGui::Text("Most recent score");
+				ImGui::PopStyleColor();
+				ImGui::TableNextRow();
+
+				ImGui::TableNextColumn();
+				if (m_recent_level_tile) {
+					m_recent_level_tile->imdraw(sm);
+				}
+				ImGui::TableNextColumn();
+				if (m_recent_score_tile) {
+					auto score = *stats.recentScore;
+					char date_fmt[100];
+					tm* date_tm = std::localtime(&stats.recentScore->createdAt);
+					std::strftime(date_fmt, 100, "%D %r", date_tm);
+					ImGui::Text("%.2f set on %s", score.time, date_fmt);
+					m_recent_score_tile->imdraw(sm);
+				}
+
+				ImGui::EndTable();
+			}
+		}
+		ImGui::EndPopup();
+	}
+}

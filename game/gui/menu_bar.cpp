@@ -98,7 +98,7 @@ void AppMenuBar::m_gui_verify_popup() {
 	}
 }
 
-void AppMenuBar::imdraw(std::string& info_msg) {
+void AppMenuBar::imdraw(std::string& info_msg, fsm* sm) {
 	const ImTextureID tiles = resource::get().imtex("assets/tiles.png");
 	sf::Texture& tiles_tex	= resource::get().tex("assets/tiles.png");
 
@@ -119,8 +119,13 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 	if (auth::get().authed() && !m_auth_unresolved()) {
 		ImGui::Image(resource::get().imtex("assets/gui/large_play.png"), ImVec2(26, 26));
 		ImGui::TextColored(sf::Color(228, 189, 255), "Welcome, %s!", auth::get().username().c_str());
+		if (ImGui::MenuItem("Profile")) {
+			m_self_modal.reset(new user_modal(auth::get().get_jwt().id));
+			m_self_modal->open();
+		}
 		if (ImGui::MenuItem("Logout")) {
 			auth::get().logout();
+			m_self_modal.reset();
 		}
 	} else {
 		// login menu
@@ -339,6 +344,10 @@ void AppMenuBar::imdraw(std::string& info_msg) {
 		if (ImGui::MenuItem("OK")) {
 			info_msg = "";
 		}
+	}
+
+	if (m_self_modal) {
+		m_self_modal->imdraw(sm);
 	}
 
 	ImGui::EndMainMenuBar();

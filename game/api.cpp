@@ -24,59 +24,44 @@ api &api::get() {
 	return instance;
 }
 
-api::level api::level_from_json(nlohmann::json lvl) {
-	api::level l{
-		.id			 = lvl["id"].get<int>(),
-		.author		 = lvl["author"],
-		.code		 = lvl.value("code", ""),
-		.title		 = lvl["title"],
-		.description = lvl["description"],
-		.createdAt	 = lvl["createdAt"].get<std::time_t>(),
-		.updatedAt	 = lvl["updatedAt"].get<std::time_t>(),
-		.downloads	 = lvl["downloads"].get<int>(),
-		.comments	 = lvl["comments"].get<int>(),
-		.likes		 = lvl["likes"].get<int>(),
-		.dislikes	 = lvl["dislikes"].get<int>(),
-	};
-	if (lvl.contains("myVote")) {
-		l.myVote = lvl["myVote"].get<int>();
-	}
-	if (lvl.contains("record")) {
-		l.record = lvl["record"].get<level_record>();
-	}
-	if (lvl.contains("records")) {
-		l.records = lvl["records"].get<int>();
-	}
-
-	float x			= 5.2f;
-	unsigned char y = x;
-	if (lvl.contains("myRecord")) {
-		l.myRecord = lvl["myRecord"].get<level_record>();
-	}
-	return l;
-}
-
-nlohmann::json api::level_to_json(api::level lvl) {
-	nlohmann::json ret;
-	ret["id"]		   = lvl.id;
-	ret["author"]	   = lvl.author;
-	ret["code"]		   = lvl.code;
-	ret["title"]	   = lvl.title;
-	ret["description"] = lvl.description;
-	ret["createdAt"]   = lvl.createdAt;
-	ret["updatedAt"]   = lvl.updatedAt;
-	ret["downloads"]   = lvl.downloads;
-	ret["comments"]	   = lvl.comments;
-	ret["likes"]	   = lvl.likes;
-	ret["dislikes"]	   = lvl.dislikes;
-	if (lvl.myVote)
-		ret["myVote"] = *lvl.myVote;
-	if (lvl.record)
-		ret["record"] = *lvl.record;
-	if (lvl.myRecord)
-		ret["myRecord"] = *lvl.myRecord;
-	ret["records"] = lvl.records;
-	return ret;
+std::future<api::user_stats_response> api::fetch_user_stats(int id) {
+	return std::async([this, id]() -> api::user_stats_response {
+		try {
+			if (auto res = m_cli.Get("/users/" + std::to_string(id))) {
+				nlohmann::json result = nlohmann::json::parse(res->body);
+				if (res->status == 200) {
+					user_stats_response rsp;
+					rsp.success = true;
+					rsp.stats	= result.get<user_stats>();
+					return rsp;
+				} else {
+					if (result.contains("error")) {
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error";
+					}
+				}
+			} else {
+				debug::log() << httplib::to_string(res.error()) << "\n";
+				throw "Could not connect to server";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.error	 = e
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.error	 = "Unknown error."
+			};
+		}
+	});
 }
 
 std::future<api::level_search_response> api::search_levels(api::level_search_query q) {
@@ -85,7 +70,6 @@ std::future<api::level_search_response> api::search_levels(api::level_search_que
 			nlohmann::json body = q;
 			body["limit"]		= q.rows * q.cols;
 			auth::get().add_jwt_to_body(body);
-			debug::log() << body.dump() << "\n";
 			if (auto res = m_cli.Post("/level/search", body.dump(), "application/json")) {
 				nlohmann::json result = nlohmann::json::parse(res->body);
 				if (res->status == 200) {
@@ -93,7 +77,7 @@ std::future<api::level_search_response> api::search_levels(api::level_search_que
 					rsp.cursor	= result["cursor"].get<int>();
 					rsp.success = true;
 					for (auto &level_json : result["levels"]) {
-						rsp.levels.push_back(level_from_json(level_json));
+						rsp.levels.push_back(level_json.get<api::level>());
 					}
 					return rsp;
 				} else {
@@ -327,7 +311,7 @@ std::future<api::level_response> api::download_level(int id) {
 					return {
 						.success = true,
 						.code	 = 200,
-						.level	 = level_from_json(result["level"]),
+						.level	 = result["level"].get<api::level>()
 					};
 				} else {
 					if (result.contains("error")) {
@@ -376,7 +360,7 @@ std::future<api::level_response> api::quickplay_level() {
 					return {
 						.success = true,
 						.code	 = 200,
-						.level	 = level_from_json(result["level"]),
+						.level	 = result["level"].get<api::level>(),
 					};
 				} else {
 					if (result.contains("error")) {
@@ -430,7 +414,7 @@ std::future<api::level_response> api::upload_level(::level l, const char *title,
 				nlohmann::json result = nlohmann::json::parse(res->body);
 				if (res->status == 200) {
 					nlohmann::json level = result["level"];
-					api::level l		 = level_from_json(level);
+					api::level l		 = level.get<api::level>();
 					return {
 						.success = true,
 						.code	 = 200,
@@ -488,7 +472,7 @@ std::future<api::vote_response> api::vote_level(api::level lvl, api::vote v) {
 				if (res->status == 200) {
 					return {
 						.success = true,
-						.level	 = level_from_json(result["level"]),
+						.level	 = result["level"].get<api::level>(),
 					};
 				} else {
 					return {
@@ -623,4 +607,85 @@ bool api::replay_search_query::operator==(const replay_search_query &other) cons
 
 bool api::replay_search_query::operator!=(const replay_search_query &other) const {
 	return !(other == *this);
+}
+
+void to_json(nlohmann::json &j, const api::user_stats &s) {
+	j = nlohmann::json{
+		{ "id", s.id },
+		{ "username", s.username },
+		{ "createdAt", s.createdAt },
+		{ "tier", s.tier },
+		{ "count", s.count },
+	};
+	if (s.recentLevel) {
+		j["recentLevel"] = *s.recentLevel;
+	}
+	if (s.recentScore) {
+		j["recentScore"] = *s.recentScore;
+	}
+}
+
+void from_json(const nlohmann::json &j, api::user_stats &s) {
+	s.id		= j.at("id").get<int>();
+	s.username	= j.at("username").get<std::string>();
+	s.createdAt = j.at("createdAt").get<std::time_t>();
+	s.tier		= j.at("tier").get<int>();
+	s.count		= j.at("count").get<api::user_stat_counts>();
+	if (j.contains("recentLevel")) {
+		s.recentLevel = j.at("recentLevel").get<api::level>();
+	}
+	if (j.contains("recentScore")) {
+		s.recentScore = j.at("recentScore").get<api::replay>();
+	}
+	if (j.contains("recentScoreLevel")) {
+		s.recentScoreLevel = j.at("recentScoreLevel").get<api::level>();
+	}
+}
+
+void from_json(const nlohmann::json &j, api::level &l) {
+	l.id		  = j["id"].get<int>();
+	l.author	  = j["author"];
+	l.code		  = j.value("code", "");
+	l.title		  = j["title"];
+	l.description = j["description"];
+	l.createdAt	  = j["createdAt"].get<std::time_t>();
+	l.updatedAt	  = j["updatedAt"].get<std::time_t>();
+	l.downloads	  = j["downloads"].get<int>();
+	l.comments	  = j["comments"].get<int>();
+	l.likes		  = j["likes"].get<int>();
+	l.dislikes	  = j["dislikes"].get<int>();
+	if (j.contains("myVote")) {
+		l.myVote = j["myVote"].get<int>();
+	}
+	if (j.contains("record")) {
+		l.record = j["record"].get<api::level_record>();
+	}
+	if (j.contains("records")) {
+		l.records = j["records"].get<int>();
+	}
+
+	if (j.contains("myRecord")) {
+		l.myRecord = j["myRecord"].get<api::level_record>();
+	}
+}
+
+void to_json(nlohmann::json &j, const api::level &l) {
+	j["id"]			 = l.id;
+	j["author"]		 = l.author;
+	j["code"]		 = l.code;
+	j["title"]		 = l.title;
+	j["description"] = l.description;
+	j["createdAt"]	 = l.createdAt;
+	j["updatedAt"]	 = l.updatedAt;
+	j["downloads"]	 = l.downloads;
+	j["comments"]	 = l.comments;
+	j["likes"]		 = l.likes;
+	j["dislikes"]	 = l.dislikes;
+	if (l.myVote)
+		j["myVote"] = *l.myVote;
+	if (l.record)
+		j["record"] = *l.record;
+	if (l.myRecord)
+		j["myRecord"] = *l.myRecord;
+	j["records"] = l.records;
 }

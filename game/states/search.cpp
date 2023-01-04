@@ -50,7 +50,7 @@ void search::process_event(sf::Event e) {
 }
 
 void search::imdraw(fsm* sm) {
-	m_menu_bar.imdraw(m_menu_info);
+	m_menu_bar.imdraw(m_menu_info, sm);
 
 	const float x_split = 0.26f;
 

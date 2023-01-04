@@ -425,7 +425,7 @@ void edit::imdraw(fsm* sm) {
 	sf::Vector2i wsz(resource::get().window().getSize());
 
 	// menu bar
-	m_menu_bar.imdraw(m_info_msg);
+	m_menu_bar.imdraw(m_info_msg, sm);
 
 	// controls
 	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
