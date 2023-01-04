@@ -19,6 +19,9 @@ public:
 private:
 	api::level m_lvl;
 
+	static int m_next_id;
+	int m_ex_id;   // for imgui id system
+
 	api_handle<api::replay_search_response> m_api_handle;
 
 	const char* m_sort_opts[4];	  // api sortBy options

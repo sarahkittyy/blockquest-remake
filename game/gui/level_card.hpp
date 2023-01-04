@@ -25,9 +25,13 @@ public:
 
 	void imdraw(fsm* sm);
 
+
 private:
+	static int m_next_id;
+	int m_ex_id;
+
 	sf::Color m_bg;
-	api::level& m_lvl;
+	api::level m_lvl;
 	std::optional<api::vote> m_last_vote;
 	tilemap m_tmap;	  // tilemap generated from the level data
 	sf::RenderTexture m_map_tex;

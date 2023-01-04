@@ -40,7 +40,7 @@ app.post('/replay/search/:levelId(\\d+)', checkAuth(), Replay.search);
 app.post('/comments/level/:levelId(\\d+)', Comment.get);
 app.post('/comments/new/:levelId(\\d+)', requireAuth(0), Comment.post);
 
-app.get('/users/:id(\\d+)', checkAuth(), User.get);
+app.post('/users/:id(\\d+)', checkAuth(), User.get);
 
 app.get('/token', requireAuth(0), (req: Request, res: Response) => {
 	return res.send(res.locals.token);

@@ -9,6 +9,8 @@
 #include "resource.hpp"
 #include "states/edit.hpp"
 
+int leaderboard_modal::m_next_id = 0;
+
 leaderboard_modal::leaderboard_modal(api::level& lvl)
 	: m_lvl(lvl),
 	  m_sort_opts{ "time", "author", "createdAt", "updatedAt" },
@@ -20,6 +22,8 @@ leaderboard_modal::leaderboard_modal(api::level& lvl)
 	auto order_it	  = std::find_if(std::begin(m_order_opts), std::end(m_order_opts),
 									 [this, replay_query](const char* str) { return std::string(str) == replay_query.order; });
 	m_order_selection = sort_it != std::end(m_order_opts) ? std::distance(std::begin(m_order_opts), order_it) : 0;
+
+	m_ex_id = m_next_id++;
 }
 
 leaderboard_modal::~leaderboard_modal() {
@@ -27,7 +31,8 @@ leaderboard_modal::~leaderboard_modal() {
 
 void leaderboard_modal::open() {
 	m_update_query();
-	ImGui::OpenPopup("###Leaderboard");
+	std::string modal_title = "###Leaderboard" + std::to_string(m_ex_id);
+	ImGui::OpenPopup(modal_title.c_str());
 }
 
 int leaderboard_modal::m_cpage() const {
@@ -73,10 +78,12 @@ void leaderboard_modal::m_update_query() {
 
 void leaderboard_modal::imdraw(fsm* sm) {
 	m_api_handle.poll();
-	bool dummy				= true;
-	std::string modal_title = m_lvl.title + " leaderboard###Leaderboard";
+	std::string modal_title = "###Leaderboard" + std::to_string(m_ex_id);
 	ImGuiWindowFlags flags	= ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings;
-	if (ImGui::BeginPopupModal(modal_title.c_str(), &dummy, flags)) {
+	if (ImGui::BeginPopup(modal_title.c_str(), flags)) {
+		if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+			ImGui::CloseCurrentPopup();
+		}
 		// query opts
 		ImGui::BeginDisabled(m_api_handle.fetching());
 		auto& replay_query = context::get().replay_search_query();

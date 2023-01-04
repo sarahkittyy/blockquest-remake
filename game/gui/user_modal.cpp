@@ -17,12 +17,11 @@ void user_modal::m_fetch() {
 
 void user_modal::open() {
 	m_fetch();
-	ImGui::OpenPopup("###UserStats");
 }
 
 void user_modal::imdraw(fsm* sm) {
+	if (!m_stats_handle.ready() && !m_stats_handle.fetching()) return;
 	m_stats_handle.poll();
-	bool dummy				= true;
 	std::string modal_title = "Stats###UserStats";
 	ImGuiWindowFlags flags	= ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings;
 
@@ -30,18 +29,21 @@ void user_modal::imdraw(fsm* sm) {
 		api::user_stats_response rsp = m_stats_handle.get();
 		if (rsp.success) {
 			modal_title = rsp.stats->username + " #" + std::to_string(m_id) + " " + modal_title;
-			if (rsp.stats->recentLevel)
+			if (rsp.stats->recentLevel && !m_recent_level_tile) {
 				m_recent_level_tile.reset(new ImGui::ApiLevelTile(*rsp.stats->recentLevel));
-			if (rsp.stats->recentScore && rsp.stats->recentScoreLevel)
+			}
+			if (rsp.stats->recentScore && rsp.stats->recentScoreLevel && !m_recent_score_tile) {
 				m_recent_score_tile.reset(new ImGui::ApiLevelTile(*rsp.stats->recentScoreLevel));
+			}
 		}
-	} else {
-		if (m_recent_level_tile)
-			m_recent_level_tile.reset();
 	}
 
-	ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_Always);
-	if (ImGui::BeginPopupModal(modal_title.c_str(), &dummy, flags)) {
+	bool open = m_stats_handle.ready();
+	if (ImGui::Begin(modal_title.c_str(), &open, flags)) {
+		if (!open && !m_stats_handle.fetching()) {
+			m_stats_handle.reset();
+			return ImGui::End();
+		}
 		if (!m_stats_handle.ready()) {
 			ImGui::Text("Loading...");
 		} else if (!m_stats_handle.get().success) {
@@ -121,6 +123,6 @@ void user_modal::imdraw(fsm* sm) {
 				ImGui::EndTable();
 			}
 		}
-		ImGui::EndPopup();
 	}
+	ImGui::End();
 }

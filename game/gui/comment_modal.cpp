@@ -6,6 +6,8 @@
 #include "gui/image_text_button.hpp"
 #include "resource.hpp"
 
+int comment_modal::m_next_id = 0;
+
 comment_modal::comment_modal(api::level& lvl)
 	: m_lvl(lvl),
 	  m_sort_opts{ "createdAt" },
@@ -18,6 +20,8 @@ comment_modal::comment_modal(api::level& lvl)
 									  [this, comment_query](const char* str) { return std::string(str) == comment_query.order; });
 	m_order_selection  = sort_it != std::end(m_order_opts) ? std::distance(std::begin(m_order_opts), order_it) : 1;
 
+	m_ex_id = m_next_id++;
+
 	std::memset(m_comment_buffer, 0, 251);
 }
 
@@ -26,7 +30,8 @@ comment_modal::~comment_modal() {
 
 void comment_modal::open() {
 	m_update_query();
-	ImGui::OpenPopup("###Comments");
+	std::string modal_title = "###Comments" + std::to_string(m_ex_id);
+	ImGui::OpenPopup(modal_title.c_str());
 }
 
 void comment_modal::m_update_query() {
@@ -72,10 +77,12 @@ int comment_modal::m_cpage() const {
 
 void comment_modal::imdraw(fsm* sm) {
 	m_fetch_handle.poll();
-	bool dummy				= true;
-	std::string modal_title = m_lvl.title + " comments###Comments";
+	std::string modal_title = "###Comments" + std::to_string(m_ex_id);
 	ImGuiWindowFlags flags	= ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings;
-	if (ImGui::BeginPopupModal(modal_title.c_str(), &dummy, flags)) {
+	if (ImGui::BeginPopup(modal_title.c_str(), flags)) {
+		if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+			ImGui::CloseCurrentPopup();
+		}
 		// query opts
 		ImGui::BeginDisabled(m_fetch_handle.fetching());
 		auto& comment_query = context::get().comment_search_query();

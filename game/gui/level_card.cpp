@@ -17,6 +17,8 @@
 
 namespace ImGui {
 
+int ApiLevelTile::m_next_id = 0;
+
 ApiLevelTile::ApiLevelTile(api::level& lvl, sf::Color bg)
 	: m_bg(bg),
 	  m_lvl(lvl),
@@ -31,6 +33,8 @@ ApiLevelTile::ApiLevelTile(api::level& lvl, sf::Color bg)
 	m_map_tex.clear(m_bg);
 	m_map_tex.draw(m_tmap);
 	m_map_tex.display();
+
+	m_ex_id = m_next_id++;
 }
 
 void ApiLevelTile::imdraw(fsm* sm) {
@@ -57,7 +61,7 @@ void ApiLevelTile::imdraw(fsm* sm) {
 	} else {
 		leaderboard_label << "No WR yet";
 	}
-	leaderboard_label << "###Leaderboard";
+	leaderboard_label << "###Leaderboard" << m_ex_id;
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/trophy.png"), leaderboard_label.str().c_str())) {
 		m_lb_modal.open();
 	}
@@ -67,11 +71,11 @@ void ApiLevelTile::imdraw(fsm* sm) {
 	ImVec2 uv0(0, 0), uv1(1, 1);
 	int fp				  = 4;
 	ImVec4 bg			  = ImVec4(1, 0, 0, 0);
-	std::string likes	  = std::to_string(m_lvl.likes) + "###LIKES";
-	std::string dislikes  = std::to_string(m_lvl.dislikes) + "###DISLIKES";
-	std::string downloads = std::to_string(m_lvl.downloads) + "###DOWNLOADS";
-	std::string comments  = std::to_string(m_lvl.comments) + "###COMMENTS";
-	std::string records	  = std::to_string(m_lvl.records) + "###RECORDS";
+	std::string likes	  = std::to_string(m_lvl.likes) + "###LIKES" + std::to_string(m_ex_id);
+	std::string dislikes  = std::to_string(m_lvl.dislikes) + "###DISLIKES" + std::to_string(m_ex_id);
+	std::string downloads = std::to_string(m_lvl.downloads) + "###DOWNLOADS" + std::to_string(m_ex_id);
+	std::string comments  = std::to_string(m_lvl.comments) + "###COMMENTS" + std::to_string(m_ex_id);
+	std::string records	  = std::to_string(m_lvl.records) + "###RECORDS" + std::to_string(m_ex_id);
 	ImU32 likes_tcol	  = ImGui::GetColorU32(sf::Color::Green);
 	ImU32 dislikes_tcol	  = ImGui::GetColorU32(sf::Color::Red);
 	bool authed			  = auth::get().authed();
@@ -158,6 +162,5 @@ void ApiLevelTile::imdraw(fsm* sm) {
 	ImGui::TextWrapped("%s", m_lvl.description.c_str());
 	ImGui::PopStyleColor();
 }
-
 
 }

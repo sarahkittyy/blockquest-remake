@@ -185,15 +185,15 @@ public:
 		std::time_t createdAt;
 		int tier;
 		user_stat_counts count;
-		std::optional<replay> recentScore;
-		std::optional<level> recentScoreLevel;
-		std::optional<level> recentLevel;
+		std::optional<api::replay> recentScore;
+		std::optional<api::level> recentScoreLevel;
+		std::optional<api::level> recentLevel;
 	};
 
 	struct user_stats_response {
 		bool success;
 		std::optional<std::string> error;
-		std::optional<user_stats> stats;
+		std::optional<api::user_stats> stats;
 	};
 
 	std::future<level_response> upload_level(::level l, const char* title, const char* description, bool override = false);

@@ -18,6 +18,10 @@ public:
 
 private:
 	api::level m_lvl;
+
+	static int m_next_id;
+	int m_ex_id;   // for imgui
+
 	api_handle<api::comment_search_response> m_fetch_handle;
 	api_handle<api::comment_response> m_post_handle;
 
