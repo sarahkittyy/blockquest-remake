@@ -156,7 +156,7 @@ void AppMenuBar::imdraw(std::string& info_msg, fsm* sm) {
 				const char* submit_text = m_login_handle.fetching() ? "Submitting...###LoginSubmit" : "Submit###LoginSubmit";
 				if (ImGui::Button(submit_text)) {
 					if (!m_login_handle.fetching())
-						m_login_handle.reset(auth::get().login(m_email, m_password));
+						m_login_handle.reset(auth::get().login(m_user_email, m_password));
 				}
 				ImGui::EndDisabled();
 				if (m_login_handle.ready() && m_login_handle.get().success) {
@@ -231,6 +231,11 @@ void AppMenuBar::imdraw(std::string& info_msg, fsm* sm) {
 			ImGui::PopID();
 		}
 		ImGui::EndTable();
+		// alt controls toggle
+		ImGui::Checkbox("BlockBros controls", &context::get().alt_controls());
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Left & right to climb ladders");
+		}
 		// volume controls
 		if (ImGui::SliderFloat("Music", &context::get().music_volume(), 0, 100, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
 			resource::get().reload_music_volume();

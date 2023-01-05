@@ -27,7 +27,7 @@ public:
 
 
 private:
-	static int m_next_id;
+	static int m_next_id;	// for imgui
 	int m_ex_id;
 
 	sf::Color m_bg;

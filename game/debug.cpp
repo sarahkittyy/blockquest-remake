@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 
 #include "imgui.h"
 #include "resource.hpp"
@@ -42,15 +43,12 @@ void debug::imdraw(sf::Time dt) {
 	char title[100];
 	std::snprintf(title, 100, "Debug Tools - %06.2f FPS###Debug", 1.f / m_last_dt.asSeconds());
 	if (ImGui::Begin(title, &m_open, flags)) {
-		m_displaying = true;
 
 		ImGui::Checkbox("Toggle debug draw", &m_draw_debug);
 		ImGui::Checkbox("Show demo window", &m_demo_open);
 
 		ImGui::TextWrapped("%s", m_data.str().c_str());
 		ImGui::TextWrapped("\n-- LOGS --\n%s", m_log.str().c_str());
-	} else {
-		m_displaying = false;
 	}
 	ImGui::End();
 }

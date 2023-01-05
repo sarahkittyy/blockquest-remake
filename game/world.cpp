@@ -53,7 +53,7 @@ world::world(level l, std::optional<replay> rp)
 		using namespace std::chrono_literals;
 		sf::Sound s(resource::get().sound_buffer("dash"));
 		while (!stoken.stop_requested()) {
-			if (m_dashing && m_player_grounded() && std::abs(m_xv) > phys.xv_max) {
+			if (m_dashing && m_player_grounded() && std::abs(m_xv) > phys.xv_max && !lost() && !won()) {
 				s.play();
 				auto& sp		= m_pmgr.spawn<particles::smoke>();
 				float grav_sign = m_flip_gravity ? -1 : 1;
@@ -528,31 +528,31 @@ bool world::update(sf::Time dt) {
 	//  debug::get().box(util::scale<float>(m_get_player_right_ghost_aabb(m_xp, m_yp), m_player.size().x));
 	//  debug::get().box(util::scale<float>(m_get_player_aabb(m_xp, m_yp), m_player.size().x));
 	//  debug::get().box(util::scale<float>(m_get_player_x_aabb(m_xp, m_yp), m_player.size().x));
-	debug::get().box(util::scale<float>(m_get_player_y_ghost_aabb(m_xp, m_yp), m_player.size().x));
+	// debug::get().box(util::scale<float>(m_get_player_y_ghost_aabb(m_xp, m_yp), m_player.size().x));
 
 
-	debug::get() << "dashing = " << m_dashing << "\n";
-	debug::get() << "airborne = " << m_time_airborne.asSeconds() << "\n";
-	debug::get() << "climbing = " << m_climbing << "\n";
-	debug::get() << "won = " << won() << "\n";
+	// debug::get() << "dashing = " << m_dashing << "\n";
+	// debug::get() << "airborne = " << m_time_airborne.asSeconds() << "\n";
+	// debug::get() << "climbing = " << m_climbing << "\n";
+	// debug::get() << "won = " << won() << "\n";
 
 	// some debug info
-	debug::get() << "dt = " << dt.asMilliseconds() << "ms\n";
-	debug::get() << "velocity = " << sf::Vector2f(m_xv, m_yv) << "\n";
-	debug::get() << "touching Y-: " << m_touching[int(dir::up)] << "\n";
-	debug::get() << "touching Y+: " << m_touching[int(dir::down)] << "\n";
-	debug::get() << "touching X-: " << m_touching[int(dir::left)] << "\n";
-	debug::get() << "touching X+: " << m_touching[int(dir::right)] << "\n";
+	// debug::get() << "dt = " << dt.asMilliseconds() << "ms\n";
+	// debug::get() << "velocity = " << sf::Vector2f(m_xv, m_yv) << "\n";
+	// debug::get() << "touching Y-: " << m_touching[int(dir::up)] << "\n";
+	// debug::get() << "touching Y+: " << m_touching[int(dir::down)] << "\n";
+	// debug::get() << "touching X-: " << m_touching[int(dir::left)] << "\n";
+	// debug::get() << "touching X+: " << m_touching[int(dir::right)] << "\n";
 
-	debug::get() << "mp u="
-				 << !!m_moving_platform_handle[0]
-				 << " d="
-				 << !!m_moving_platform_handle[2]
-				 << " r="
-				 << !!m_moving_platform_handle[1]
-				 << " l="
-				 << !!m_moving_platform_handle[3]
-				 << "\n";
+	// debug::get() << "mp u="
+	//<< !!m_moving_platform_handle[0]
+	//<< " d="
+	//<< !!m_moving_platform_handle[2]
+	//<< " r="
+	//<< !!m_moving_platform_handle[1]
+	//<< " l="
+	//<< !!m_moving_platform_handle[3]
+	//<< "\n";
 
 	// update the player's animation
 	m_update_animation();

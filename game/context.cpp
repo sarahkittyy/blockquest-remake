@@ -29,7 +29,8 @@ context::context()
 						.order	= "desc" }),
 	  m_sfx_volume(50.f),
 	  m_music_volume(50.f),
-	  m_fps_limit(120) {
+	  m_fps_limit(120),
+	  m_use_alt_ctrls(false) {
 	load_from_file("bq-r.json");
 	resource::get().window().setFramerateLimit(m_fps_limit);
 }
@@ -58,6 +59,10 @@ const int& context::fps_limit() const {
 	return m_fps_limit;
 }
 
+bool& context::alt_controls() {
+	return m_use_alt_ctrls;
+}
+
 std::string context::save() const {
 	nlohmann::json j;
 
@@ -78,7 +83,8 @@ std::string context::save() const {
 	j["screen_pos"]["x"] = resource::get().window().getPosition().x;
 	j["screen_pos"]["y"] = resource::get().window().getPosition().y;
 
-	j["fps_limit"] = m_fps_limit;
+	j["fps_limit"]	  = m_fps_limit;
+	j["alt_controls"] = m_use_alt_ctrls;
 
 	j["controls"] = settings::get().get_key_map();
 
@@ -116,6 +122,10 @@ void context::load(std::string data) {
 
 	if (j.contains("fps_limit")) {
 		j["fps_limit"].get_to(m_fps_limit);
+	}
+
+	if (j.contains("alt_controls")) {
+		j["alt_controls"].get_to(m_use_alt_ctrls);
 	}
 
 	if (j.contains("screen_size")) {

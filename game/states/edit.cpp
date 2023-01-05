@@ -404,7 +404,7 @@ sf::Vector2i edit::m_update_mouse_tile() {
 	mouse_pos = m_level().getInverseTransform().transformPoint(mouse_pos);
 
 	const sf::Vector2i mouse_tile = m_level().mouse_tile(mouse_pos);
-	debug::get() << mouse_tile << "\n";
+	// debug::get() << mouse_tile << "\n";
 	if (mouse_tile != m_old_mouse_tile) {
 		m_last_placed = { -1, -1 };
 		m_cursor.map().clear(m_old_mouse_tile.x, m_old_mouse_tile.y);

@@ -38,6 +38,9 @@ public:
 	float& music_volume();
 	float& sfx_volume();
 
+	// are we using alternate block-bros style controls?
+	bool& alt_controls();
+
 private:
 	context();
 	context(const context&) = delete;
@@ -50,4 +53,5 @@ private:
 	float m_sfx_volume;
 	float m_music_volume;
 	int m_fps_limit;
+	bool m_use_alt_ctrls;
 };
