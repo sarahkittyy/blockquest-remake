@@ -15,6 +15,7 @@
 #include "tilemap.hpp"
 
 class fsm;
+class user_modal;
 
 namespace ImGui {
 
@@ -38,6 +39,7 @@ private:
 
 	leaderboard_modal m_lb_modal;
 	comment_modal m_comment_modal;
+	std::unique_ptr<user_modal> m_user_modal;
 
 	api_handle<api::vote_response> m_vote_handle;
 };

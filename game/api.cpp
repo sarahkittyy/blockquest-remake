@@ -66,6 +66,48 @@ std::future<api::user_stats_response> api::fetch_user_stats(int id) {
 	});
 }
 
+std::future<api::user_stats_response> api::fetch_user_stats(std::string name) {
+	return std::async([this, name]() -> api::user_stats_response {
+		try {
+			nlohmann::json body;
+			auth::get().add_jwt_to_body(body);
+			if (auto res = m_cli.Post("/users/name/" + name, body.dump(), "application/json")) {
+				nlohmann::json result = nlohmann::json::parse(res->body);
+				if (res->status == 200) {
+					user_stats_response rsp;
+					rsp.success = true;
+					rsp.stats	= result.get<user_stats>();
+					return rsp;
+				} else {
+					if (result.contains("error")) {
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error";
+					}
+				}
+			} else {
+				debug::log() << httplib::to_string(res.error()) << "\n";
+				throw "Could not connect to server";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.error	 = e
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.error	 = "Unknown error."
+			};
+		}
+	});
+}
+
 std::future<api::level_search_response> api::search_levels(api::level_search_query q) {
 	return std::async([this, q]() -> api::level_search_response {
 		try {

@@ -41,6 +41,7 @@ app.post('/comments/level/:levelId(\\d+)', Comment.get);
 app.post('/comments/new/:levelId(\\d+)', requireAuth(0), Comment.post);
 
 app.post('/users/:id(\\d+)', checkAuth(), User.get);
+app.post('/users/name/:name', checkAuth(), User.getByName);
 
 app.get('/token', requireAuth(0), (req: Request, res: Response) => {
 	return res.send(res.locals.token);

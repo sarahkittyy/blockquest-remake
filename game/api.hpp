@@ -208,6 +208,7 @@ public:
 	std::future<api::replay_upload_response> upload_replay(::replay rp);
 
 	std::future<api::user_stats_response> fetch_user_stats(int id);
+	std::future<api::user_stats_response> fetch_user_stats(std::string name);
 
 	// get the current app version
 	const char* version() const;

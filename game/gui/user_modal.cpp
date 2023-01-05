@@ -3,8 +3,18 @@
 #include "fsm.hpp"
 #include "resource.hpp"
 
+int user_modal::m_next_id = 0;
+
 user_modal::user_modal(int id)
-	: m_id(id) {
+	: m_id(id),
+	  m_name("") {
+	m_ex_id = m_next_id++;
+}
+
+user_modal::user_modal(std::string name)
+	: m_id(-1),
+	  m_name(name) {
+	m_ex_id = m_next_id++;
 }
 
 user_modal::~user_modal() {
@@ -12,7 +22,11 @@ user_modal::~user_modal() {
 
 void user_modal::m_fetch() {
 	if (m_stats_handle.fetching()) return;
-	m_stats_handle.reset(api::get().fetch_user_stats(m_id));
+	if (m_id != -1) {
+		m_stats_handle.reset(api::get().fetch_user_stats(m_id));
+	} else if (m_name.length() != 0) {
+		m_stats_handle.reset(api::get().fetch_user_stats(m_name));
+	}
 }
 
 void user_modal::open() {
@@ -28,7 +42,7 @@ void user_modal::imdraw(fsm* sm) {
 	if (m_stats_handle.ready()) {
 		api::user_stats_response rsp = m_stats_handle.get();
 		if (rsp.success) {
-			modal_title = rsp.stats->username + " #" + std::to_string(m_id) + " " + modal_title;
+			modal_title = rsp.stats->username + " #" + std::to_string(rsp.stats->id) + " " + modal_title;
 			if (rsp.stats->recentLevel && !m_recent_level_tile) {
 				m_recent_level_tile.reset(new ImGui::ApiLevelTile(*rsp.stats->recentLevel));
 			}
@@ -37,6 +51,8 @@ void user_modal::imdraw(fsm* sm) {
 			}
 		}
 	}
+
+	modal_title += std::to_string(m_ex_id);
 
 	bool open = m_stats_handle.ready();
 	if (ImGui::Begin(modal_title.c_str(), &open, flags)) {

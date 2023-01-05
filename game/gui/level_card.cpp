@@ -8,6 +8,7 @@
 #include "auth.hpp"
 #include "context.hpp"
 #include "fsm.hpp"
+#include "gui/user_modal.hpp"
 #include "states/edit.hpp"
 #include "util.hpp"
 
@@ -39,9 +40,22 @@ ApiLevelTile::ApiLevelTile(api::level& lvl, sf::Color bg)
 
 void ApiLevelTile::imdraw(fsm* sm) {
 	// title / auth
-	ImGui::PushStyleColor(ImGuiCol_Text, 0xFB8CABFF);
-	ImGui::Text("%s (%s) #%d", m_lvl.title.c_str(), m_lvl.author.c_str(), m_lvl.id);
-	ImGui::PopStyleColor();
+	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFB8CABFF), "%s", m_lvl.title.c_str());
+	ImGui::SameLine();
+	ImGui::BeginGroup();
+	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFFFFFFFF), "(%s)", m_lvl.author.c_str());
+	ImGui::SameLine();
+	ImGui::Image(resource::get().imtex("assets/gui/play.png"), ImVec2(16, 16));
+	ImGui::EndGroup();
+	if (ImGui::IsItemHovered()) {
+		ImGui::SetTooltip("View player profile");
+		if (ImGui::IsMouseClicked(0)) {
+			m_user_modal.reset(new user_modal(m_lvl.author));
+			m_user_modal->open();
+		}
+	}
+	ImGui::SameLine();
+	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFB8CABFF), "#%d", m_lvl.id);
 	ImVec2 ip = ImGui::GetCursorScreenPos();
 	ImGui::Image(m_map_tex);
 	if (ImGui::IsItemHovered()) {
@@ -146,6 +160,7 @@ void ApiLevelTile::imdraw(fsm* sm) {
 
 	m_lb_modal.imdraw(sm);
 	m_comment_modal.imdraw(sm);
+	if (m_user_modal) m_user_modal->imdraw(sm);
 
 	// extra info
 

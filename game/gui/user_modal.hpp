@@ -12,6 +12,7 @@ class fsm;
 class user_modal {
 public:
 	user_modal(int id);
+	user_modal(std::string name);
 	~user_modal();
 
 	void open();
@@ -19,6 +20,11 @@ public:
 
 private:
 	int m_id;	// user id to fetch
+
+	static int m_next_id;
+	int m_ex_id;   // for imgui
+
+	std::string m_name;	  // username to fetch
 	api_handle<api::user_stats_response> m_stats_handle;
 
 	std::unique_ptr<ImGui::ApiLevelTile> m_recent_level_tile;
