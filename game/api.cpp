@@ -27,7 +27,7 @@ api &api::get() {
 std::future<api::user_stats_response> api::fetch_user_stats(int id) {
 	return std::async([this, id]() -> api::user_stats_response {
 		try {
-			nlohmann::json body;
+			nlohmann::json body = nlohmann::json::object();
 			auth::get().add_jwt_to_body(body);
 			if (auto res = m_cli.Post("/users/" + std::to_string(id), body.dump(), "application/json")) {
 				nlohmann::json result = nlohmann::json::parse(res->body);
@@ -69,7 +69,7 @@ std::future<api::user_stats_response> api::fetch_user_stats(int id) {
 std::future<api::user_stats_response> api::fetch_user_stats(std::string name) {
 	return std::async([this, name]() -> api::user_stats_response {
 		try {
-			nlohmann::json body;
+			nlohmann::json body = nlohmann::json::object();
 			auth::get().add_jwt_to_body(body);
 			if (auto res = m_cli.Post("/users/name/" + name, body.dump(), "application/json")) {
 				nlohmann::json result = nlohmann::json::parse(res->body);
@@ -509,7 +509,7 @@ std::future<api::vote_response> api::vote_level(api::level lvl, api::vote v) {
 			url += std::to_string(lvl.id);
 			url += "/";
 			url += v == vote::LIKE ? "like" : "dislike";
-			nlohmann::json body;
+			nlohmann::json body = nlohmann::json::object();
 			auth::get().add_jwt_to_body(body);
 			if (auto res = m_cli.Post(url, body.dump(), "application/json")) {
 				nlohmann::json result = nlohmann::json::parse(res->body);
