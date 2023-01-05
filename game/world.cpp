@@ -920,9 +920,14 @@ bool world::m_can_player_wallkick(dir d, bool keys_pressed) const {
 	bool jump_this_frame  = !m_last_frame.jump && m_this_frame.jump;
 	bool just_keyed		  = !keyed_last_frame && keyed_this_frame;
 
-	bool key_condition = !keys_pressed || (context::get().alt_controls() ? (jump_this_frame) : ((just_keyed || jump_this_frame)));
+	bool key_condition = !keys_pressed || just_keyed || jump_this_frame;
 
-	return key_condition && !m_player_grounded() &&
+	bool alt_no_ladder_jump_cond = true;
+	if (context::get().alt_controls()) {   // disable walljumping against ladders with l/r in the alt control scheme
+		alt_no_ladder_jump_cond = !m_against_ladder(d == dir::left ? dir::right : dir::left) || jump_this_frame;
+	}
+
+	return key_condition && alt_no_ladder_jump_cond && !m_player_grounded() &&
 		   m_test_touching_any(d == dir::left ? dir::right : dir::left, [](tile t) {
 			   return t.solid() && !t.blocks_wallkicks();
 		   });
