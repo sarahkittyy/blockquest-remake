@@ -1,5 +1,6 @@
 #include "world.hpp"
 
+#include "context.hpp"
 #include "debug.hpp"
 #include "imgui_internal.h"
 #include "util.hpp"
@@ -146,6 +147,8 @@ void world::step(sf::Time dt) {
 	// -1 if gravity is flipped. used for y velocity calculations
 	float gravity_sign = m_flip_gravity ? -1 : 1;
 
+	bool alt_controls = context::get().alt_controls();
+
 	m_cstep++;
 
 	if (!m_playback && !m_dead) m_replay.push(m_this_frame);
@@ -221,7 +224,9 @@ void world::step(sf::Time dt) {
 			m_climbing_facing = dir::right;
 			m_yv			  = 0;
 		} else if (m_climbing && m_against_ladder(dir::left) && m_last_frame.right) {
-			m_climbing = false;
+			if (!alt_controls || m_player_grounded()) m_climbing = false;
+		} else if (m_climbing && alt_controls) {
+			// no op
 		} else if (!m_this_frame.left) {
 			// normal acceleration
 			if (m_xv < 0 && !on_ice) {
@@ -250,8 +255,10 @@ void world::step(sf::Time dt) {
 			m_climbing		  = true;
 			m_climbing_facing = dir::left;
 			m_yv			  = 0;
-		} else if (m_climbing && m_against_ladder(dir::right) && m_last_frame.right) {
-			m_climbing = false;
+		} else if (m_climbing && m_against_ladder(dir::right) && m_last_frame.left) {
+			if (!alt_controls || m_player_grounded()) m_climbing = false;
+		} else if (m_climbing && alt_controls) {
+			// no op
 		} else if (!m_this_frame.right) {
 			// normal acceleration
 			if (m_xv > 0 && !on_ice) {
@@ -285,6 +292,7 @@ void world::step(sf::Time dt) {
 	}
 
 	if (m_this_frame.jump) {
+		bool dismount_keyed = m_climbing && alt_controls && (m_climbing_facing == dir::left ? m_this_frame.right : m_this_frame.left) && m_this_frame.jump;
 		if (!m_jumping && !m_climbing && m_player_grounded_ago(sf::milliseconds(phys.coyote_millis)) && !m_tile_above_player()) {
 			m_yv = -phys.jump_v * gravity_sign;
 			// so that we can't jump twice :)
@@ -293,6 +301,8 @@ void world::step(sf::Time dt) {
 			resource::get().play_sound("jump");
 			// to prevent sticking
 			m_yp -= 0.01f * gravity_sign;
+		} else if (m_climbing && !m_last_frame.jump && dismount_keyed) {
+			m_climbing = false;
 		} else if (m_climbing && !m_last_frame.jump && m_can_player_wallkick(mirror(m_climbing_facing), false)) {
 			m_player_wallkick(mirror(m_climbing_facing));
 		}
@@ -304,24 +314,46 @@ void world::step(sf::Time dt) {
 		}
 	}
 
-	if (m_climbing) {	// up and down controls while climbing
-		if (m_this_frame.up) {
-			m_yv -= phys.climb_ya * dt.asSeconds() * gravity_sign;
-			// to prevent sticking
-			if (m_player_grounded())
-				m_yp -= 0.01f * gravity_sign;
-		} else if (m_this_frame.down) {
-			m_yv += phys.climb_ya * dt.asSeconds() * gravity_sign;
-		} else {
-			if (m_yv > (phys.climb_ya / 2.f) * dt.asSeconds()) {
-				m_yv -= phys.climb_ya * dt.asSeconds();
-			} else if (m_yv < -(phys.climb_ya / 2.f) * dt.asSeconds()) {
-				m_yv += phys.climb_ya * dt.asSeconds();
+	if (m_climbing) {		   // up and down controls while climbing
+		if (!alt_controls) {   // DEFAULT CONTROLS
+			if (m_this_frame.up) {
+				m_yv -= phys.climb_ya * dt.asSeconds() * gravity_sign;
+				// to prevent sticking
+				if (m_player_grounded())
+					m_yp -= 0.01f * gravity_sign;
+			} else if (m_this_frame.down) {
+				m_yv += phys.climb_ya * dt.asSeconds() * gravity_sign;
 			} else {
-				m_yv = 0;
+				if (m_yv > (phys.climb_ya / 2.f) * dt.asSeconds()) {
+					m_yv -= phys.climb_ya * dt.asSeconds();
+				} else if (m_yv < -(phys.climb_ya / 2.f) * dt.asSeconds()) {
+					m_yv += phys.climb_ya * dt.asSeconds();
+				} else {
+					m_yv = 0;
+				}
 			}
+			m_yv = util::clamp(m_yv, -phys.climb_yv_max, phys.climb_yv_max);
+		} else {   // BLOCKBROS CONTROLS
+			bool v_up_keyed	  = m_climbing_facing == dir::left ? m_this_frame.left : m_this_frame.right;
+			bool v_down_keyed = m_climbing_facing == dir::left ? m_this_frame.right : m_this_frame.left;
+			if (v_up_keyed) {
+				m_yv -= phys.climb_ya * dt.asSeconds() * gravity_sign;
+				// to prevent sticking
+				if (m_player_grounded())
+					m_yp -= 0.01f * gravity_sign;
+			} else if (v_down_keyed) {
+				m_yv += phys.climb_ya * dt.asSeconds() * gravity_sign;
+			} else {
+				if (m_yv > (phys.climb_ya / 2.f) * dt.asSeconds()) {
+					m_yv -= phys.climb_ya * dt.asSeconds();
+				} else if (m_yv < -(phys.climb_ya / 2.f) * dt.asSeconds()) {
+					m_yv += phys.climb_ya * dt.asSeconds();
+				} else {
+					m_yv = 0;
+				}
+			}
+			m_yv = util::clamp(m_yv, -phys.climb_yv_max, phys.climb_yv_max);
 		}
-		m_yv = util::clamp(m_yv, -phys.climb_yv_max, phys.climb_yv_max);
 	}
 	/////////////////////
 
@@ -885,9 +917,12 @@ bool world::m_against_ladder(dir d) const {
 bool world::m_can_player_wallkick(dir d, bool keys_pressed) const {
 	bool keyed_last_frame = d == dir::left ? m_last_frame.left : m_last_frame.right;
 	bool keyed_this_frame = d == dir::left ? m_this_frame.left : m_this_frame.right;
+	bool jump_this_frame  = !m_last_frame.jump && m_this_frame.jump;
 	bool just_keyed		  = !keyed_last_frame && keyed_this_frame;
 
-	return (!keys_pressed || just_keyed) && !m_player_grounded() &&
+	bool key_condition = !keys_pressed || (context::get().alt_controls() ? (jump_this_frame) : ((just_keyed || jump_this_frame)));
+
+	return key_condition && !m_player_grounded() &&
 		   m_test_touching_any(d == dir::left ? dir::right : dir::left, [](tile t) {
 			   return t.solid() && !t.blocks_wallkicks();
 		   });

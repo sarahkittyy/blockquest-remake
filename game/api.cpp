@@ -31,7 +31,6 @@ std::future<api::user_stats_response> api::fetch_user_stats(int id) {
 			auth::get().add_jwt_to_body(body);
 			if (auto res = m_cli.Post("/users/" + std::to_string(id), body.dump(), "application/json")) {
 				nlohmann::json result = nlohmann::json::parse(res->body);
-				std::cout << result.dump(4) << std::endl;
 				if (res->status == 200) {
 					user_stats_response rsp;
 					rsp.success = true;
