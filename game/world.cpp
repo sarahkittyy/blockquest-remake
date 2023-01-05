@@ -148,6 +148,7 @@ void world::step(sf::Time dt) {
 	float gravity_sign = m_flip_gravity ? -1 : 1;
 
 	bool alt_controls = context::get().alt_controls();
+	if (m_playback) alt_controls = m_playback->alt();
 
 	m_cstep++;
 

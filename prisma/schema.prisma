@@ -78,6 +78,7 @@ model UserLevelScore {
 	time		Float
 	version		String		@db.VarChar(10)
 	replay		Bytes
+	alt			Boolean		@default(false)
 
 	@@id([id, userId, levelId])
 }

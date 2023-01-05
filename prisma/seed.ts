@@ -83,7 +83,7 @@ async function fakeScore(user: User, level: Level) {
 		data: {
 			user: { connect: { id: user.id } },
 			level: { connect: { id: level.id } },
-			time: Math.floor(Math.random() * 10) + 1,
+			time: sampleScore.time,
 			replay: Buffer.from(sampleScore.replay, 'base64'),
 			version: 'vSeeded',
 		},

@@ -110,6 +110,7 @@ export interface IReplayHeader {
 	levelId: number;
 	created: Date;
 	user: string;
+	alt: boolean;
 	time: number;
 }
 
@@ -129,9 +130,10 @@ export function decodeRawReplay(bin: Buffer | undefined): IReplayData | undefine
 			.join('');
 		const levelId: number = bin.readInt32LE(12);
 		const created: number = bin.readInt32LE(16);
-		const user: string = [...bin.toString('ascii', 20, 20 + 60)]
+		const user: string = [...bin.toString('ascii', 20, 20 + 59)]
 			.filter((v) => v.charCodeAt(0) != 0)
 			.join('');
+		const alt: boolean = bin.readInt8(79) > 0;
 		const time: number = bin.readFloatLE(80);
 		// bits 84+ are for the input data
 		// 3 bytes = 4 input states
@@ -190,6 +192,7 @@ export function decodeRawReplay(bin: Buffer | undefined): IReplayData | undefine
 				levelId,
 				created: new Date(created * 1000),
 				user,
+				alt,
 				time,
 			},
 			inputs,
@@ -223,6 +226,7 @@ export function toReplayResponse(replay: UserLevelScoreRunner): IReplayResponse 
 		version: replay.version,
 		createdAt: replay.createdAt.getTime() / 1000,
 		updatedAt: replay.updatedAt.getTime() / 1000,
+		alt: replay.alt,
 	};
 }
 

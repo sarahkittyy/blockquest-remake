@@ -99,6 +99,8 @@ private:
 	sf::Vector2i m_update_mouse_tile();	  // update the editor cursor
 	sf::Vector2i m_last_placed;			  // the position of the last clicked tile
 
+	bool m_mouse_pressed(sf::Mouse::Button btn) const;
+
 	bool m_test_playing() const;
 	std::unique_ptr<world> m_test_play_world;
 	sf::Text m_timer_text;

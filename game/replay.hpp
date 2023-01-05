@@ -37,13 +37,15 @@ public:
 
 	size_t size() const;		  // get the amount of input states stored
 	size_t serial_size() const;	  // get the amount of bytes required to store the whole compressed replay
+	bool alt() const;
 
 	// replay header information
 	struct header {
 		char version[12];	// the version this replay was made in
 		int32_t levelId;	// the level id this was played on, or -1 if none
 		int32_t created;	// when was this replay created
-		char user[60];		// the user who made this replay
+		char user[59];		// the user who made this replay
+		char alt;			// alt control scheme?
 		float time;			// duration in seconds
 	};
 
@@ -61,6 +63,7 @@ public:
 
 private:
 	std::vector<input_state> m_frames;
+	std::optional<api::replay> m_rpl;	// api replay if initialized in that way
 
 	header m_h;
 

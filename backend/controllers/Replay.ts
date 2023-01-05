@@ -54,6 +54,7 @@ export interface IReplayResponse {
 	raw: string;
 	createdAt: number;
 	updatedAt: number;
+	alt: boolean;
 }
 
 // replay controller
@@ -81,6 +82,7 @@ export default class Replay {
 						replay: buf,
 						time: data.header.time,
 						version: data.header.version,
+						alt: data.header.alt,
 					},
 				});
 			}

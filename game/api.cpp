@@ -1,6 +1,7 @@
 #include "api.hpp"
 
 #include "auth.hpp"
+#include "context.hpp"
 #include "debug.hpp"
 #include "level.hpp"
 #include "replay.hpp"
@@ -612,7 +613,8 @@ bool api::replay::operator==(const api::replay &other) const {
 		   other.levelId == levelId &&
 		   other.time == time &&
 		   other.user == user &&
-		   other.version == version;
+		   other.version == version &&
+		   other.alt == alt;
 }
 
 bool api::replay::operator!=(const api::replay &other) const {

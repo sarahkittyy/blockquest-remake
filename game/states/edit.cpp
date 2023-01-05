@@ -147,6 +147,10 @@ void edit::process_event(sf::Event e) {
 	}
 }
 
+bool edit::m_mouse_pressed(sf::Mouse::Button btn) const {
+	return sf::Mouse::isButtonPressed(btn) && resource::get().window().hasFocus();
+}
+
 void edit::update(fsm* sm, sf::Time dt) {
 	sf::Vector2i mouse_tile = m_update_mouse_tile();
 
@@ -164,7 +168,7 @@ void edit::update(fsm* sm, sf::Time dt) {
 
 	// if we're not on gui, and on the map, and ready to place a tile
 	if (!ImGui::GetIO().WantCaptureMouse &&
-		sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
+		m_mouse_pressed(sf::Mouse::Left) &&
 		!m_test_playing() &&
 		m_level().map().in_bounds(mouse_tile)) {
 		// metadata check
@@ -742,7 +746,7 @@ void edit::m_gui_controls(fsm* sm) {
 	///////////////// UPLOAD LOGIC END ////////////////////////
 	ImGui::Separator();
 	if (m_loaded_replay) {
-		ImGui::Text("Replay: %.2f by %s", m_loaded_replay->get_time(), m_loaded_replay->get_user());
+		ImGui::Text("Replay: %.2f by %s%s", m_loaded_replay->get_time(), m_loaded_replay->get_user(), m_loaded_replay->alt() ? " (bb controls)" : "");
 		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/erase.png"), "Unload###UL")) {
 			m_loaded_replay.reset();
 		}

@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "util.hpp"
+#include "context.hpp"
 
 #define CHECK_BIT(v, p) ((v) & (1 << (p)))
 
@@ -64,6 +65,11 @@ float replay::get_time() const {
 	return size() * timestep.asSeconds();
 }
 
+bool replay::alt() const {
+	if (m_rpl) return m_rpl->alt;
+	else return m_h.alt;
+}
+
 std::time_t replay::get_created() const {
 	return m_h.created;
 }
@@ -88,6 +94,7 @@ bool replay::serialize(char* buf, size_t buf_sz) const {
 	}
 	replay::header h = m_h;
 	h.time			 = get_time();
+	h.alt = context::get().alt_controls();
 	// serialize the header first
 	std::memcpy(buf, (void*)(&h), sizeof(header));
 	buf += sizeof(header);

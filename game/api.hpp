@@ -48,7 +48,8 @@ public:
 		std::string raw;
 		std::time_t createdAt;
 		std::time_t updatedAt;
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, user, levelId, time, version, raw, createdAt, updatedAt);
+		bool alt;
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, user, levelId, time, version, raw, createdAt, updatedAt, alt);
 		bool operator==(const replay& other) const;
 		bool operator!=(const replay& other) const;
 	};
