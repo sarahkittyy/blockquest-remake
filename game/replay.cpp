@@ -18,6 +18,7 @@ replay::replay() {
 replay::replay(api::replay rpl)
 	: replay() {
 	deserialize_b64(rpl.raw);
+	m_rpl	 = rpl;
 	m_h.alt	 = rpl.alt;
 	m_h.time = rpl.time;
 }
