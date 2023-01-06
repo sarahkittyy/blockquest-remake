@@ -3,8 +3,8 @@
 #include <cmath>
 #include <cstring>
 
-#include "util.hpp"
 #include "context.hpp"
+#include "util.hpp"
 
 #define CHECK_BIT(v, p) ((v) & (1 << (p)))
 
@@ -18,6 +18,8 @@ replay::replay() {
 replay::replay(api::replay rpl)
 	: replay() {
 	deserialize_b64(rpl.raw);
+	m_h.alt	 = rpl.alt;
+	m_h.time = rpl.time;
 }
 
 void replay::m_expand() {
@@ -66,8 +68,10 @@ float replay::get_time() const {
 }
 
 bool replay::alt() const {
-	if (m_rpl) return m_rpl->alt;
-	else return m_h.alt;
+	if (m_rpl)
+		return m_rpl->alt;
+	else
+		return m_h.alt;
 }
 
 std::time_t replay::get_created() const {
@@ -94,7 +98,7 @@ bool replay::serialize(char* buf, size_t buf_sz) const {
 	}
 	replay::header h = m_h;
 	h.time			 = get_time();
-	h.alt = context::get().alt_controls();
+	h.alt			 = context::get().alt_controls();
 	// serialize the header first
 	std::memcpy(buf, (void*)(&h), sizeof(header));
 	buf += sizeof(header);
