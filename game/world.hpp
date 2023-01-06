@@ -42,6 +42,8 @@ private:
 	void m_init_world();	  // sets up tilemaps, the character, the game, and the b2d physics
 	void m_restart_world();	  // puts the player at the start, resets moving obstacles
 
+	bool m_alt_controls() const;   // are we using alt controls?
+
 	bool m_has_focus;	// does the window have focus rn
 
 	tilemap m_tmap;	  // tilemap of all static, unmoving tiles.kk, ty

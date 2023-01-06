@@ -143,12 +143,17 @@ void world::process_event(sf::Event e) {
 	}
 }
 
+bool world::m_alt_controls() const {
+	if (m_playback.has_value())
+		return m_playback->alt();
+	else
+		return context::get().alt_controls();
+}
+
 void world::step(sf::Time dt) {
 	// -1 if gravity is flipped. used for y velocity calculations
 	float gravity_sign = m_flip_gravity ? -1 : 1;
-
-	bool alt_controls = context::get().alt_controls();
-	if (m_playback) alt_controls = m_playback->alt();
+	bool alt_controls  = m_alt_controls();
 
 	m_cstep++;
 
@@ -924,7 +929,7 @@ bool world::m_can_player_wallkick(dir d, bool keys_pressed) const {
 	bool key_condition = !keys_pressed || just_keyed || jump_this_frame;
 
 	bool alt_no_ladder_jump_cond = true;
-	if (context::get().alt_controls()) {   // disable walljumping against ladders with l/r in the alt control scheme
+	if (m_alt_controls()) {	  // disable walljumping against ladders with l/r in the alt control scheme
 		alt_no_ladder_jump_cond = !m_against_ladder(d == dir::left ? dir::right : dir::left) || jump_this_frame;
 	}
 

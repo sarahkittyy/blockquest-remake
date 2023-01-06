@@ -69,7 +69,7 @@ float replay::get_time() const {
 }
 
 bool replay::alt() const {
-	if (m_rpl)
+	if (m_rpl.has_value())
 		return m_rpl->alt;
 	else
 		return m_h.alt;
