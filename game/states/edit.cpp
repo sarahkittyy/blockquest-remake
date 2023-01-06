@@ -79,6 +79,13 @@ edit::edit()
 	m_border.set_editor_view(true);
 	m_stroke_map.set_editor_view(true);
 
+	m_bg.setTexture(resource::get().tex("assets/bg.png"));
+	m_bg.setColor(sf::Color(255, 255, 255, 128));
+	m_bg.setOrigin(m_bg.getLocalBounds().width / 2.f, m_bg.getLocalBounds().height / 2.f);
+	m_bg.rotate(33.f);
+	m_bg.setScale(4.f, 4.f);
+	m_bg.setPosition(sf::Vector2f(resource::get().window().getSize()) * 0.5f);
+
 	for (int i = 0; i < 32; ++i) {
 		m_border.set(0, i, tile::block);
 		m_border.set(33, i, tile::block);
@@ -958,6 +965,7 @@ const char* edit::m_cursor_description(edit::cursor_type c) const {
 
 void edit::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	s.transform *= getTransform();
+	t.draw(m_bg, s);
 	t.draw(m_map, s);
 }
 }

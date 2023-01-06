@@ -31,6 +31,8 @@ private:
 	sf::RenderTexture m_rt;
 	sf::Sprite m_map;
 
+	sf::Sprite m_bg;
+
 	ImGui::AppMenuBar m_menu_bar;
 
 	void draw(sf::RenderTarget&, sf::RenderStates) const;
