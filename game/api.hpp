@@ -38,9 +38,14 @@ public:
 		std::optional<level_record> myRecord;
 		int records;
 		std::optional<int> myVote;
+		std::optional<int> verificationId;
+		inline bool verified() const {
+			return verificationId.has_value();
+		}
 	};
 
 	struct replay {
+		int id;
 		std::string user;
 		int levelId;
 		float time;
@@ -49,7 +54,7 @@ public:
 		std::time_t createdAt;
 		std::time_t updatedAt;
 		bool alt;
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, user, levelId, time, version, raw, createdAt, updatedAt, alt);
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, id, user, levelId, time, version, raw, createdAt, updatedAt, alt);
 		bool operator==(const replay& other) const;
 		bool operator!=(const replay& other) const;
 	};
@@ -197,7 +202,7 @@ public:
 		std::optional<api::user_stats> stats;
 	};
 
-	std::future<level_response> upload_level(::level l, const char* title, const char* description, bool override = false);
+	std::future<level_response> upload_level(::level l, ::replay verify, const char* title, const char* description, bool override = false);
 	std::future<level_response> download_level(int id);
 	std::future<level_response> quickplay_level();
 	std::future<vote_response> vote_level(api::level lvl, vote v);

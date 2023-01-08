@@ -219,6 +219,7 @@ export function toCommentResponse(comment: UserLevelCommentPoster): ICommentResp
 
 export function toReplayResponse(replay: UserLevelScoreRunner): IReplayResponse {
 	return {
+		id: replay.id,
 		user: replay.user.name,
 		levelId: replay.levelId,
 		raw: replay.replay.toString('base64'),
@@ -276,6 +277,9 @@ export function toLevelResponse(lvl: LevelMetadataIncluded, userId?: number): IL
 		records: lvl.scores.length,
 		comments: lvl._count.comments,
 		myVote: userId != null ? userVote(userId, lvl.votes) : undefined,
+		...(lvl.verificationId != null && {
+			verificationId: lvl.verificationId,
+		}),
 	};
 }
 

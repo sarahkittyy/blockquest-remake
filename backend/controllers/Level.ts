@@ -21,6 +21,7 @@ import {
 	validate,
 	validateOrReject,
 } from 'class-validator';
+import { uploadReplay } from './Replay';
 
 const SortableFields = [
 	'id',
@@ -107,6 +108,7 @@ export interface ILevelResponse {
 	records: number;
 	comments: number;
 	myVote?: 1 | 0 | -1;
+	verificationId?: number;
 }
 
 /* what is returned from the search endpoint */
@@ -352,9 +354,9 @@ export default class Level {
 			return res.status(400).send({ error: 'Description too long! Max 256 characters' });
 		}
 
-		const user = await prisma.user.findFirst({
+		const user = await prisma.user.findUnique({
 			where: {
-				name: token.username,
+				id: token.id,
 			},
 			include: { levels: true },
 		});
@@ -375,6 +377,16 @@ export default class Level {
 			}
 		}
 
+		const verificationb64: string | undefined = req.body.verification;
+		if (verificationb64 == null) {
+			return res.status(400).send({ error: 'You must verify a level before posting it!' });
+		}
+		const verification: Buffer = Buffer.from(verificationb64, 'base64');
+		const replayData: tools.IReplayData | undefined = tools.decodeRawReplay(verification);
+		if (replayData == null) {
+			return res.status(400).send({ error: 'Invalid level verification.' });
+		}
+
 		const existingLevel = await prisma.level.findFirst({ where: { title } });
 		if (existingLevel) {
 			if (user.id !== existingLevel.authorId) {
@@ -387,16 +399,41 @@ export default class Level {
 					.status(409)
 					.send({ error: `A level with that title already exists (ID ${existingLevel.id})` });
 			}
-			const updatedLevel = await prisma.level.update({
+			const updatedLevelPreVerify = await prisma.level.update({
 				where: { id: existingLevel.id },
 				data: {
 					title,
 					description,
 					code,
 					updatedAt: new Date(),
+					scores: {
+						create: {
+							user: { connect: { id: token.id } },
+							replay: replayData.raw,
+							time: replayData.header.time,
+							version: replayData.header.version,
+							alt: replayData.header.alt,
+						},
+					},
 				},
-				...LevelQueryInclude,
+				include: {
+					scores: {
+						orderBy: { createdAt: 'desc' },
+						take: 1,
+					},
+				},
 			});
+			const updatedLevel =
+				updatedLevelPreVerify != null
+					? await prisma.level.update({
+							where: { id: updatedLevelPreVerify.id },
+							data: {
+								verification: { connect: { id: updatedLevelPreVerify.scores[0].id } },
+							},
+							...LevelQueryInclude,
+					  })
+					: null;
+
 			if (!updatedLevel)
 				return res.status(500).send({ error: 'Internal server error (NO_OVERWRITE_LEVEL)' });
 			log.info(
@@ -407,15 +444,34 @@ export default class Level {
 			});
 		}
 
-		const newLevel = await prisma.level.create({
+		let newLevel = await prisma.level.create({
 			data: {
 				code,
 				author: { connect: { id: user.id } },
 				title,
 				description,
+				scores: {
+					create: {
+						user: { connect: { id: user.id } },
+						replay: replayData.raw,
+						time: replayData.header.time,
+						version: replayData.header.version,
+						alt: replayData.header.alt,
+					},
+				},
 			},
 			...LevelQueryInclude,
 		});
+		newLevel =
+			newLevel != null
+				? await prisma.level.update({
+						where: { id: newLevel.id },
+						data: {
+							verification: { connect: { id: newLevel.scores[0].id } },
+						},
+						...LevelQueryInclude,
+				  })
+				: newLevel;
 
 		if (!newLevel) {
 			return res.status(500).send({ error: 'Internal server error (NO_POST_LEVEL)' });

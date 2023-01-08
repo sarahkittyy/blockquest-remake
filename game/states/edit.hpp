@@ -108,6 +108,8 @@ private:
 	sf::Text m_timer_text;
 	void m_toggle_test_play();
 
+	std::unique_ptr<::replay> m_verification;
+
 	std::string m_info_msg;
 
 	void m_update_transforms();	  // update the transforms based on m_level_size

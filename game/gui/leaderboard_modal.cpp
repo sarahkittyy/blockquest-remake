@@ -172,6 +172,13 @@ void leaderboard_modal::imdraw(fsm* sm) {
 								}
 								ImGui::SameLine();
 							}
+							if (m_lvl.verificationId.has_value() && *m_lvl.verificationId == score.id) {
+								ImGui::Image(resource::get().imtex("assets/gui/home.png"), sf::Vector2f(16, 16));
+								if (ImGui::IsItemHovered()) {
+									ImGui::SetTooltip("Original verification");
+								}
+								ImGui::SameLine();
+							}
 							ImGui::Text("%s", score.user.c_str());
 							ImGui::TableNextColumn();
 							ImGui::Text("%.2f", score.time);

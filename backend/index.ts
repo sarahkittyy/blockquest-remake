@@ -36,6 +36,7 @@ app.post('/level/:id', checkAuth(), Level.getById);
 
 app.post('/replay/upload', requireAuth(0), Replay.upload);
 app.post('/replay/search/:levelId(\\d+)', checkAuth(), Replay.search);
+app.post('/replay/:id(\\d+)', checkAuth(), Replay.get);
 
 app.post('/comments/level/:levelId(\\d+)', Comment.get);
 app.post('/comments/new/:levelId(\\d+)', requireAuth(0), Comment.post);

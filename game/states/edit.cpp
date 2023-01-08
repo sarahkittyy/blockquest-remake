@@ -181,6 +181,10 @@ void edit::update(fsm* sm, sf::Time dt) {
 		// metadata check
 		if (m_level().has_metadata() && !m_is_current_level_ours())
 			m_level().clear_metadata();
+		// verification check
+		if (m_verification) {
+			m_verification.reset();
+		}
 
 		// set the tile
 		switch (m_cursor_type) {
@@ -462,9 +466,13 @@ void edit::imdraw(fsm* sm) {
 		ImGui::Begin("Level Info");
 		m_gui_level_info(sm);
 		ImGui::End();
-
-		// victory  
-		if (m_test_play_world && m_test_play_world->won() && !m_test_play_world->has_playback()) {
+	}
+	// victory  
+	if (m_test_play_world && m_test_play_world->won() && !m_test_play_world->has_playback()) {
+		if (m_is_current_level_ours() && !m_verification) {
+			m_verification.reset(new ::replay(m_test_play_world->get_replay()));
+		}
+		if (m_level().has_metadata()) {
 			ImGui::SetNextWindowPos(ImVec2(wsz.x / 2.f - 150, wsz.y / 2.f + 75), ImGuiCond_Appearing);
 			ImGui::SetNextWindowSize(ImVec2(300, 250), ImGuiCond_Appearing);
 			ImGui::Begin("Replay");
@@ -659,9 +667,9 @@ void edit::m_gui_controls(fsm* sm) {
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/erase.png"), "Clear")) {
 		ImGui::OpenPopup("Clear###Confirm");
 	}
-	ImGui::BeginDisabled(!m_is_current_level_ours() || !m_level().valid() || !auth::get().authed());
+	ImGui::BeginDisabled(!m_is_current_level_ours() || !m_level().valid() || !auth::get().authed() || !m_verification);
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/upload.png"), "Upload")) {
-		ImGui::OpenPopup("Upload###Upload");
+		if (m_verification) ImGui::OpenPopup("Upload###Upload");
 	}
 	ImGui::EndDisabled();
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
@@ -671,6 +679,8 @@ void edit::m_gui_controls(fsm* sm) {
 			ImGui::SetTooltip("Cannot upload a level without a start & end point.");
 		} else if (!m_is_current_level_ours()) {
 			ImGui::SetTooltip("Cannot re-upload someone else's level. Clear first to make your own level for posting.");
+		} else if (!m_verification) {
+			ImGui::SetTooltip("Cannot upload a level without verifying it first.");
 		}
 	}
 	ImGui::SameLine();
@@ -706,6 +716,7 @@ void edit::m_gui_controls(fsm* sm) {
 	///////////////// UPLOAD LOGIC ////////////////////////
 	bool upload_modal_open = m_level().valid();
 	if (ImGui::BeginPopupModal("Upload###Upload", &upload_modal_open, modal_flags)) {
+		if (!m_verification) return ImGui::EndPopup();
 		if (m_upload_handle.ready() && !m_upload_handle.get().success && m_upload_handle.get().error) {
 			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color::Red));
 			ImGui::TextWrapped("%s", m_upload_handle.get().error->c_str());
@@ -716,13 +727,16 @@ void edit::m_gui_controls(fsm* sm) {
 		}
 		if (ImGui::InputText("Description", m_description_buffer, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
 			if (!m_upload_handle.fetching())
-				m_upload_handle.reset(api::get().upload_level(m_level(), m_title_buffer, m_description_buffer));
+				m_upload_handle.reset(api::get().upload_level(m_level(), *m_verification, m_title_buffer, m_description_buffer));
 		}
 		ImGui::BeginDisabled(m_upload_handle.fetching());
 		const char* upload_label = m_upload_handle.fetching() ? "Uploading...###UploadForReal" : "Upload###UploadForReal";
 		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/upload.png"), upload_label)) {
-			if (!m_upload_handle.fetching())
-				m_upload_handle.reset(api::get().upload_level(m_level(), m_title_buffer, m_description_buffer));
+			if (!m_upload_handle.fetching()) {
+				m_verification->set_created_now();
+				m_verification->set_user(auth::get().username().c_str());
+				m_upload_handle.reset(api::get().upload_level(m_level(), *m_verification, m_title_buffer, m_description_buffer));
+			}
 		}
 		ImGui::EndDisabled();
 		if (m_upload_handle.ready()) {
@@ -737,7 +751,7 @@ void edit::m_gui_controls(fsm* sm) {
 				ImGui::TextWrapped("A level named %s already exists, do you want to overwrite it?", m_title_buffer);
 				if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/yes.png"), "Yes###OverrideYes")) {
 					m_upload_handle.reset();
-					m_upload_handle.reset(api::get().upload_level(m_level(), m_title_buffer, m_description_buffer, true));
+					m_upload_handle.reset(api::get().upload_level(m_level(), *m_verification, m_title_buffer, m_description_buffer, true));
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::SameLine();
@@ -752,6 +766,15 @@ void edit::m_gui_controls(fsm* sm) {
 	}
 	///////////////// UPLOAD LOGIC END ////////////////////////
 	ImGui::Separator();
+	// verification
+	if (!m_level().has_metadata() || m_is_current_level_ours()) {
+		if (m_verification) {
+			ImGui::Text("Verified in %.2fs", m_verification->get_time());
+		} else {
+			ImGui::TextWrapped("Level not verified. Beat the level before posting.");
+		}
+		ImGui::Separator();
+	}
 	if (m_loaded_replay) {
 		ImGui::Text("Replay: %.2f by %s%s", m_loaded_replay->get_time(), m_loaded_replay->get_user(), m_loaded_replay->alt() ? " (bb controls)" : "");
 		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/erase.png"), "Unload###UL")) {

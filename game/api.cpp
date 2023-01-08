@@ -439,8 +439,8 @@ std::future<api::level_response> api::quickplay_level() {
 	});
 }
 
-std::future<api::level_response> api::upload_level(::level l, const char *title, const char *description, bool override) {
-	return std::async([this, l, title, description, override]() -> api::level_response {
+std::future<api::level_response> api::upload_level(::level l, ::replay verify, const char *title, const char *description, bool override) {
+	return std::async([this, l, title, description, override, verify]() -> api::level_response {
 		if (!auth::get().authed()) {
 			return {
 				.success = false,
@@ -450,9 +450,10 @@ std::future<api::level_response> api::upload_level(::level l, const char *title,
 		}
 		try {
 			nlohmann::json body;
-			body["code"]		= l.map().save();
-			body["title"]		= title;
-			body["description"] = description;
+			body["code"]		 = l.map().save();
+			body["title"]		 = title;
+			body["description"]	 = description;
+			body["verification"] = verify.serialize_b64();
 			auth::get().add_jwt_to_body(body);
 			std::string path = override ? "/level/upload/confirm" : "/level/upload";
 			if (auto res = m_cli.Post(path, body.dump(), "application/json")) {
@@ -608,7 +609,8 @@ std::future<api::update_response> api::is_up_to_date() {
 }
 
 bool api::replay::operator==(const api::replay &other) const {
-	return other.createdAt == createdAt &&	 //
+	return other.id == id &&
+		   other.createdAt == createdAt &&	 //
 		   other.updatedAt == updatedAt &&
 		   other.levelId == levelId &&
 		   other.time == time &&
@@ -709,6 +711,9 @@ void from_json(const nlohmann::json &j, api::level &l) {
 	if (j.contains("records")) {
 		l.records = j["records"].get<int>();
 	}
+	if (j.contains("verificationId")) {
+		l.verificationId = j["verificationId"].get<int>();
+	}
 
 	if (j.contains("myRecord")) {
 		l.myRecord = j["myRecord"].get<api::level_record>();
@@ -733,5 +738,7 @@ void to_json(nlohmann::json &j, const api::level &l) {
 		j["record"] = *l.record;
 	if (l.myRecord)
 		j["myRecord"] = *l.myRecord;
+	if (l.verificationId)
+		j["verificationId"] = *l.verificationId;
 	j["records"] = l.records;
 }
