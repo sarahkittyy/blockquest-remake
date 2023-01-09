@@ -6,10 +6,140 @@ import { prisma } from '@db/index';
 
 import { generateJwt, IAuthToken, saltAndHash, validatePassword } from '@util/tools';
 import * as mail from '@util/mail';
+import * as tools from '@util/tools';
+import * as constants from '@util/constants';
 import log from '@/log';
-import { User } from '@prisma/client';
+import { stringify } from 'flatted';
 
 export default class Auth {
+	static async ForgotPassword(req: Request, res: Response) {
+		let { email } = req.body;
+		if (email == null) return res.status(400).send({ error: 'No email provided.' });
+		if (!validator.isEmail(email)) return res.status(400).send({ error: 'Invalid email address' });
+		email = validator.normalizeEmail(email);
+
+		try {
+			// try to find an existing one
+			const existingReset = await prisma.userPasswordReset.findUnique({
+				where: {
+					email,
+				},
+			});
+			if (
+				existingReset != null &&
+				dayjs().diff(existingReset.issued, 'minutes') < constants.PASSWORD_RESET_EXP_MINUTES
+			) {
+				return res.status(200).send({
+					exists: true,
+					exp: dayjs(existingReset.issued)
+						.add(constants.PASSWORD_RESET_EXP_MINUTES, 'minutes')
+						.unix(),
+				});
+			}
+			// upsert the password reset model
+			const passwordReset = await prisma.userPasswordReset.upsert({
+				where: {
+					email,
+				},
+				update: {
+					issued: new Date(),
+					code: tools.randomString(64),
+				},
+				create: {
+					user: {
+						connect: {
+							email,
+						},
+					},
+					email,
+					code: tools.randomString(64),
+					issued: new Date(),
+				},
+			});
+			if (passwordReset == null) {
+				return res.status(400).send({ error: 'Email not found.' });
+			}
+
+			// send the reset email
+			mail.sendPasswordResetEmail(email, passwordReset.code, dayjs(passwordReset.issued));
+
+			return res.status(200).send({
+				exists: false,
+				exp: dayjs(passwordReset.issued)
+					.add(constants.PASSWORD_RESET_EXP_MINUTES, 'minutes')
+					.unix(),
+			});
+		} catch (e) {
+			return res.status(400).send({ error: 'Email not found.' });
+		}
+	}
+
+	static async ResetPassword(req: Request, res: Response) {
+		let { email, code, password } = req.body;
+		if (email == null) return res.status(400).send({ error: 'No email provided' });
+		if (code == null) return res.status(400).send({ error: 'No code provided' });
+		if (password == null) return res.status(400).send({ error: 'No new password provided' });
+
+		if (!validator.isEmail(email)) return res.status(400).send({ error: 'Invalid email address' });
+		email = validator.normalizeEmail(email);
+		if (!validator.isLength(password, { min: 8 }))
+			return res.status(400).send({ error: 'Password must be at least 8 characters long' });
+		if (`${code}`.length != 64) return res.status(400).send({ error: 'Invalid code' });
+
+		// fetch the reset model
+		const reset = await prisma.userPasswordReset.findUnique({
+			where: {
+				email,
+			},
+		});
+		if (reset == null)
+			return res.status(400).send({ error: 'Email address not found / has no pending reset.' });
+		// send a new code if the current one is expired
+		if (dayjs().diff(reset.issued, 'minutes') > constants.PASSWORD_RESET_EXP_MINUTES) {
+			const newReset = await prisma.userPasswordReset.update({
+				where: {
+					email,
+				},
+				data: {
+					issued: new Date(),
+					code: tools.randomString(64),
+				},
+			});
+			mail.sendPasswordResetEmail(email, newReset.code, dayjs(newReset.issued));
+			return res
+				.status(400)
+				.send({ error: 'Code expired. A new code has been sent to your inbox.' });
+		}
+		if (reset.code !== code) return res.status(400).send({ error: 'Incorrect code.' });
+
+		// update the password
+		const newPasswordHashed = await tools.saltAndHash(password);
+		if (newPasswordHashed == null)
+			return res.status(500).send({ error: 'Internal server error (NO_HASH)' });
+		try {
+			const newUser = await prisma.user.update({
+				where: {
+					id: reset.userId,
+				},
+				data: {
+					password: newPasswordHashed,
+				},
+			});
+
+			if (newUser == null) throw 'Internal server error (NO_NEW_USER)';
+
+			await prisma.userPasswordReset.delete({
+				where: {
+					userId: newUser.id,
+				},
+			});
+
+			return res.status(200).send();
+		} catch (e) {
+			return res.status(500).send({ error: stringify(e) });
+		}
+	}
+
 	static async CreateAccount(req: Request, res: Response) {
 		let { email, name, password } = req.body;
 

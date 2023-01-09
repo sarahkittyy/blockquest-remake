@@ -30,6 +30,7 @@ AppMenuBar::AppMenuBar()
 	std::memset(m_password, 0, 50);
 	std::memset(m_email, 0, 150);
 	std::memset(m_user_email, 0, 150);
+	m_pword_just_reset = false;
 }
 
 void AppMenuBar::process_event(sf::Event e) {
@@ -145,7 +146,12 @@ void AppMenuBar::imdraw(std::string& info_msg, fsm* sm) {
 					ImGui::TextWrapped("%s", m_login_handle.get().error->c_str());
 					ImGui::PopStyleColor();
 				}
-				if (ImGui::InputText("Username / Email###UserEmail", m_user_email, 150, iflags_enter)) {
+				if (m_pword_just_reset || (m_fgp_modal && m_fgp_modal->success())) {
+					m_fgp_modal.reset();
+					m_pword_just_reset = true;
+					ImGui::TextColored(sf::Color::Green, "Password was just reset.");
+				}
+				if (ImGui::InputText("Username / Email###UserEmailmbar", m_user_email, 150, iflags_enter)) {
 					ImGui::SetKeyboardFocusHere(0);
 				}
 				if (ImGui::InputText("Password###Pword", m_password, 50, ImGuiInputTextFlags_Password | iflags_enter)) {
@@ -158,6 +164,11 @@ void AppMenuBar::imdraw(std::string& info_msg, fsm* sm) {
 					if (!m_login_handle.fetching())
 						m_login_handle.reset(auth::get().login(m_user_email, m_password));
 				}
+				ImGui::SameLine();
+				if (ImGui::Button("Forgot Password###FGPWORD")) {
+					m_fgp_modal.reset(new forgot_password_modal());
+					m_fgp_modal->open();
+				}
 				ImGui::EndDisabled();
 				if (m_login_handle.ready() && m_login_handle.get().success) {
 					if (m_login_handle.get().confirmed.value_or(false)) {
@@ -167,6 +178,9 @@ void AppMenuBar::imdraw(std::string& info_msg, fsm* sm) {
 					}
 				}
 				m_gui_verify_popup();
+				if (m_fgp_modal) {
+					m_fgp_modal->imdraw();
+				}
 				ImGui::EndTabItem();
 			}
 			ImGui::EndDisabled();

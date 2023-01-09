@@ -5,6 +5,7 @@
 #include "auth.hpp"
 #include "context.hpp"
 #include "fsm.hpp"
+#include "gui/user_modal.hpp"
 #include "replay.hpp"
 #include "resource.hpp"
 #include "states/edit.hpp"

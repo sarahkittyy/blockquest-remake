@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 
 import { prisma } from '@db/index';
 import { User } from '@prisma/client';
+import { Dayjs } from 'dayjs';
 
 export const mailer = nodemailer.createTransport({
 	host: process.env.SMTP_HOST,
@@ -12,6 +13,17 @@ export const mailer = nodemailer.createTransport({
 		pass: process.env.SMTP_PASSWORD,
 	},
 });
+
+export async function sendPasswordResetEmail(email: string, code: string, issued: Dayjs) {
+	mailer.sendMail({
+		from: `${process.env.SMTP_FROM_NAME} <${process.env.SMTP_FROM_EMAIL}>`,
+		to: email,
+		subject: 'Blockquest-Remake password reset code',
+		html: `Your password reset code is: <tt>${code}</tt><br />Do not share this code with anyone.<br />This code will expire at ${issued
+			.add(10, 'minutes')
+			.format('MMMM D YYYY, h:mm:ss a')}`,
+	});
+}
 
 export async function updateCode(name: string): Promise<User | undefined> {
 	try {

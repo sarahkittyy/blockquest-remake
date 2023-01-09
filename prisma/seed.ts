@@ -122,7 +122,7 @@ async function main() {
 		data: {
 			name: 'dev',
 			password: (await saltAndHash('dev')) ?? 'UNDEFINED',
-			email: 'dev@dev',
+			email: process.env.DEV_EMAIL ?? 'dev@dev.dev',
 			confirmed: true,
 			tier: 0,
 		},

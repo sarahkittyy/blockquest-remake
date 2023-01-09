@@ -26,6 +26,8 @@ app.post('/signup', Auth.CreateAccount);
 app.post('/login', Auth.Login);
 app.post('/resend-verify', requireAuth(0, false), Auth.ResendVerify);
 app.post('/verify/:code', requireAuth(0, false), Auth.Verify);
+app.post('/forgot-password', Auth.ForgotPassword);
+app.post('/reset-password', Auth.ResetPassword);
 
 app.post('/level/upload/:confirm?', requireAuth(0), Level.upload);
 app.post('/level/search', checkAuth(), Level.search);

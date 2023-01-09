@@ -8,6 +8,7 @@ import { prisma } from '@db/index';
 import { ILevelResponse } from '@/controllers/Level';
 import { IReplayResponse } from '@/controllers/Replay';
 import { ICommentResponse } from '@/controllers/Comment';
+import crypto from 'crypto';
 
 export function isValidLevel(code: string): boolean {
 	const levelRegex = /^(?:[0-9]{3}|\/){1024}/g;
@@ -48,6 +49,10 @@ export async function saltAndHash(password: string): Promise<string | undefined>
 	} catch (e) {
 		return undefined;
 	}
+}
+
+export function randomString(length: number) {
+	return crypto.randomBytes(length).toString('hex').slice(0, length);
 }
 
 export function validatePassword(given: string, saved: string): boolean {

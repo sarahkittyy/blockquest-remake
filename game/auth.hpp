@@ -37,9 +37,24 @@ public:
 		std::optional<std::string> error;
 	};
 
+	struct forgot_password_response {
+		bool success;
+		std::optional<std::time_t> exp;
+		std::optional<bool> exists;
+		std::optional<std::string> error;
+	};
+
+	struct reset_password_response {
+		bool success;
+		std::optional<std::string> error;
+	};
+
 	std::future<response> signup(std::string email, std::string username, std::string password);
 	std::future<response> login(std::string email_or_username, std::string password);
 	void logout();
+
+	std::future<forgot_password_response> forgot_password(std::string email);
+	std::future<reset_password_response> reset_password(std::string email, std::string code, std::string newPassword);
 
 	std::future<response> verify(int code);
 	std::future<reverify_response> resend_verify();

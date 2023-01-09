@@ -174,6 +174,96 @@ std::future<auth::response> auth::login(std::string email_or_username, std::stri
 	// clang-format on
 }
 
+std::future<auth::forgot_password_response> auth::forgot_password(std::string email) {
+	// clang-format off
+	using namespace std::chrono_literals;
+	return std::async([this, email]() -> auth::forgot_password_response {
+		try {
+			nlohmann::json body;
+			body["email"] = email;
+			if (auto res = m_cli.Post("/forgot-password", body.dump(), "application/json")) {
+				nlohmann::json result = nlohmann::json::parse(res->body);
+				if (res->status == 200) {
+					return {
+						.success = true,
+						.exp = result["exp"].get<std::time_t>(),
+						.exists = result["exists"].get<bool>(),
+					};
+				} else {
+					if (result.contains("error")) {
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error.";
+					}
+				}
+			} else {
+				throw "Could not connect to server.";
+			}
+		} catch (const char* e) {
+			return {
+				.success = false,
+				.error = e
+			};
+		} catch (std::exception& e) {
+			return {
+				.success = false,
+				.error = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.error = "Unknown error."
+			};
+		}
+	});
+	// clang-format on
+}
+
+std::future<auth::reset_password_response> auth::reset_password(std::string email, std::string code, std::string newPassword) {
+	// clang-format off
+	using namespace std::chrono_literals;
+	return std::async([this, email, code, newPassword]() -> auth::reset_password_response {
+		try {
+			nlohmann::json body;
+			body["email"] = email;
+			body["code"] = code;
+			body["password"] = newPassword;
+			if (auto res = m_cli.Post("/reset-password", body.dump(), "application/json")) {
+				if (res->status == 200) {
+					return {
+						.success = true,
+					};
+				} else {
+					nlohmann::json result = nlohmann::json::parse(res->body);
+					if (result.contains("error")) {
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error.";
+					}
+				}
+			} else {
+				throw "Could not connect to server.";
+			}
+		} catch (const char* e) {
+			return {
+				.success = false,
+				.error = e
+			};
+		} catch (std::exception& e) {
+			return {
+				.success = false,
+				.error = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.error = "Unknown error."
+			};
+		}
+	});
+	// clang-format on
+}
+
 std::future<auth::response> auth::verify(int code) {
 	// clang-format off
 	using namespace std::chrono_literals;

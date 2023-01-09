@@ -15,6 +15,7 @@
 
 #include "api_handle.hpp"
 
+#include "gui/forgot_password_modal.hpp"
 #include "gui/user_modal.hpp"
 
 namespace ImGui {
@@ -44,6 +45,9 @@ private:
 	api_handle<auth::reverify_response> m_reverify_handle;
 
 	std::unique_ptr<user_modal> m_self_modal;
+
+	std::unique_ptr<forgot_password_modal> m_fgp_modal;
+	bool m_pword_just_reset;
 
 	bool m_auth_unresolved() const;	  // are the login/signup futures / statues all reset properly?
 	void m_open_verify_popup();
