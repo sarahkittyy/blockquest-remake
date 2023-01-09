@@ -49,6 +49,7 @@ void ApiLevelTile::imdraw(fsm* sm) {
 	ImGui::EndGroup();
 	if (ImGui::IsItemHovered()) {
 		ImGui::SetTooltip("View player profile");
+		ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 		if (ImGui::IsMouseClicked(0)) {
 			m_user_modal.reset(new user_modal(m_lvl.author));
 			m_user_modal->open();

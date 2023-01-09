@@ -165,6 +165,7 @@ void leaderboard_modal::imdraw(fsm* sm) {
 								}
 								ImGui::SameLine();
 							}
+							ImGui::BeginGroup();
 							ImGui::Text("%s%s", score.user.c_str(), auth::get().authed() && auth::get().username() == score.user ? " (You)" : "");
 							if (score.user == m_lvl.author) {
 								ImGui::SameLine();
@@ -172,7 +173,15 @@ void leaderboard_modal::imdraw(fsm* sm) {
 								if (ImGui::IsItemHovered()) {
 									ImGui::SetTooltip("Level Creator");
 								}
-								ImGui::SameLine();
+							}
+							ImGui::EndGroup();
+							if (ImGui::IsItemHovered()) {
+								ImGui::SetTooltip("View player profile");
+								ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+								if (ImGui::IsMouseClicked(0)) {
+									m_user_modal.reset(new user_modal(m_lvl.author));
+									m_user_modal->open();
+								}
 							}
 							ImGui::TableNextColumn();
 							ImGui::Text("%.2f", score.time);
@@ -194,6 +203,7 @@ void leaderboard_modal::imdraw(fsm* sm) {
 				}
 			}
 		}
+		if (m_user_modal) m_user_modal->imdraw(sm);
 		ImGui::EndPopup();
 	}
 }

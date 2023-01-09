@@ -7,6 +7,7 @@
 #include "api_handle.hpp"
 
 class fsm;
+class user_modal;
 
 class leaderboard_modal {
 public:
@@ -33,6 +34,8 @@ private:
 	api::replay_search_query m_last_query;
 
 	std::stack<int> m_cursor_log;	// logs cursors from each pagination
+
+	std::unique_ptr<user_modal> m_user_modal;	// for opening user profiles
 
 	int m_cpage() const;		// current page we're on
 	bool m_last_page() const;	// are we on the last page
