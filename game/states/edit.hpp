@@ -31,6 +31,9 @@ private:
 	sf::RenderTexture m_rt;
 	sf::Sprite m_map;
 
+	sf::VertexArray m_grid;	  // gridlines
+	sf::Transform m_grid_tf;
+
 	sf::Sprite m_bg;
 
 	ImGui::AppMenuBar m_menu_bar;

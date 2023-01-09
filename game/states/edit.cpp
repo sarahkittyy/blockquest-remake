@@ -91,6 +91,17 @@ edit::edit()
 	m_bg.setScale(4.f, 4.f);
 	m_bg.setPosition(sf::Vector2f(resource::get().window().getSize()) * 0.5f);
 
+	// gridlines init
+	m_grid.setPrimitiveType(sf::Lines);
+	for (int x = 0; x < 33; ++x) {
+		m_grid.append(sf::Vertex(sf::Vector2f(x * 64, 0), sf::Color::Black));
+		m_grid.append(sf::Vertex(sf::Vector2f(x * 64, 32 * 64), sf::Color::Black));
+	}
+	for (int y = 0; y < 33; ++y) {
+		m_grid.append(sf::Vertex(sf::Vector2f(0, y * 64), sf::Color::Black));
+		m_grid.append(sf::Vertex(sf::Vector2f(32 * 64, y * 64), sf::Color::Black));
+	}
+
 	for (int i = 0; i < 32; ++i) {
 		m_border.set(0, i, tile::block);
 		m_border.set(33, i, tile::block);
@@ -143,6 +154,11 @@ void edit::m_update_transforms() {
 	debug::get().setOrigin(m_rt.getSize().x / 2.f, -24 / scale);
 	debug::get().setPosition(win_sz.x / 2.f + 64 * scale, 0);
 	debug::get().setScale(scale, scale);
+
+	m_grid_tf = sf::Transform::Identity;
+	m_grid_tf
+		.translate(win_sz.x / 2 - (64 * 16.f * scale), 24.f)
+		.scale(scale, scale);
 }
 
 void edit::process_event(sf::Event e) {
@@ -1108,5 +1124,10 @@ void edit::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	s.transform *= getTransform();
 	t.draw(m_bg, s);
 	t.draw(m_map, s);
+	if (context::get().grid_lines()) {
+		sf::RenderStates sg = s;
+		sg.transform *= m_grid_tf;
+		t.draw(m_grid, sg);
+	}
 }
 }

@@ -30,7 +30,8 @@ context::context()
 	  m_sfx_volume(50.f),
 	  m_music_volume(50.f),
 	  m_fps_limit(120),
-	  m_use_alt_ctrls(false) {
+	  m_use_alt_ctrls(false),
+	  m_draw_grid_lines(false) {
 	load_from_file("bq-r.json");
 	resource::get().window().setFramerateLimit(m_fps_limit);
 }
@@ -63,6 +64,10 @@ bool& context::alt_controls() {
 	return m_use_alt_ctrls;
 }
 
+bool& context::grid_lines() {
+	return m_draw_grid_lines;
+}
+
 std::string context::save() const {
 	nlohmann::json j;
 
@@ -85,6 +90,7 @@ std::string context::save() const {
 
 	j["fps_limit"]	  = m_fps_limit;
 	j["alt_controls"] = m_use_alt_ctrls;
+	j["grid_lines"]	  = m_draw_grid_lines;
 
 	j["controls"] = settings::get().get_key_map();
 
@@ -126,6 +132,10 @@ void context::load(std::string data) {
 
 	if (j.contains("alt_controls")) {
 		j["alt_controls"].get_to(m_use_alt_ctrls);
+	}
+
+	if (j.contains("grid_lines")) {
+		j["grid_lines"].get_to(m_draw_grid_lines);
 	}
 
 	if (j.contains("screen_size")) {

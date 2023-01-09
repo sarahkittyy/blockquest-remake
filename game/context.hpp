@@ -40,6 +40,8 @@ public:
 
 	// are we using alternate block-bros style controls?
 	bool& alt_controls();
+	// draw grid lines in the editor?
+	bool& grid_lines();
 
 private:
 	context();
@@ -54,4 +56,5 @@ private:
 	float m_music_volume;
 	int m_fps_limit;
 	bool m_use_alt_ctrls;
+	bool m_draw_grid_lines;
 };

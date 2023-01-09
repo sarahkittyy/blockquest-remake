@@ -250,6 +250,11 @@ void AppMenuBar::imdraw(std::string& info_msg, fsm* sm) {
 		if (ImGui::IsItemHovered()) {
 			ImGui::SetTooltip("Left & right to climb ladders");
 		}
+		// gridlines
+		ImGui::Checkbox("Editor grid lines", &context::get().grid_lines());
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Show grid lines in the editor");
+		}
 		// volume controls
 		if (ImGui::SliderFloat("Music", &context::get().music_volume(), 0, 100, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
 			resource::get().reload_music_volume();
