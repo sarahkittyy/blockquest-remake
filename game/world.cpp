@@ -298,7 +298,7 @@ void world::step(sf::Time dt) {
 	}
 
 	if (m_this_frame.jump) {
-		bool dismount_keyed = m_climbing && alt_controls && (m_climbing_facing == dir::left ? m_this_frame.right : m_this_frame.left) && m_this_frame.jump;
+		bool dismount_keyed = m_climbing && alt_controls && !m_this_frame.right && !m_this_frame.left && m_this_frame.jump;
 		if (!m_jumping && !m_climbing && m_player_grounded_ago(sf::milliseconds(phys.coyote_millis)) && !m_tile_above_player()) {
 			m_yv = -phys.jump_v * gravity_sign;
 			// so that we can't jump twice :)
