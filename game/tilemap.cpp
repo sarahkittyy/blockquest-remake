@@ -173,6 +173,27 @@ std::optional<tilemap::diff> tilemap::set(int x, int y, tile t) {
 	return d;
 }
 
+std::vector<tilemap::diff> tilemap::set_rect(sf::Vector2i min, sf::Vector2i max, bool hollow, tile tl) {
+	std::vector<tilemap::diff> ret;
+
+	// iterate over all tiles in the rectangle's area
+	const int x_min = std::min(min.x, max.x);
+	const int x_max = std::max(min.x, max.x);
+	const int y_min = std::min(min.y, max.y);
+	const int y_max = std::max(min.y, max.y);
+	for (int x = x_min; x <= x_max; ++x) {
+		for (int y = y_min; y <= y_max; ++y) {
+			// if hollow, skip the edges
+			if (hollow && (x != min.x && x != max.x && y != min.y && y != max.y)) continue;
+			auto diff = set(x, y, tl);
+			if (diff) {
+				ret.push_back(*diff);
+			}
+		}
+	}
+	return ret;
+}
+
 std::vector<tilemap::diff> tilemap::set_line(sf::Vector2i min, sf::Vector2i max, tile tl) {
 	std::vector<tilemap::diff> ret;
 

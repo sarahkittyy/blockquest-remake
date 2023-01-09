@@ -18,6 +18,7 @@
 
 #include "context.hpp"
 #include "states/search.hpp"
+#include "util.hpp"
 
 namespace states {
 
@@ -44,6 +45,9 @@ edit::edit()
 	  m_stroke_active(false),
 	  m_pencil_active(false),
 	  m_stroke_map(resource::get().tex("assets/tiles.png"), 32, 32, 64),
+	  m_rect_start(-1, -1),
+	  m_rect_active(false),
+	  m_rect_map(resource::get().tex("assets/tiles.png"), 32, 32, 64),
 	  m_old_mouse_tile(-1, -1),
 	  m_last_placed(-1, -1) {
 
@@ -78,6 +82,7 @@ edit::edit()
 	m_cursor.map().set_editor_view(true);
 	m_border.set_editor_view(true);
 	m_stroke_map.set_editor_view(true);
+	m_rect_map.set_editor_view(true);
 
 	m_bg.setTexture(resource::get().tex("assets/bg.png"));
 	m_bg.setColor(sf::Color(255, 255, 255, 128));
@@ -124,6 +129,7 @@ void edit::m_update_transforms() {
 	m_level().setPosition(64, 0);
 	m_cursor.setPosition(64, 0);
 	m_stroke_map.setPosition(64, 0);
+	m_rect_map.setPosition(64, 0);
 	if (m_test_play_world) {
 		m_test_play_world->setPosition(64, 0);
 	}
@@ -206,7 +212,7 @@ void edit::update(fsm* sm, sf::Time dt) {
 			}
 			break;
 		}
-		case STROKE:
+		case STROKE: {
 			if (m_selected_tile == tile::begin || m_selected_tile == tile::end) {
 				auto diff = m_set_tile(mouse_tile, m_selected_tile, m_info_msg);
 				if (diff && m_last_placed != mouse_tile && !diff->same()) {
@@ -215,6 +221,18 @@ void edit::update(fsm* sm, sf::Time dt) {
 			} else
 				m_stroke_fill(mouse_tile, m_info_msg);
 			break;
+		}
+		case FILLED_RECT:
+		case HOLLOW_RECT: {
+			if (m_selected_tile == tile::begin || m_selected_tile == tile::end) {
+				auto diff = m_set_tile(mouse_tile, m_selected_tile, m_info_msg);
+				if (diff && m_last_placed != mouse_tile && !diff->same()) {
+					m_undo_queue.push_back({ *diff });
+				}
+			} else
+				m_rect_fill(mouse_tile, m_cursor_type == HOLLOW_RECT, m_info_msg);
+			break;
+		}
 		}
 		m_last_placed = mouse_tile;
 	} else {
@@ -231,6 +249,14 @@ void edit::update(fsm* sm, sf::Time dt) {
 			m_pencil_active = false;
 			m_undo_queue.push_back(m_pencil_undo_queue);
 			m_pencil_undo_queue.clear();
+		}
+		if (m_rect_active) {
+			m_rect_active = false;
+			auto diffs	  = m_rect_map.layer_over(m_level().map(), true);
+			if (!diffs.empty()) {
+				m_undo_queue.push_back(diffs);
+			}
+			m_rect_map.clear();
 		}
 	}
 
@@ -252,12 +278,77 @@ void edit::update(fsm* sm, sf::Time dt) {
 	if (!m_test_playing()) {
 		m_rt.draw(m_level());
 		m_rt.draw(m_stroke_map);
+		m_rt.draw(m_rect_map);
 		m_rt.draw(m_cursor);
 	} else {
 		m_rt.draw(*m_test_play_world);
 		m_rt.draw(m_timer_text);
 	}
 	m_rt.display();
+}
+
+std::vector<tilemap::diff> edit::m_rect_fill(sf::Vector2i pos, bool hollow, std::string& error) {
+	// exclude certain types
+	switch (m_selected_tile) {
+	default:
+		break;
+	case tile::move_up:
+	case tile::move_down:
+	case tile::move_left:
+	case tile::move_right:
+	case tile::move_none:
+	case tile::move_up_bit:
+	case tile::move_right_bit:
+	case tile::move_down_bit:
+	case tile::move_left_bit:
+	case tile::cursor:
+	case tile::begin:
+	case tile::end:
+		return {};
+	}
+	bool shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift);
+	static sf::Vector2i last_pos;
+	static bool last_shift;
+
+	// initial setup
+	if (!m_rect_active) {
+		m_rect_active = true;
+		m_rect_start  = pos;
+		last_pos	  = pos;
+		last_shift	  = shift;
+	}
+
+	// squarify the old rect
+	sf::Vector2i old_min = m_rect_start, old_max = last_pos;
+	if (last_shift) {
+		const int dx = old_max.x - old_min.x;
+		const int dy = old_max.y - old_min.y;
+		// if we're going further in the X direction
+		if (dx > dy) {
+			old_max.y = old_min.y + (std::abs(dx) * util::sign(dy));
+		} else {
+			old_max.x = old_min.x + (std::abs(dy) * util::sign(dx));
+		}
+	}
+	// clear the previous rect
+	m_rect_map.set_rect(old_min, old_max, hollow, tile::empty);
+
+	last_pos   = pos;
+	last_shift = shift;
+
+	// squarify the new rect
+	sf::Vector2i new_min = m_rect_start, new_max = pos;
+	if (shift) {
+		const int dx = new_max.x - new_min.x;
+		const int dy = new_max.y - new_min.y;
+		// if we're going further in the X direction
+		if (dx > dy) {
+			new_max.y = new_min.y + (std::abs(dx) * util::sign(dy));
+		} else {
+			new_max.x = new_min.x + (std::abs(dy) * util::sign(dx));
+		}
+	}
+	return m_rect_map.set_rect(new_min, new_max, hollow, selected());
 }
 
 std::vector<tilemap::diff> edit::m_stroke_fill(sf::Vector2i pos, std::string& error) {
@@ -926,6 +1017,20 @@ void edit::m_gui_block_picker(fsm* sm) {
 	if (ImGui::IsItemHovered()) {
 		ImGui::SetTooltip("%s", m_cursor_description(STROKE));
 	}
+	ImGui::SameLine();
+	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)HOLLOW_RECT, m_level(), m_cursor_type == HOLLOW_RECT, 32)) {
+		m_cursor_type = HOLLOW_RECT;
+	}
+	if (ImGui::IsItemHovered()) {
+		ImGui::SetTooltip("%s", m_cursor_description(HOLLOW_RECT));
+	}
+	ImGui::SameLine();
+	if (ImGui::EditorTileButton(m_tools, (tile::tile_type)FILLED_RECT, m_level(), m_cursor_type == FILLED_RECT, 32)) {
+		m_cursor_type = FILLED_RECT;
+	}
+	if (ImGui::IsItemHovered()) {
+		ImGui::SetTooltip("%s", m_cursor_description(FILLED_RECT));
+	}
 	ImGui::TextWrapped("%s", m_cursor_description(m_cursor_type));
 	ImGui::BeginDisabled(m_undo_queue.empty());
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/back.png"), "Undo")) {
@@ -983,6 +1088,12 @@ const char* edit::m_cursor_description(edit::cursor_type c) const {
 		return "Flood fill an area with the same type of tile";
 	case STROKE:
 		return "Draw straight lines (hold SHIFT to draw X/Y parallel lines)";
+	case HOLLOW_RECT:
+		return "Draw a hollow rectangle (hold SHIFT to draw a perfect square)";
+	case FILLED_RECT:
+		return "Draw a filled rectangle (hold SHIFT to draw a perfect square)";
+	default:
+		return "Undescribed";
 	}
 }
 

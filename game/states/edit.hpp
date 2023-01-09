@@ -53,6 +53,8 @@ private:
 		PENCIL = 0,
 		FLOOD,
 		STROKE,
+		HOLLOW_RECT,
+		FILLED_RECT,
 	} m_cursor_type;
 	const char* m_cursor_description(cursor_type c) const;
 
@@ -96,6 +98,12 @@ private:
 	sf::Vector2i m_stroke_start;
 	bool m_stroke_active;
 	tilemap m_stroke_map;	// for temporary rendering of stroke tool graphics
+
+	// draw rects
+	std::vector<tilemap::diff> m_rect_fill(sf::Vector2i pos, bool hollow, std::string& error);
+	sf::Vector2i m_rect_start;
+	bool m_rect_active;
+	tilemap m_rect_map;
 
 	sf::Vector2i m_old_mouse_tile;		  // the hovered tile last update, so we can reset it when the mouse moves
 	sf::Vector2i m_update_mouse_tile();	  // update the editor cursor

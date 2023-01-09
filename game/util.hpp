@@ -27,6 +27,11 @@ float clamp(float v, float min, float max);	  // keeps a value between two value
  */
 float lerp(float min, float max, float t);
 
+template <typename T>
+float sign(T x) {
+	return x < 0 ? -1 : 1;
+}
+
 // returns true if the two numbers are the same sign
 bool same_sign(float a, float b);
 

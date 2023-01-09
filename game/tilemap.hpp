@@ -97,13 +97,14 @@ public:
 	// returns the dimensions of the area in the tilemap the tile's gfx is stored
 	sf::IntRect calculate_texture_rect(tile t) const;
 
-	std::optional<diff> set(int x, int y, tile t);							  // set a tile
-	std::vector<diff> set_line(sf::Vector2i min, sf::Vector2i max, tile t);	  // set a line of tiles
-	tile get(int x, int y) const;											  // get a tile
-	tile get(int i) const;													  // get a tile at a given index
-	const std::vector<tile>& get() const;									  // get all tiles
-	std::optional<diff> clear(int x, int y);								  // set the tile to air
-	std::vector<diff> clear();												  // clear the entire map
+	std::optional<diff> set(int x, int y, tile t);										   // set a tile
+	std::vector<diff> set_line(sf::Vector2i min, sf::Vector2i max, tile t);				   // set a line of tiles
+	std::vector<diff> set_rect(sf::Vector2i min, sf::Vector2i max, bool hollow, tile t);   // set a line of tiles
+	tile get(int x, int y) const;														   // get a tile
+	tile get(int i) const;																   // get a tile at a given index
+	const std::vector<tile>& get() const;												   // get all tiles
+	std::optional<diff> clear(int x, int y);											   // set the tile to air
+	std::vector<diff> clear();															   // clear the entire map
 
 	void undo(diff d);	 // undoes a change
 	void redo(diff d);	 // reapplies a change
