@@ -94,6 +94,7 @@ model UserLevelScore {
 	alt			Boolean		@default(false)
 	verifies	Level?		@relation("verify")
 	levelVersion	Int			@default(1)
+	hidden		Boolean			@default(false)
 
 	@@id([id, userId, levelId])
 }

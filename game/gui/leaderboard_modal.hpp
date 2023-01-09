@@ -24,6 +24,7 @@ private:
 	int m_ex_id;   // for imgui id system
 
 	api_handle<api::replay_search_response> m_api_handle;
+	api_handle<api::response> m_hide_handle;
 
 	const char* m_sort_opts[4];	  // api sortBy options
 	int m_sort_selection;

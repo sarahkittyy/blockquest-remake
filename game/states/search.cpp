@@ -39,10 +39,13 @@ void search::update(fsm* sm, sf::Time dt) {
 	m_loading_gif.update();
 	// check if a pending query is ready, and update status accordingly
 	m_query_handle.poll();
-	if (!m_authed_last_frame && auth::get().authed()) {
+	bool authed = auth::get().authed();
+	if (!m_authed_last_frame && authed) {
+		m_update_query();
+	} else if (m_authed_last_frame && !authed) {
 		m_update_query();
 	}
-	m_authed_last_frame = auth::get().authed();
+	m_authed_last_frame = authed;
 }
 
 void search::process_event(sf::Event e) {
@@ -215,9 +218,9 @@ api::level_search_query& search::query() {
 	return context::get().level_search_query();
 }
 
-ImGui::ApiLevelTile& search::m_gui_level_tile(api::level& lvl) {
+level_card& search::m_gui_level_tile(api::level& lvl) {
 	if (!m_api_level_tile.contains(lvl.id)) {
-		m_api_level_tile[lvl.id] = std::make_shared<ImGui::ApiLevelTile>(lvl);
+		m_api_level_tile[lvl.id] = std::make_shared<level_card>(lvl);
 	}
 	return *m_api_level_tile[lvl.id].get();
 }

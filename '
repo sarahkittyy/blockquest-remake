@@ -46,7 +46,6 @@ export interface IReplayResponse {
 	updatedAt: number;
 	alt: boolean;
 	levelVersion: number;
-	hidden: boolean;
 }
 
 export const ScoreQueryInclude = {
@@ -56,6 +55,20 @@ export const ScoreQueryInclude = {
 };
 
 export const ScoreQueryHide = (uid?: number) => ({
+	OR: [
+		{
+			hidden: false,
+		},
+		...(uid != undefined
+			? [
+					{
+						userId: uid,
+					},
+			  ]
+			: []),
+	],
+});
+var ScoreQueryHide = (uid) => ({
 	OR: [
 		{
 			hidden: false,
@@ -210,7 +223,6 @@ export default class Replay {
 			}),
 			where: {
 				levelId,
-				...ScoreQueryHide(token?.id),
 			},
 			orderBy: [{ levelVersion: 'desc' }, { [opts.sortBy]: opts.order }],
 			...ScoreQueryInclude,

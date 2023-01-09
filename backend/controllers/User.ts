@@ -37,14 +37,14 @@ export default class User {
 				levels: {
 					orderBy: { createdAt: 'desc' },
 					take: 1,
-					...LevelQueryInclude,
+					...LevelQueryInclude(token?.id),
 				},
 				scores: {
 					orderBy: { createdAt: 'desc' },
 					include: {
 						user: true,
 						level: {
-							...LevelQueryInclude,
+							...LevelQueryInclude(token?.id),
 						},
 					},
 				},
@@ -114,14 +114,14 @@ export default class User {
 				levels: {
 					orderBy: { createdAt: 'desc' },
 					take: 1,
-					...LevelQueryInclude,
+					...LevelQueryInclude(token?.id),
 				},
 				scores: {
 					orderBy: { createdAt: 'desc' },
 					include: {
 						user: true,
 						level: {
-							...LevelQueryInclude,
+							...LevelQueryInclude(token?.id),
 						},
 					},
 				},

@@ -18,11 +18,9 @@
 #include "gui/forgot_password_modal.hpp"
 #include "gui/user_modal.hpp"
 
-namespace ImGui {
-
-class AppMenuBar {
+class menu_bar {
 public:
-	AppMenuBar();
+	menu_bar();
 
 	void imdraw(std::string& info_msg, fsm* sm);
 	void process_event(sf::Event e);
@@ -55,5 +53,3 @@ private:
 
 	void m_close_auth_popup();	 // close the auth popup and reset all values
 };
-
-}

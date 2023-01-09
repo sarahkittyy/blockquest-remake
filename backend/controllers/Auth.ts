@@ -325,12 +325,13 @@ export default class Auth {
 	static async Login(req: Request, res: Response) {
 		let email: string | undefined = undefined;
 		let name: string | undefined = undefined;
-		if (validator.isEmail(req.body.username)) {
+		if (validator.isEmail(req.body.username ?? '')) {
 			email = validator.normalizeEmail(req.body.username) as string;
 		} else {
 			name = req.body.username;
 		}
-		if (!name && !email) return res.status(400).send({ error: 'No username / email specified' });
+		if (name == null && email == null)
+			return res.status(400).send({ error: 'No username / email specified' });
 		const password: string | undefined = req.body.password;
 		if (!password) return res.status(400).send({ error: 'No password specified' });
 

@@ -840,8 +840,11 @@ void edit::m_gui_controls(fsm* sm) {
 			ImGui::SetKeyboardFocusHere(0);
 		}
 		if (ImGui::InputText("Description", m_description_buffer, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-			if (!m_upload_handle.fetching())
+			if (!m_upload_handle.fetching()) {
+				m_verification->set_created_now();
+				m_verification->set_user(auth::get().username().c_str());
 				m_upload_handle.reset(api::get().upload_level(m_level(), *m_verification, m_title_buffer, m_description_buffer));
+			}
 		}
 		ImGui::BeginDisabled(m_upload_handle.fetching());
 		const char* upload_label = m_upload_handle.fetching() ? "Uploading...###UploadForReal" : "Upload###UploadForReal";

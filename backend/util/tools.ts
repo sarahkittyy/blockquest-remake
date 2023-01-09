@@ -234,6 +234,7 @@ export function toReplayResponse(replay: UserLevelScoreRunner): IReplayResponse 
 		updatedAt: replay.updatedAt.getTime() / 1000,
 		alt: replay.alt,
 		levelVersion: replay.levelVersion,
+		hidden: replay.hidden,
 	};
 }
 

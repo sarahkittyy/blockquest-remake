@@ -26,7 +26,7 @@ public:
 	void process_event(sf::Event e);
 
 private:
-	ImGui::AppMenuBar m_menu_bar;	// app menu bar
+	menu_bar m_menu_bar;   // app menu bar
 
 	// QUERY STUFF
 	api::level_search_query& query();		// just fetches the query from context
@@ -51,8 +51,8 @@ private:
 	api_handle<api::level_response> m_quickplay_handle;
 
 	// handles automatic loading & caching to prevent unnecessary draws
-	std::unordered_map<int, std::shared_ptr<ImGui::ApiLevelTile>> m_api_level_tile;
-	ImGui::ApiLevelTile& m_gui_level_tile(api::level& lvl);
+	std::unordered_map<int, std::shared_ptr<level_card>> m_api_level_tile;
+	level_card& m_gui_level_tile(api::level& lvl);
 
 	void m_update_query();	 // sends the query to the api
 	void m_next_page();

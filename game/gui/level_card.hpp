@@ -17,12 +17,10 @@
 class fsm;
 class user_modal;
 
-namespace ImGui {
-
 /* a frame that stores a small preview of an api-fetched level */
-class ApiLevelTile {
+class level_card {
 public:
-	ApiLevelTile(api::level& lvl, sf::Color bg = sf::Color(0xC8AD7FFF));
+	level_card(api::level& lvl, sf::Color bg = sf::Color(0xC8AD7FFF));
 
 	void imdraw(fsm* sm);
 
@@ -44,4 +42,3 @@ private:
 	api_handle<api::vote_response> m_vote_handle;
 };
 
-}

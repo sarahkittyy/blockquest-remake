@@ -126,7 +126,7 @@ void leaderboard_modal::imdraw(fsm* sm) {
 				ImGui::TextWrapped("%s", res.error->c_str());
 				ImGui::PopStyleColor();
 			} else {
-				if (ImGui::BeginTable("###Scores", 6, ImGuiTableFlags_Borders)) {
+				if (ImGui::BeginTable("###Scores", 7, ImGuiTableFlags_Borders)) {
 					ImGui::TableNextRow();
 					ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color(0xC8AD7FFF)));
 					ImGui::TableNextColumn();
@@ -141,6 +141,8 @@ void leaderboard_modal::imdraw(fsm* sm) {
 					ImGui::Text("Game Version");
 					ImGui::TableNextColumn();
 					ImGui::Text("Replay");
+					ImGui::TableNextColumn();
+					ImGui::Text("Visibility");
 					ImGui::PopStyleColor();
 					if (res.scores.size()) {
 						api::replay wr = res.scores[0];
@@ -202,6 +204,44 @@ void leaderboard_modal::imdraw(fsm* sm) {
 							ImGui::TableNextColumn();
 							if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/download.png"), "Replay")) {
 								sm->swap_state<states::edit>(m_lvl, replay(score));
+							}
+							ImGui::TableNextColumn();
+							// if we own this score
+							bool can_hide = auth::get().authed() && auth::get().username() == score.user;
+							ImGui::BeginDisabled(!can_hide);
+							ImTextureID hide_tex = resource::get().imtex(!score.hidden ? "assets/gui/eye_open.png" : "assets/gui/minus.png");
+							if (ImGui::ImageButton(hide_tex, ImVec2(16, 16))) {
+								if (!m_hide_handle.fetching())
+									m_hide_handle.reset(api::get().set_replay_visibility(score.id, score.hidden));
+							}
+							ImGui::EndDisabled();
+							// hide button
+							if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+								if (!can_hide) {
+									ImGui::SetTooltip("You must be logged in as the player who ran this replay to hide it.");
+								} else if (score.hidden) {
+									ImGui::SetTooltip("Make this replay private");
+								} else {
+									ImGui::SetTooltip("Hide this replay from public view");
+								}
+							}
+							ImGui::SameLine();
+							// hide api handling
+							m_hide_handle.poll();
+							if (m_hide_handle.ready()) {
+								auto res = m_hide_handle.get();
+								if (res.success) {
+									m_update_query();
+									m_hide_handle.reset();
+								} else if (res.error.has_value()) {
+									ImGui::TextColored(sf::Color::Red, "[!]");
+									if (ImGui::IsItemHovered()) {
+										ImGui::SetTooltip("Failed to %shide replay: %s", score.hidden ? "un" : "", res.error->c_str());
+										if (ImGui::IsItemClicked()) {
+											m_hide_handle.reset();
+										}
+									}
+								}
 							}
 							ImGui::PopID();
 						}

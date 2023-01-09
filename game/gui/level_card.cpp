@@ -16,11 +16,9 @@
 #include <iomanip>
 #include <sstream>
 
-namespace ImGui {
+int level_card::m_next_id = 0;
 
-int ApiLevelTile::m_next_id = 0;
-
-ApiLevelTile::ApiLevelTile(api::level& lvl, sf::Color bg)
+level_card::level_card(api::level& lvl, sf::Color bg)
 	: m_bg(bg),
 	  m_lvl(lvl),
 	  m_tmap(resource::get().tex("assets/tiles.png"), 32, 32, 16),
@@ -38,7 +36,7 @@ ApiLevelTile::ApiLevelTile(api::level& lvl, sf::Color bg)
 	m_ex_id = m_next_id++;
 }
 
-void ApiLevelTile::imdraw(fsm* sm) {
+void level_card::imdraw(fsm* sm) {
 	// title / auth
 	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFB8CABFF), "%s (v%d)", m_lvl.title.c_str(), m_lvl.version);
 	ImGui::SameLine();
@@ -177,6 +175,4 @@ void ApiLevelTile::imdraw(fsm* sm) {
 	ImGui::PushStyleColor(ImGuiCol_Text, 0x48c8f0FF);
 	ImGui::TextWrapped("%s", m_lvl.description.c_str());
 	ImGui::PopStyleColor();
-}
-
 }

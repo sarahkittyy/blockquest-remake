@@ -27,7 +27,7 @@ private:
 	std::string m_name;	  // username to fetch
 	api_handle<api::user_stats_response> m_stats_handle;
 
-	std::unique_ptr<ImGui::ApiLevelTile> m_recent_level_tile;
-	std::unique_ptr<ImGui::ApiLevelTile> m_recent_score_tile;
+	std::unique_ptr<level_card> m_recent_level_tile;
+	std::unique_ptr<level_card> m_recent_score_tile;
 	void m_fetch();
 };

@@ -11,9 +11,7 @@
 #include "tilemap.hpp"
 #include "util.hpp"
 
-namespace ImGui {
-
-AppMenuBar::AppMenuBar()
+menu_bar::menu_bar()
 	: m_listening_key(),
 	  m_rules_gifs({ std::make_pair(ImGui::Gif(resource::get().tex("assets/gifs/run.png"), 33, { 240, 240 }, 20),
 									"Use left & right to run"),
@@ -33,7 +31,7 @@ AppMenuBar::AppMenuBar()
 	m_pword_just_reset = false;
 }
 
-void AppMenuBar::process_event(sf::Event e) {
+void menu_bar::process_event(sf::Event e) {
 	switch (e.type) {
 	case sf::Event::KeyPressed:
 		if (m_listening_key) {
@@ -47,7 +45,7 @@ void AppMenuBar::process_event(sf::Event e) {
 	}
 }
 
-void AppMenuBar::m_open_verify_popup() {
+void menu_bar::m_open_verify_popup() {
 	m_v_code = 0;
 	m_verify_handle.reset();
 	m_reverify_handle.reset();
@@ -56,7 +54,7 @@ void AppMenuBar::m_open_verify_popup() {
 	ImGui::OpenPopup("Verify###Verify");
 }
 
-void AppMenuBar::m_gui_verify_popup() {
+void menu_bar::m_gui_verify_popup() {
 	ImGuiWindowFlags modal_flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
 	bool dummy					 = true;
 	// VERIFICATION
@@ -99,7 +97,7 @@ void AppMenuBar::m_gui_verify_popup() {
 	}
 }
 
-void AppMenuBar::imdraw(std::string& info_msg, fsm* sm) {
+void menu_bar::imdraw(std::string& info_msg, fsm* sm) {
 	const ImTextureID tiles = resource::get().imtex("assets/tiles.png");
 	sf::Texture& tiles_tex	= resource::get().tex("assets/tiles.png");
 
@@ -377,7 +375,7 @@ void AppMenuBar::imdraw(std::string& info_msg, fsm* sm) {
 	ImGui::EndMainMenuBar();
 }
 
-bool AppMenuBar::m_auth_unresolved() const {
+bool menu_bar::m_auth_unresolved() const {
 	return m_login_handle.fetching() ||
 		   m_signup_handle.fetching() ||
 		   m_login_handle.ready() ||
@@ -388,7 +386,7 @@ bool AppMenuBar::m_auth_unresolved() const {
 		   m_reverify_handle.ready();
 }
 
-void AppMenuBar::m_close_auth_popup() {
+void menu_bar::m_close_auth_popup() {
 	m_login_handle.reset();
 	m_signup_handle.reset();
 	m_verify_handle.reset();
@@ -400,5 +398,4 @@ void AppMenuBar::m_close_auth_popup() {
 	std::memset(m_user_email, 0, 150);
 
 	ImGui::CloseCurrentPopup();
-}
 }

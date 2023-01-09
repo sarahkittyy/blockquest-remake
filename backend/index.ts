@@ -31,7 +31,7 @@ app.post('/reset-password', Auth.ResetPassword);
 
 app.post('/level/upload/:confirm?', requireAuth(0), Level.upload);
 app.post('/level/search', checkAuth(), Level.search);
-app.get('/level/quickplay', Level.getQuickplay);
+app.get('/level/quickplay', checkAuth(), Level.getQuickplay);
 app.get('/level/:id/ping-download', Level.downloadPing);
 app.post('/level/:id(\\d+)/:vote(like|dislike)', requireAuth(0), Level.vote);
 app.post('/level/:id', checkAuth(), Level.getById);
@@ -39,6 +39,7 @@ app.post('/level/:id', checkAuth(), Level.getById);
 app.post('/replay/upload', requireAuth(0), Replay.upload);
 app.post('/replay/search/:levelId(\\d+)', checkAuth(), Replay.search);
 app.post('/replay/:id(\\d+)', checkAuth(), Replay.get);
+app.post('/replay/:id(\\d+)/:hide(hide|unhide)', requireAuth(0), Replay.hide);
 
 app.post('/comments/level/:levelId(\\d+)', Comment.get);
 app.post('/comments/new/:levelId(\\d+)', requireAuth(0), Comment.post);

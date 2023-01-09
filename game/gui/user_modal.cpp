@@ -44,10 +44,10 @@ void user_modal::imdraw(fsm* sm) {
 		if (rsp.success) {
 			modal_title = rsp.stats->username + " #" + std::to_string(rsp.stats->id) + " " + modal_title;
 			if (rsp.stats->recentLevel && !m_recent_level_tile) {
-				m_recent_level_tile.reset(new ImGui::ApiLevelTile(*rsp.stats->recentLevel));
+				m_recent_level_tile.reset(new level_card(*rsp.stats->recentLevel));
 			}
 			if (rsp.stats->recentScore && rsp.stats->recentScoreLevel && !m_recent_score_tile) {
-				m_recent_score_tile.reset(new ImGui::ApiLevelTile(*rsp.stats->recentScoreLevel));
+				m_recent_score_tile.reset(new level_card(*rsp.stats->recentScoreLevel));
 			}
 		}
 	}

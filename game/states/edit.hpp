@@ -36,7 +36,7 @@ private:
 
 	sf::Sprite m_bg;
 
-	ImGui::AppMenuBar m_menu_bar;
+	menu_bar m_menu_bar;
 
 	void draw(sf::RenderTarget&, sf::RenderStates) const;
 

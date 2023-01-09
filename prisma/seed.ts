@@ -86,6 +86,7 @@ async function fakeScore(user: User, level: Level) {
 			time: sampleScore.time,
 			replay: Buffer.from(sampleScore.replay, 'base64'),
 			version: 'vSeeded',
+			hidden: Math.random() > 0.7,
 		},
 	});
 	return score;

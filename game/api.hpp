@@ -16,6 +16,13 @@ class api {
 public:
 	static api& get();
 
+	// this is not inherited by other response types because that would make designation initialization in the api implementations
+	// less pretty
+	struct response {
+		bool success;
+		std::optional<std::string> error;
+	};
+
 	struct level_record {
 		std::string user;
 		float time;
@@ -57,7 +64,8 @@ public:
 		std::time_t updatedAt;
 		bool alt;
 		int levelVersion;
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, id, user, levelId, time, version, raw, createdAt, updatedAt, alt, levelVersion);
+		bool hidden;
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, id, user, levelId, time, version, raw, createdAt, updatedAt, alt, levelVersion, hidden);
 		bool operator==(const replay& other) const;
 		bool operator!=(const replay& other) const;
 	};
@@ -215,6 +223,8 @@ public:
 
 	std::future<api::replay_search_response> search_replays(int levelId, api::replay_search_query q);
 	std::future<api::replay_upload_response> upload_replay(::replay rp);
+
+	std::future<api::response> set_replay_visibility(int rid, bool visible);
 
 	std::future<api::user_stats_response> fetch_user_stats(int id);
 	std::future<api::user_stats_response> fetch_user_stats(std::string name);

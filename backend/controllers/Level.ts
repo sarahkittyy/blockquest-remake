@@ -19,9 +19,8 @@ import {
 	Max,
 	Min,
 	validate,
-	validateOrReject,
 } from 'class-validator';
-import { ScoreQueryInclude, uploadReplay } from './Replay';
+import { ScoreQueryHide, ScoreQueryInclude } from './Replay';
 
 const SortableFields = [
 	'id',
@@ -35,12 +34,15 @@ const SortableFields = [
 ] as const;
 const SortDirections = ['asc', 'desc'] as const;
 
-export const LevelQueryInclude = {
+export const LevelQueryInclude = (uid?: number) => ({
 	include: {
 		author: true,
 		votes: true,
 		scores: {
 			...ScoreQueryInclude,
+			where: {
+				...ScoreQueryHide(uid),
+			},
 		},
 		_count: {
 			select: {
@@ -48,7 +50,7 @@ export const LevelQueryInclude = {
 			},
 		},
 	},
-};
+});
 
 export interface ILevelResponse {
 	id: number;
@@ -143,7 +145,7 @@ export default class Level {
 				update: {
 					vote: vote === 'like' ? 1 : -1,
 				},
-				include: { level: { ...LevelQueryInclude } },
+				include: { level: { ...LevelQueryInclude(token.id) } },
 			});
 			return res.status(200).send({
 				level: tools.toLevelResponse(voteModel.level, token.id),
@@ -238,7 +240,7 @@ export default class Level {
 			orderBy: {
 				[opts.sortBy]: opts.order,
 			},
-			...LevelQueryInclude,
+			...LevelQueryInclude(token?.id),
 		});
 
 		if (levels.length === 0) {
@@ -265,6 +267,7 @@ export default class Level {
 	 * @param {int} req.params.id
 	 */
 	static async getById(req: Request, res: Response) {
+		const token: tools.IAuthToken | undefined = res.locals.token;
 		const id: string | undefined = req.params.id;
 		if (!id) {
 			return res.status(400).send({ error: 'No id specified' });
@@ -284,7 +287,7 @@ export default class Level {
 						increment: 1,
 					},
 				},
-				...LevelQueryInclude,
+				...LevelQueryInclude(token.id),
 			});
 			if (!level) {
 				return res.status(404).send({ error: `Level id "${id}" not found` });
@@ -301,6 +304,7 @@ export default class Level {
 
 	static async getQuickplay(req: Request, res: Response) {
 		try {
+			const token: tools.IAuthToken | undefined = res.locals.token;
 			const levelIds = await prisma.level.findMany({
 				select: {
 					id: true,
@@ -309,7 +313,7 @@ export default class Level {
 			const { id } = levelIds[Math.floor(Math.random() * levelIds.length)];
 			const level = await prisma.level.findUnique({
 				where: { id },
-				...LevelQueryInclude,
+				...LevelQueryInclude(token?.id),
 			});
 			if (!level) {
 				return res.status(500).send({ error: `Quickplay fetch failed.` });
@@ -433,7 +437,7 @@ export default class Level {
 							data: {
 								verification: { connect: { id: updatedLevelPreVerify.scores[0].id } },
 							},
-							...LevelQueryInclude,
+							...LevelQueryInclude(token.id),
 					  })
 					: null;
 
@@ -463,7 +467,7 @@ export default class Level {
 					},
 				},
 			},
-			...LevelQueryInclude,
+			...LevelQueryInclude(token.id),
 		});
 		newLevel =
 			newLevel != null
@@ -472,7 +476,7 @@ export default class Level {
 						data: {
 							verification: { connect: { id: newLevel.scores[0].id } },
 						},
-						...LevelQueryInclude,
+						...LevelQueryInclude(token.id),
 				  })
 				: newLevel;
 
