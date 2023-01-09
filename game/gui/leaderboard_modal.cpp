@@ -180,7 +180,7 @@ void leaderboard_modal::imdraw(fsm* sm) {
 								ImGui::SetTooltip("View player profile");
 								ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 								if (ImGui::IsMouseClicked(0)) {
-									m_user_modal.reset(new user_modal(m_lvl.author));
+									m_user_modal.reset(new user_modal(score.user));
 									m_user_modal->open();
 								}
 							}
