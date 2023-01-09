@@ -19,7 +19,8 @@ public:
 	struct level_record {
 		std::string user;
 		float time;
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::level_record, user, time);
+		int version;
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::level_record, user, time, version);
 	};
 
 	struct level {
@@ -39,6 +40,7 @@ public:
 		int records;
 		std::optional<int> myVote;
 		std::optional<int> verificationId;
+		int version;
 		inline bool verified() const {
 			return verificationId.has_value();
 		}
@@ -54,7 +56,8 @@ public:
 		std::time_t createdAt;
 		std::time_t updatedAt;
 		bool alt;
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, id, user, levelId, time, version, raw, createdAt, updatedAt, alt);
+		int levelVersion;
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, id, user, levelId, time, version, raw, createdAt, updatedAt, alt, levelVersion);
 		bool operator==(const replay& other) const;
 		bool operator!=(const replay& other) const;
 	};

@@ -610,6 +610,7 @@ std::future<api::update_response> api::is_up_to_date() {
 
 bool api::replay::operator==(const api::replay &other) const {
 	return other.id == id &&
+		   other.levelVersion == levelVersion &&
 		   other.createdAt == createdAt &&	 //
 		   other.updatedAt == updatedAt &&
 		   other.levelId == levelId &&
@@ -714,7 +715,9 @@ void from_json(const nlohmann::json &j, api::level &l) {
 	if (j.contains("verificationId")) {
 		l.verificationId = j["verificationId"].get<int>();
 	}
-
+	if (j.contains("version")) {
+		l.version = j["version"].get<int>();
+	}
 	if (j.contains("myRecord")) {
 		l.myRecord = j["myRecord"].get<api::level_record>();
 	}
@@ -726,6 +729,7 @@ void to_json(nlohmann::json &j, const api::level &l) {
 	j["code"]		 = l.code;
 	j["title"]		 = l.title;
 	j["description"] = l.description;
+	j["version"]	 = l.version;
 	j["createdAt"]	 = l.createdAt;
 	j["updatedAt"]	 = l.updatedAt;
 	j["downloads"]	 = l.downloads;

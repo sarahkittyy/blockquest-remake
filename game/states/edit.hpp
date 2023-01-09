@@ -42,6 +42,7 @@ private:
 	std::deque<std::vector<tilemap::diff>> m_undo_queue;   // all changes made
 	std::deque<std::vector<tilemap::diff>> m_redo_queue;   // redo queue
 	const int UNDO_MAX = 100;							   // maximum amount of undos
+	bool m_modified	   = false;
 
 	level m_cursor;							 // the level that just renders the cursor
 	std::optional<replay> m_loaded_replay;	 // the currently loaded replay file

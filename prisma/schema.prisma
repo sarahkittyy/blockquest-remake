@@ -46,6 +46,7 @@ model Level {
 	comments		UserLevelComment[]
 	verification	UserLevelScore?		@relation(fields: [verificationId], references: id, name: "verify")
 	verificationId	Int?				@unique
+	version						Int					@default(1)
 }
 
 model UserPasswordReset {
@@ -92,6 +93,7 @@ model UserLevelScore {
 	replay		Bytes
 	alt			Boolean		@default(false)
 	verifies	Level?		@relation("verify")
+	levelVersion	Int			@default(1)
 
 	@@id([id, userId, levelId])
 }

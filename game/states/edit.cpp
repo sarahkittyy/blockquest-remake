@@ -187,6 +187,9 @@ void edit::update(fsm* sm, sf::Time dt) {
 		// metadata check
 		if (m_level().has_metadata() && !m_is_current_level_ours())
 			m_level().clear_metadata();
+		if (m_level().has_metadata()) {
+			m_modified = true;
+		}
 		// verification check
 		if (m_verification) {
 			m_verification.reset();
@@ -586,6 +589,7 @@ void edit::m_load_api_level(api::level lvl) {
 	m_download_handle.reset();
 	m_level().load_from_api(lvl);
 	api::level md = m_level().get_metadata();
+	m_modified = false;
 	if (m_is_current_level_ours()) {
 		std::strncpy(m_title_buffer, m_level().get_metadata().title.c_str(), 50);
 		std::strncpy(m_description_buffer, m_level().get_metadata().description.c_str(), 256);
@@ -599,6 +603,7 @@ void edit::m_load_api_level(api::level lvl) {
 void edit::m_clear_level() {
 	m_upload_handle.reset();
 	m_download_handle.reset();
+	m_modified = false;
 	m_level().clear();
 	std::memset(m_title_buffer, 0, 50);
 	std::memset(m_description_buffer, 0, 50);
@@ -612,7 +617,7 @@ void edit::m_gui_replay_submit(fsm* sm) {
 	auto& md = m_level().get_metadata();
 	replay& rp = m_test_play_world->get_replay();
 	bool authed = auth::get().authed();
-	bool can_submit = !m_upload_replay_handle.fetching() && authed && ((md.myRecord && md.myRecord->time > rp.get_time()) || !md.myRecord);
+	bool can_submit = !m_upload_replay_handle.fetching() && !m_modified && authed && ((md.myRecord && md.myRecord->time > rp.get_time()) || !md.myRecord || md.myRecord->version != md.version);
 	
 	sf::Vector2f wsz(resource::get().window().getSize());
 	
@@ -658,6 +663,16 @@ void edit::m_gui_replay_submit(fsm* sm) {
 		rp.set_user(auth::get().username().c_str());
 		m_upload_replay_handle.reset(api::get().upload_replay(rp));
 	}
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && !can_submit) {
+		if (m_upload_replay_handle.fetching())
+			ImGui::SetTooltip("Submitting...");
+		else if (!authed)
+			ImGui::SetTooltip("Log in to submit times!");
+		else if (m_modified)
+			ImGui::SetTooltip("Level is modified from the server's version");
+		else
+			ImGui::SetTooltip("Cannot submit slower record.");
+	}
 	ImGui::SameLine();
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/download.png"), "Download###DownloadRecord")) {
 		ImGuiFileDialog::Instance()->OpenDialog("DownloadReplayDialog", "Download Replay", ".rpl", ".", 1, nullptr, ImGuiFileDialogFlags_Modal);
@@ -671,14 +686,6 @@ void edit::m_gui_replay_submit(fsm* sm) {
 			rp.save_to_file(path);
 		}
 		ImGuiFileDialog::Instance()->Close();
-	}
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && !can_submit) {
-		if (m_upload_replay_handle.fetching())
-			ImGui::SetTooltip("Submitting...");
-		else if (!authed)
-			ImGui::SetTooltip("Log in to submit times!");
-		else
-			ImGui::SetTooltip("Cannot submit slower record.");
 	}
 
 	ImGui::EndDisabled();

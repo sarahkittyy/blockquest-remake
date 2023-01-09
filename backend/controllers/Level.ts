@@ -21,7 +21,7 @@ import {
 	validate,
 	validateOrReject,
 } from 'class-validator';
-import { uploadReplay } from './Replay';
+import { ScoreQueryInclude, uploadReplay } from './Replay';
 
 const SortableFields = [
 	'id',
@@ -40,9 +40,7 @@ export const LevelQueryInclude = {
 		author: true,
 		votes: true,
 		scores: {
-			include: {
-				user: true,
-			},
+			...ScoreQueryInclude,
 		},
 		_count: {
 			select: {
@@ -51,6 +49,34 @@ export const LevelQueryInclude = {
 		},
 	},
 };
+
+export interface ILevelResponse {
+	id: number;
+	code: string;
+	author: string;
+	title: string;
+	description: string;
+	createdAt: number;
+	updatedAt: number;
+	downloads: number;
+	likes: number;
+	dislikes: number;
+	record?: {
+		user: string;
+		time: number;
+		version: number;
+	};
+	myRecord?: {
+		user: string;
+		time: number;
+		version: number;
+	};
+	records: number;
+	comments: number;
+	myVote?: 1 | 0 | -1;
+	verificationId?: number;
+	version: number;
+}
 
 /* options for searching through levels */
 export class ISearchOptions {
@@ -84,31 +110,6 @@ export class ISearchOptions {
 
 	@IsIn(SortDirections)
 	order!: typeof SortDirections[number];
-}
-
-export interface ILevelResponse {
-	id: number;
-	code: string;
-	author: string;
-	title: string;
-	description: string;
-	createdAt: number;
-	updatedAt: number;
-	downloads: number;
-	likes: number;
-	dislikes: number;
-	record?: {
-		user: string;
-		time: number;
-	};
-	myRecord?: {
-		user: string;
-		time: number;
-	};
-	records: number;
-	comments: number;
-	myVote?: 1 | 0 | -1;
-	verificationId?: number;
 }
 
 /* what is returned from the search endpoint */
@@ -413,8 +414,10 @@ export default class Level {
 							time: replayData.header.time,
 							version: replayData.header.version,
 							alt: replayData.header.alt,
+							levelVersion: existingLevel.version + 1,
 						},
 					},
+					version: existingLevel.version + 1,
 				},
 				include: {
 					scores: {

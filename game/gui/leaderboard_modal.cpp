@@ -126,7 +126,7 @@ void leaderboard_modal::imdraw(fsm* sm) {
 				ImGui::TextWrapped("%s", res.error->c_str());
 				ImGui::PopStyleColor();
 			} else {
-				if (ImGui::BeginTable("###Scores", 5, ImGuiTableFlags_Borders)) {
+				if (ImGui::BeginTable("###Scores", 6, ImGuiTableFlags_Borders)) {
 					ImGui::TableNextRow();
 					ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color(0xC8AD7FFF)));
 					ImGui::TableNextColumn();
@@ -136,7 +136,9 @@ void leaderboard_modal::imdraw(fsm* sm) {
 					ImGui::TableNextColumn();
 					ImGui::Text("Submitted");
 					ImGui::TableNextColumn();
-					ImGui::Text("Version");
+					ImGui::Text("Level Version");
+					ImGui::TableNextColumn();
+					ImGui::Text("Game Version");
 					ImGui::TableNextColumn();
 					ImGui::Text("Replay");
 					ImGui::PopStyleColor();
@@ -150,7 +152,8 @@ void leaderboard_modal::imdraw(fsm* sm) {
 						for (int i = 0; i < res.scores.size(); ++i) {
 							ImGui::PushID(i);
 							ImGui::TableNextRow();
-							auto& score = res.scores[i];
+							auto& score	  = res.scores[i];
+							bool outdated = score.levelVersion != m_lvl.version;
 							ImGui::TableNextColumn();
 							if (score == wr) {
 								ImGui::Image(resource::get().imtex("assets/gui/crown.png"), sf::Vector2f(16, 16));
@@ -166,22 +169,20 @@ void leaderboard_modal::imdraw(fsm* sm) {
 								}
 								ImGui::SameLine();
 							}
-							ImGui::BeginGroup();
 							ImGui::Text("%s%s", score.user.c_str(), auth::get().authed() && auth::get().username() == score.user ? " (You)" : "");
-							if (score.user == m_lvl.author) {
-								ImGui::SameLine();
-								ImGui::Image(resource::get().imtex("assets/gui/create.png"), sf::Vector2f(16, 16));
-								if (ImGui::IsItemHovered()) {
-									ImGui::SetTooltip("Level Creator");
-								}
-							}
-							ImGui::EndGroup();
 							if (ImGui::IsItemHovered()) {
 								ImGui::SetTooltip("View player profile");
 								ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 								if (ImGui::IsMouseClicked(0)) {
 									m_user_modal.reset(new user_modal(score.user));
 									m_user_modal->open();
+								}
+							}
+							if (score.user == m_lvl.author) {
+								ImGui::SameLine();
+								ImGui::Image(resource::get().imtex("assets/gui/create.png"), sf::Vector2f(16, 16));
+								if (ImGui::IsItemHovered()) {
+									ImGui::SetTooltip("Level Creator");
 								}
 							}
 							ImGui::TableNextColumn();
@@ -191,6 +192,11 @@ void leaderboard_modal::imdraw(fsm* sm) {
 							tm* date_tm = std::localtime(&score.updatedAt);
 							std::strftime(date_fmt, 100, "%D %r", date_tm);
 							ImGui::Text("%s", date_fmt);
+							ImGui::TableNextColumn();
+							ImGui::TextColored(outdated ? sf::Color::Red : sf::Color::White, "%d%s", score.levelVersion, outdated ? " (outdated)" : "");
+							if (outdated && ImGui::IsItemHovered()) {
+								ImGui::SetTooltip("Level has been updated since this replay was ran.");
+							}
 							ImGui::TableNextColumn();
 							ImGui::Text("%s", score.version.c_str());
 							ImGui::TableNextColumn();

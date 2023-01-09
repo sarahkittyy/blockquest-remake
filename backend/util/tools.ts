@@ -233,6 +233,7 @@ export function toReplayResponse(replay: UserLevelScoreRunner): IReplayResponse 
 		createdAt: replay.createdAt.getTime() / 1000,
 		updatedAt: replay.updatedAt.getTime() / 1000,
 		alt: replay.alt,
+		levelVersion: replay.levelVersion,
 	};
 }
 
@@ -253,7 +254,7 @@ export function toLevelResponse(lvl: LevelMetadataIncluded, userId?: number): IL
 			.catch(log.warn);
 	}
 
-	const record = bestScore(lvl.scores);
+	const record = bestScore(lvl.scores, lvl);
 	const myScore: UserLevelScoreRunner | undefined =
 		userId != null ? userScore(lvl.scores, userId) : undefined;
 	return {
@@ -271,12 +272,14 @@ export function toLevelResponse(lvl: LevelMetadataIncluded, userId?: number): IL
 			record: {
 				time: record.time,
 				user: record.user.name,
+				version: record.levelVersion,
 			},
 		}),
 		...(myScore != undefined && {
 			myRecord: {
 				time: myScore.time,
 				user: myScore.user.name,
+				version: myScore.levelVersion,
 			},
 		}),
 		records: lvl.scores.length,
@@ -285,6 +288,7 @@ export function toLevelResponse(lvl: LevelMetadataIncluded, userId?: number): IL
 		...(lvl.verificationId != null && {
 			verificationId: lvl.verificationId,
 		}),
+		version: lvl.version,
 	};
 }
 
@@ -317,15 +321,23 @@ export function dislikesCount(votes: UserLevelVote[]) {
 	}, 0);
 }
 
-export function bestScore(scores: UserLevelScoreRunner[]): UserLevelScoreRunner | undefined {
-	return scores.sort((a, b) => a.time - b.time)?.[0];
+export function bestScore(
+	scores: UserLevelScoreRunner[],
+	level: Level
+): UserLevelScoreRunner | undefined {
+	return scores //
+		.sort((a, b) => a.time - b.time)
+		.sort((a, b) => b.levelVersion - a.levelVersion)?.[0];
 }
 
 export function userScore(
 	scores: UserLevelScoreRunner[],
 	userId: number
 ): UserLevelScoreRunner | undefined {
-	return scores.find((score) => score.userId === userId);
+	return scores //
+		.filter((score) => score.userId === userId)
+		.sort((a, b) => a.time - b.time)
+		.sort((a, b) => b.levelVersion - a.levelVersion)?.[0];
 }
 
 export function rating(votes: UserLevelVote[]) {

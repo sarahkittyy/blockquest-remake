@@ -45,7 +45,14 @@ export interface IReplayResponse {
 	createdAt: number;
 	updatedAt: number;
 	alt: boolean;
+	levelVersion: number;
 }
+
+export const ScoreQueryInclude = {
+	include: {
+		user: true,
+	},
+};
 
 export async function uploadParsedReplay(
 	data: tools.IReplayData,
@@ -58,11 +65,11 @@ export async function uploadParsedReplay(
 				userId: userId,
 				levelId: levelId ?? data.header.levelId,
 			},
-			include: {
-				user: true,
-			},
+			...ScoreQueryInclude,
 		});
-		if (score == undefined || data.header.time < score.time) {
+		const lvl = await prisma.level.findUnique({ where: { id: levelId ?? data.header.levelId } });
+		if (lvl == null) throw '(NO_FIND_LVL)';
+		if (score == undefined || data.header.time < score.time || score.levelVersion != lvl.version) {
 			score = await prisma.userLevelScore.create({
 				data: {
 					user: { connect: { id: userId } },
@@ -71,10 +78,9 @@ export async function uploadParsedReplay(
 					time: data.header.time,
 					version: data.header.version,
 					alt: data.header.alt,
+					levelVersion: lvl.version,
 				},
-				include: {
-					user: true,
-				},
+				...ScoreQueryInclude,
 			});
 		}
 		return score;
@@ -116,9 +122,7 @@ export default class Replay {
 		try {
 			const replay = await prisma.userLevelScore.findUnique({
 				where: { id },
-				include: {
-					user: true,
-				},
+				...ScoreQueryInclude,
 			});
 			if (replay == null)
 				return res.status(400).send({ error: 'A replay with that ID was not found.' });
@@ -163,12 +167,8 @@ export default class Replay {
 			where: {
 				levelId,
 			},
-			orderBy: {
-				[opts.sortBy]: opts.order,
-			},
-			include: {
-				user: true,
-			},
+			orderBy: [{ levelVersion: 'desc' }, { [opts.sortBy]: opts.order }],
+			...ScoreQueryInclude,
 		});
 
 		if (scores.length === 0) {

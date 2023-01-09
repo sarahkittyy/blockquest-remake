@@ -40,7 +40,7 @@ ApiLevelTile::ApiLevelTile(api::level& lvl, sf::Color bg)
 
 void ApiLevelTile::imdraw(fsm* sm) {
 	// title / auth
-	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFB8CABFF), "%s", m_lvl.title.c_str());
+	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFB8CABFF), "%s (v%d)", m_lvl.title.c_str(), m_lvl.version);
 	ImGui::SameLine();
 	ImGui::BeginGroup();
 	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFFFFFFFF), "(%s)", m_lvl.author.c_str());
@@ -168,7 +168,7 @@ void ApiLevelTile::imdraw(fsm* sm) {
 	char date_fmt[100];
 	tm* date_tm = std::localtime(&m_lvl.createdAt);
 	std::strftime(date_fmt, 100, "%D %r", date_tm);
-	ImGui::TextWrapped("Created: %s", date_fmt);
+	ImGui::Text("Created: %s", date_fmt);
 	if (m_lvl.createdAt != m_lvl.updatedAt) {
 		date_tm = std::localtime(&m_lvl.updatedAt);
 		std::strftime(date_fmt, 100, "%D %r", date_tm);
