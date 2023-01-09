@@ -62,7 +62,7 @@ export async function uploadParsedReplay(
 				user: true,
 			},
 		});
-		if (score == undefined || data.header.time <= score.time) {
+		if (score == undefined || data.header.time < score.time) {
 			score = await prisma.userLevelScore.create({
 				data: {
 					user: { connect: { id: userId } },

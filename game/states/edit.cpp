@@ -521,7 +521,7 @@ void edit::m_gui_replay_submit(fsm* sm) {
 	auto& md = m_level().get_metadata();
 	replay& rp = m_test_play_world->get_replay();
 	bool authed = auth::get().authed();
-	bool can_submit = !m_upload_replay_handle.fetching() && authed && ((md.myRecord && md.myRecord->time >= rp.get_time()) || !md.myRecord);
+	bool can_submit = !m_upload_replay_handle.fetching() && authed && ((md.myRecord && md.myRecord->time > rp.get_time()) || !md.myRecord);
 	
 	sf::Vector2f wsz(resource::get().window().getSize());
 	
