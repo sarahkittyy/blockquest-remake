@@ -151,24 +151,10 @@ void leaderboard_modal::imdraw(fsm* sm) {
 							ImGui::TableNextRow();
 							auto& score = res.scores[i];
 							ImGui::TableNextColumn();
-							if (score.user == m_lvl.author) {
-								ImGui::Image(resource::get().imtex("assets/gui/create.png"), sf::Vector2f(16, 16));
-								if (ImGui::IsItemHovered()) {
-									ImGui::SetTooltip("Level Creator");
-								}
-								ImGui::SameLine();
-							}
 							if (score == wr) {
 								ImGui::Image(resource::get().imtex("assets/gui/crown.png"), sf::Vector2f(16, 16));
 								if (ImGui::IsItemHovered()) {
 									ImGui::SetTooltip("World Record");
-								}
-								ImGui::SameLine();
-							}
-							if (auth::get().authed() && auth::get().username() == score.user) {
-								ImGui::Image(resource::get().imtex("assets/gui/play.png"), sf::Vector2f(16, 16));
-								if (ImGui::IsItemHovered()) {
-									ImGui::SetTooltip("Your Score");
 								}
 								ImGui::SameLine();
 							}
@@ -179,7 +165,15 @@ void leaderboard_modal::imdraw(fsm* sm) {
 								}
 								ImGui::SameLine();
 							}
-							ImGui::Text("%s", score.user.c_str());
+							ImGui::Text("%s%s", score.user.c_str(), auth::get().authed() && auth::get().username() == score.user ? " (You)" : "");
+							if (score.user == m_lvl.author) {
+								ImGui::SameLine();
+								ImGui::Image(resource::get().imtex("assets/gui/create.png"), sf::Vector2f(16, 16));
+								if (ImGui::IsItemHovered()) {
+									ImGui::SetTooltip("Level Creator");
+								}
+								ImGui::SameLine();
+							}
 							ImGui::TableNextColumn();
 							ImGui::Text("%.2f", score.time);
 							ImGui::TableNextColumn();
