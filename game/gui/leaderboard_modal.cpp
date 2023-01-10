@@ -219,10 +219,10 @@ void leaderboard_modal::imdraw(fsm* sm) {
 							if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
 								if (!can_hide) {
 									ImGui::SetTooltip("You must be logged in as the player who ran this replay to hide it.");
-								} else if (score.hidden) {
-									ImGui::SetTooltip("Make this replay private");
+								} else if (!score.hidden) {
+									ImGui::SetTooltip("Hide replay (Only you can see it)");
 								} else {
-									ImGui::SetTooltip("Hide this replay from public view");
+									ImGui::SetTooltip("Show replay (Everyone can see it)");
 								}
 							}
 							ImGui::SameLine();

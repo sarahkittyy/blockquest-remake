@@ -38,7 +38,7 @@ level_card::level_card(api::level& lvl, sf::Color bg)
 
 void level_card::imdraw(fsm* sm) {
 	// title / auth
-	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFB8CABFF), "%s (v%d)", m_lvl.title.c_str(), m_lvl.version);
+	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFB8CABFF), "%s", m_lvl.title.c_str());
 	ImGui::SameLine();
 	ImGui::BeginGroup();
 	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFFFFFFFF), "(%s)", m_lvl.author.c_str());
@@ -170,9 +170,9 @@ void level_card::imdraw(fsm* sm) {
 	if (m_lvl.createdAt != m_lvl.updatedAt) {
 		date_tm = std::localtime(&m_lvl.updatedAt);
 		std::strftime(date_fmt, 100, "%D %r", date_tm);
-		ImGui::TextWrapped("Updated: %s", date_fmt);
+		ImGui::TextWrapped("Updated: %s (v%d)", date_fmt, m_lvl.version);
 	}
-	ImGui::PushStyleColor(ImGuiCol_Text, 0x48c8f0FF);
+	ImGui::PushStyleColor(ImGuiCol_Text, sf::Color(255, 87, 51));
 	ImGui::TextWrapped("%s", m_lvl.description.c_str());
 	ImGui::PopStyleColor();
 }
