@@ -26,6 +26,8 @@ public:
 protected:
 	virtual void draw(sf::RenderTarget&, sf::RenderStates) const;
 
+	sf::Sprite& spr();
+
 private:
 	sf::Sprite m_spr;	// the internal sprite used
 

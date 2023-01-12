@@ -299,6 +299,7 @@ void world::step(sf::Time dt) {
 
 	if (m_this_frame.jump) {
 		bool dismount_keyed = m_climbing && alt_controls && !m_this_frame.right && !m_this_frame.left && m_this_frame.jump;
+		// normal jumping
 		if (!m_jumping && !m_climbing && m_player_grounded_ago(sf::milliseconds(phys.coyote_millis)) && !m_tile_above_player()) {
 			m_yv = -phys.jump_v * gravity_sign;
 			// so that we can't jump twice :)
@@ -307,10 +308,13 @@ void world::step(sf::Time dt) {
 			resource::get().play_sound("jump");
 			// to prevent sticking
 			m_yp -= 0.01f * gravity_sign;
-		} else if (m_climbing && !m_last_frame.jump && dismount_keyed) {
+		} else if (m_climbing && !m_last_frame.jump && dismount_keyed) {   // if not jumping, we can dismount
 			m_climbing = false;
-		} else if (m_climbing && !m_last_frame.jump && m_can_player_wallkick(mirror(m_climbing_facing), false)) {
-			m_player_wallkick(mirror(m_climbing_facing));
+		}
+
+		// wallkicks
+		if (m_can_player_wallkick(mirror(m_facing()))) {
+			m_player_wallkick(mirror(m_facing()));
 		}
 	} else {
 		if (m_jumping) {
@@ -579,8 +583,8 @@ bool world::update(sf::Time dt) {
 	// debug::get() << "velocity = " << sf::Vector2f(m_xv, m_yv) << "\n";
 	// debug::get() << "touching Y-: " << m_touching[int(dir::up)] << "\n";
 	// debug::get() << "touching Y+: " << m_touching[int(dir::down)] << "\n";
-	// debug::get() << "touching X-: " << m_touching[int(dir::left)] << "\n";
-	// debug::get() << "touching X+: " << m_touching[int(dir::right)] << "\n";
+	debug::get() << "touching X-: " << m_touching[int(dir::left)] << "\n";
+	debug::get() << "touching X+: " << m_touching[int(dir::right)] << "\n";
 
 	// debug::get() << "mp u="
 	//<< !!m_moving_platform_handle[0]

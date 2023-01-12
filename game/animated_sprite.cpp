@@ -8,6 +8,7 @@ animated_sprite::animated_sprite(sf::Texture& tex, int tx, int ty)
 	  m_current_animation("default"),
 	  m_cframe(0) {
 	m_spr.setTexture(m_tex);
+
 	m_anims["default"] = { 0 };
 	m_update_sprite_rect();
 }
@@ -71,6 +72,10 @@ void animated_sprite::m_update_sprite_rect() {
 void animated_sprite::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	// s.transform *= getTransform();
 	t.draw(m_spr, s);
+}
+
+sf::Sprite& animated_sprite::spr() {
+	return m_spr;
 }
 
 sf::Vector2i animated_sprite::size() const {
