@@ -63,7 +63,7 @@ void player::queue_animation(std::string name) {
 }
 
 sf::Vector2i player::size() const {
-	return sf::Vector2i(64, 64);
+	return m_inner.size();
 }
 
 void player::update() {
