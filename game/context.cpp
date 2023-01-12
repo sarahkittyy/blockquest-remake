@@ -31,7 +31,9 @@ context::context()
 	  m_music_volume(50.f),
 	  m_fps_limit(120),
 	  m_use_alt_ctrls(false),
-	  m_draw_grid_lines(false) {
+	  m_draw_grid_lines(false),
+	  m_player_outer(sf::Color::Black),
+	  m_player_inner(sf::Color::White) {
 	load_from_file("bq-r.json");
 	resource::get().window().setFramerateLimit(m_fps_limit);
 }
@@ -68,6 +70,14 @@ bool& context::grid_lines() {
 	return m_draw_grid_lines;
 }
 
+sf::Color& context::player_outline() {
+	return m_player_outer;
+}
+
+sf::Color& context::player_fill() {
+	return m_player_inner;
+}
+
 std::string context::save() const {
 	nlohmann::json j;
 
@@ -91,6 +101,9 @@ std::string context::save() const {
 	j["fps_limit"]	  = m_fps_limit;
 	j["alt_controls"] = m_use_alt_ctrls;
 	j["grid_lines"]	  = m_draw_grid_lines;
+
+	j["player_outline"] = m_player_outer.toInteger();
+	j["player_fill"]	= m_player_inner.toInteger();
 
 	j["controls"] = settings::get().get_key_map();
 
@@ -136,6 +149,14 @@ void context::load(std::string data) {
 
 	if (j.contains("grid_lines")) {
 		j["grid_lines"].get_to(m_draw_grid_lines);
+	}
+
+	if (j.contains("player_outline")) {
+		m_player_outer = sf::Color(j["player_outline"].get<uint32_t>());
+	}
+
+	if (j.contains("player_fill")) {
+		m_player_inner = sf::Color(j["player_fill"].get<uint32_t>());
 	}
 
 	if (j.contains("screen_size")) {

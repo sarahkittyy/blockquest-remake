@@ -11,6 +11,7 @@
 #include "gif.hpp"
 
 #include "auth.hpp"
+#include "player.hpp"
 #include "settings.hpp"
 
 #include "api_handle.hpp"
@@ -36,6 +37,12 @@ private:
 	char m_email[150];
 	char m_user_email[150];
 	int m_v_code;
+
+	player m_preview_player;
+	sf::RenderTexture m_preview_player_rt;
+
+	float m_outer_player_color[4];
+	float m_inner_player_color[4];
 
 	api_handle<auth::response> m_login_handle;
 	api_handle<auth::response> m_signup_handle;

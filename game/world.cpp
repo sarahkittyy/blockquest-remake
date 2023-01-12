@@ -17,7 +17,7 @@ world::world(level l, std::optional<replay> rp)
 	  m_tmap(l.map()),
 	  m_mt_mgr(m_tmap),
 	  m_level(l),
-	  m_player(resource::get().tex("assets/player.png")),
+	  m_player(),
 	  m_start_x(0),
 	  m_start_y(0),
 	  m_cstep(0),
@@ -95,6 +95,8 @@ void world::m_restart_world() {
 	m_dead		   = false;
 	m_sync_player_position();
 	m_player.setScale(1, 1);
+	m_player.set_fill_color(context::get().player_fill());
+	m_player.set_outline_color(context::get().player_outline());
 	m_mt_mgr.restart();
 	m_time_airborne	 = sf::seconds(999);
 	m_jumping		 = true;

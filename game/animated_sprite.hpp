@@ -23,10 +23,10 @@ public:
 
 	sf::Vector2i size() const;	 // get the sprite's size
 
+	sf::Sprite& spr();	 // get the internal sprite
+
 protected:
 	virtual void draw(sf::RenderTarget&, sf::RenderStates) const;
-
-	sf::Sprite& spr();
 
 private:
 	sf::Sprite m_spr;	// the internal sprite used

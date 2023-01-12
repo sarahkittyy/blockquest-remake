@@ -43,6 +43,9 @@ public:
 	// draw grid lines in the editor?
 	bool& grid_lines();
 
+	sf::Color& player_outline();
+	sf::Color& player_fill();
+
 private:
 	context();
 	context(const context&) = delete;
@@ -57,4 +60,7 @@ private:
 	int m_fps_limit;
 	bool m_use_alt_ctrls;
 	bool m_draw_grid_lines;
+
+	sf::Color m_player_outer;
+	sf::Color m_player_inner;
 };

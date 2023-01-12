@@ -29,6 +29,24 @@ menu_bar::menu_bar()
 	std::memset(m_email, 0, 150);
 	std::memset(m_user_email, 0, 150);
 	m_pword_just_reset = false;
+
+	m_outer_player_color[0] = context::get().player_outline().r / 255.f;
+	m_outer_player_color[1] = context::get().player_outline().g / 255.f;
+	m_outer_player_color[2] = context::get().player_outline().b / 255.f;
+	m_outer_player_color[3] = context::get().player_outline().a / 255.f;
+
+	m_inner_player_color[0] = context::get().player_fill().r / 255.f;
+	m_inner_player_color[1] = context::get().player_fill().g / 255.f;
+	m_inner_player_color[2] = context::get().player_fill().b / 255.f;
+	m_inner_player_color[3] = context::get().player_fill().a / 255.f;
+
+	m_preview_player_rt.create(64, 64);
+	m_preview_player.setScale(1.0, -1.0);
+	m_preview_player.setPosition(0, 64);
+
+	m_preview_player.set_animation("dash");
+	m_preview_player.set_fill_color(context::get().player_fill());
+	m_preview_player.set_outline_color(context::get().player_outline());
 }
 
 void menu_bar::process_event(sf::Event e) {
@@ -229,6 +247,12 @@ void menu_bar::imdraw(std::string& info_msg, fsm* sm) {
 		ImGui::OpenPopup("Settings###Settings");
 	}
 	if (ImGui::BeginPopupModal("Settings###Settings", nullptr, modal_flags)) {
+		// preview player rendering
+		m_preview_player.update();
+		m_preview_player_rt.clear(sf::Color(0xC8AD7FFF));
+		m_preview_player_rt.draw(m_preview_player);
+		m_preview_player_rt.display();
+
 		ImGui::BeginTable("###Buttons", 2);
 		for (key k = key::LEFT; k <= key::RESTART; k = key(int(k) + 1)) {
 			ImGui::PushID(int(k));
@@ -243,6 +267,24 @@ void menu_bar::imdraw(std::string& info_msg, fsm* sm) {
 			ImGui::PopID();
 		}
 		ImGui::EndTable();
+		ImGuiColorEditFlags ceditflags = ImGuiColorEditFlags_NoSidePreview;
+		ImGui::Image(m_preview_player_rt.getTexture());
+		if (ImGui::ColorEdit4("Player Outline", m_outer_player_color, ceditflags)) {
+			context::get().player_outline() = sf::Color(	 //
+				std::floor(m_outer_player_color[0] * 255),	 //
+				std::floor(m_outer_player_color[1] * 255),	 //
+				std::floor(m_outer_player_color[2] * 255),	 //
+				std::floor(m_outer_player_color[3] * 255));
+			m_preview_player.set_outline_color(context::get().player_outline());
+		}
+		if (ImGui::ColorEdit4("Player Fill", m_inner_player_color, ceditflags)) {
+			context::get().player_fill() = sf::Color(		 //
+				std::floor(m_inner_player_color[0] * 255),	 //
+				std::floor(m_inner_player_color[1] * 255),	 //
+				std::floor(m_inner_player_color[2] * 255),	 //
+				std::floor(m_inner_player_color[3] * 255));
+			m_preview_player.set_fill_color(context::get().player_fill());
+		}
 		// alt controls toggle
 		ImGui::Checkbox("BlockBros controls", &context::get().alt_controls());
 		if (ImGui::IsItemHovered()) {
