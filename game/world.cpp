@@ -55,6 +55,7 @@ world::world(level l, std::optional<replay> rp)
 		sf::Sound s(resource::get().sound_buffer("dash"));
 		while (!stoken.stop_requested()) {
 			if (m_dashing && m_player_grounded() && std::abs(m_xv) > phys.xv_max && !lost() && !won()) {
+				s.setVolume(context::get().sfx_volume());
 				s.play();
 				auto& sp		= m_pmgr.spawn<particles::smoke>();
 				float grav_sign = m_flip_gravity ? -1 : 1;
