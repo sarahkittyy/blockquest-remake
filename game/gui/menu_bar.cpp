@@ -297,7 +297,8 @@ void menu_bar::imdraw(std::string& info_msg, fsm* sm) {
 			}
 		}
 		const std::string upload_colors_label = m_submit_color_handle.fetching() ? "Uploading...###UploadColors" : "Upload Colors###UploadColors";
-		ImGui::BeginDisabled(m_submit_color_handle.fetching());
+		bool can_upload_color				  = !m_submit_color_handle.fetching() && auth::get().authed();
+		ImGui::BeginDisabled(!can_upload_color);
 		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/upload.png"), upload_colors_label.c_str())) {
 			if (!m_submit_color_handle.fetching())
 				m_submit_color_handle.reset(api::get().set_color(context::get().get_player_fill(), context::get().get_player_outline()));
@@ -306,6 +307,8 @@ void menu_bar::imdraw(std::string& info_msg, fsm* sm) {
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
 			if (m_submit_color_handle.fetching())
 				ImGui::SetTooltip("Uploading your color to the server...");
+			else if (!auth::get().authed())
+				ImGui::SetTooltip("Not logged in!");
 			else
 				ImGui::SetTooltip("Set this color as your publically visible one");
 		}
