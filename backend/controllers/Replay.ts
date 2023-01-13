@@ -1,13 +1,10 @@
 import { Request, Response } from 'express';
-import validator from 'validator';
-
 import * as tools from '@util/tools';
 
 import { stringify } from 'flatted';
 
 import { prisma } from '@db/index';
 import log from '@/log';
-import { UserLevelScore } from '@prisma/client';
 
 import { IsIn, IsInt, IsNumber, IsOptional, Max, Min, validate } from 'class-validator';
 
@@ -37,7 +34,7 @@ export class IReplaySearchOptions {
 
 export interface IReplayResponse {
 	id: number;
-	user: string;
+	user: tools.UserStub;
 	levelId: number;
 	time: number;
 	version: string;

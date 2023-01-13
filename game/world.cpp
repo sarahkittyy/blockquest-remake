@@ -95,8 +95,13 @@ void world::m_restart_world() {
 	m_dead		   = false;
 	m_sync_player_position();
 	m_player.setScale(1, 1);
-	m_player.set_fill_color(context::get().player_fill());
-	m_player.set_outline_color(context::get().player_outline());
+	if (m_playback) {
+		m_player.set_fill_color(m_playback->fill());
+		m_player.set_outline_color(m_playback->outline());
+	} else {
+		m_player.set_fill_color(context::get().get_player_fill());
+		m_player.set_outline_color(context::get().get_player_outline());
+	}
 	m_mt_mgr.restart();
 	m_time_airborne	 = sf::seconds(999);
 	m_jumping		 = true;
@@ -146,7 +151,7 @@ void world::process_event(sf::Event e) {
 }
 
 bool world::m_alt_controls() const {
-	if (m_playback.has_value())
+	if (has_playback())
 		return m_playback->alt();
 	else
 		return context::get().alt_controls();

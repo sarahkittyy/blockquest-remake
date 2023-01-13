@@ -21,6 +21,7 @@ import {
 	validate,
 } from 'class-validator';
 import { ScoreQueryHide, ScoreQueryInclude } from './Replay';
+import { stringify } from 'flatted';
 
 const SortableFields = [
 	'id',
@@ -55,7 +56,7 @@ export const LevelQueryInclude = (uid?: number) => ({
 export interface ILevelResponse {
 	id: number;
 	code: string;
-	author: string;
+	author: tools.UserStub;
 	title: string;
 	description: string;
 	createdAt: number;
@@ -287,7 +288,7 @@ export default class Level {
 						increment: 1,
 					},
 				},
-				...LevelQueryInclude(token.id),
+				...LevelQueryInclude(token?.id),
 			});
 			if (!level) {
 				return res.status(404).send({ error: `Level id "${id}" not found` });
@@ -296,6 +297,7 @@ export default class Level {
 				level: tools.toLevelResponse(level),
 			});
 		} catch (e) {
+			log.error(e);
 			return res.status(500).send({
 				error: 'Internal server error (NO_FETCH_LEVEL)',
 			});

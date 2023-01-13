@@ -43,8 +43,11 @@ public:
 	// draw grid lines in the editor?
 	bool& grid_lines();
 
-	sf::Color& player_outline();
-	sf::Color& player_fill();
+	sf::Color get_player_outline() const;
+	sf::Color get_player_fill() const;
+
+	void set_player_outline(sf::Color outline);
+	void set_player_fill(sf::Color fill);
 
 private:
 	context();

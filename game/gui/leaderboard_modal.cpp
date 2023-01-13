@@ -171,12 +171,12 @@ void leaderboard_modal::imdraw(fsm* sm) {
 								}
 								ImGui::SameLine();
 							}
-							ImGui::Text("%s%s", score.user.c_str(), auth::get().authed() && auth::get().username() == score.user ? " (You)" : "");
+							ImGui::Text("%s%s", score.user.name.c_str(), auth::get().authed() && auth::get().username() == score.user.name ? " (You)" : "");
 							if (ImGui::IsItemHovered()) {
 								ImGui::SetTooltip("View player profile");
 								ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 								if (ImGui::IsMouseClicked(0)) {
-									m_user_modal.reset(new user_modal(score.user));
+									m_user_modal.reset(new user_modal(score.user.name));
 									m_user_modal->open();
 								}
 							}
@@ -207,7 +207,7 @@ void leaderboard_modal::imdraw(fsm* sm) {
 							}
 							ImGui::TableNextColumn();
 							// if we own this score
-							bool can_hide = auth::get().authed() && auth::get().username() == score.user;
+							bool can_hide = auth::get().authed() && auth::get().username() == score.user.name;
 							ImGui::BeginDisabled(!can_hide);
 							ImTextureID hide_tex = resource::get().imtex(!score.hidden ? "assets/gui/eye_open.png" : "assets/gui/minus.png");
 							if (ImGui::ImageButton(hide_tex, ImVec2(16, 16))) {

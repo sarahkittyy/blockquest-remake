@@ -5,6 +5,7 @@
 
 #include "gui/comment_modal.hpp"
 #include "gui/leaderboard_modal.hpp"
+#include "gui/player_icon.hpp"
 #include "imgui-SFML.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -37,6 +38,7 @@ private:
 
 	leaderboard_modal m_lb_modal;
 	comment_modal m_comment_modal;
+	player_icon m_player_icon;
 	std::unique_ptr<user_modal> m_user_modal;
 
 	api_handle<api::vote_response> m_vote_handle;

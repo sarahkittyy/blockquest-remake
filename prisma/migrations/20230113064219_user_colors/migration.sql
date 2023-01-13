@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "fillColor" TEXT NOT NULL DEFAULT '#FFFFFFFF',
+ADD COLUMN     "outlineColor" TEXT NOT NULL DEFAULT '#000000FF';

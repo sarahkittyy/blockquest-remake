@@ -7,10 +7,7 @@ import * as tools from '@util/tools';
 import dayjs from 'dayjs';
 
 export interface ICommentResponse {
-	user: {
-		name: string;
-		id: number;
-	};
+	user: tools.UserStub;
 	id: number;
 	levelId: number;
 	text: string;

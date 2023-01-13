@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics.hpp>
 #include <ctime>
 #include <future>
 #include <optional>
@@ -23,6 +24,16 @@ public:
 		std::optional<std::string> error;
 	};
 
+	struct user_stub {
+		int id;
+		std::string name;
+		int fill;
+		int outline;
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::user_stub, id, name, fill, outline);
+		bool operator==(const user_stub& other) const;
+		bool operator!=(const user_stub& other) const;
+	};
+
 	struct level_record {
 		std::string user;
 		float time;
@@ -32,7 +43,7 @@ public:
 
 	struct level {
 		int id;
-		std::string author;
+		user_stub author;
 		std::string code;
 		std::string title;
 		std::string description;
@@ -55,7 +66,7 @@ public:
 
 	struct replay {
 		int id;
-		std::string user;
+		user_stub user;
 		int levelId;
 		float time;
 		std::string version;
@@ -68,12 +79,6 @@ public:
 		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::replay, id, user, levelId, time, version, raw, createdAt, updatedAt, alt, levelVersion, hidden);
 		bool operator==(const replay& other) const;
 		bool operator!=(const replay& other) const;
-	};
-
-	struct user_stub {
-		int id;
-		std::string name;
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(api::user_stub, id, name);
 	};
 
 	struct comment {
@@ -205,12 +210,19 @@ public:
 		std::optional<api::replay> recentScore;
 		std::optional<api::level> recentScoreLevel;
 		std::optional<api::level> recentLevel;
+		int outlineColor;
+		int fillColor;
 	};
 
 	struct user_stats_response {
 		bool success;
 		std::optional<std::string> error;
 		std::optional<api::user_stats> stats;
+	};
+
+	enum color_type {
+		FILL,
+		OUTLINE,
 	};
 
 	std::future<level_response> upload_level(::level l, ::replay verify, const char* title, const char* description, bool override = false);
@@ -228,6 +240,8 @@ public:
 
 	std::future<api::user_stats_response> fetch_user_stats(int id);
 	std::future<api::user_stats_response> fetch_user_stats(std::string name);
+
+	std::future<api::response> set_color(sf::Color fill, sf::Color outline);
 
 	// get the current app version
 	const char* version() const;

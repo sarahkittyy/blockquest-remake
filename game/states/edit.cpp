@@ -596,7 +596,7 @@ void edit::imdraw(fsm* sm) {
 bool edit::m_is_current_level_ours() const {
 	if (!m_level().has_metadata()) return true;
 	if (!auth::get().authed()) return false;
-	if (m_level().get_metadata().author != auth::get().username()) return false;
+	if (m_level().get_metadata().author.name != auth::get().username()) return false;
 	return true;
 }
 
@@ -739,7 +739,7 @@ void edit::m_gui_level_info(fsm* sm) {
 	api::level md = m_level().get_metadata();
 	ImGui::Text("-= Details (ID %d) =-", md.id);
 	ImGui::TextWrapped("Title: %s", md.title.c_str());
-	ImGui::TextWrapped("Author: %s", md.author.c_str());
+	ImGui::TextWrapped("Author: %s", md.author.name.c_str());
 	ImGui::TextWrapped("Downloads: %d", md.downloads);
 	if (md.record) {
 		ImGui::TextWrapped("World record: %.2fs by %s", md.record->time, md.record->user.c_str());

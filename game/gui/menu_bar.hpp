@@ -48,6 +48,7 @@ private:
 	api_handle<auth::response> m_signup_handle;
 	api_handle<auth::response> m_verify_handle;
 	api_handle<auth::reverify_response> m_reverify_handle;
+	api_handle<api::response> m_submit_color_handle;
 
 	std::unique_ptr<user_modal> m_self_modal;
 

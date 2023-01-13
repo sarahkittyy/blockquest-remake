@@ -36,6 +36,8 @@ context::context()
 	  m_player_inner(sf::Color::White) {
 	load_from_file("bq-r.json");
 	resource::get().window().setFramerateLimit(m_fps_limit);
+
+	api::get().set_color(m_player_outer, m_player_inner);
 }
 
 level& context::editor_level() {
@@ -70,12 +72,20 @@ bool& context::grid_lines() {
 	return m_draw_grid_lines;
 }
 
-sf::Color& context::player_outline() {
+sf::Color context::get_player_outline() const {
 	return m_player_outer;
 }
 
-sf::Color& context::player_fill() {
+sf::Color context::get_player_fill() const {
 	return m_player_inner;
+}
+
+void context::set_player_outline(sf::Color outline) {
+	m_player_outer = outline;
+}
+
+void context::set_player_fill(sf::Color fill) {
+	m_player_inner = fill;
 }
 
 std::string context::save() const {

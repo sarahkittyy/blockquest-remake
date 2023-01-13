@@ -65,6 +65,48 @@ std::future<api::response> api::set_replay_visibility(int rid, bool visible) {
 	});
 }
 
+std::future<api::response> api::set_color(sf::Color fill, sf::Color outline) {
+	return std::async([this, fill, outline]() -> api::response {
+		try {
+			nlohmann::json body = nlohmann::json::object();
+			auth::get().add_jwt_to_body(body);
+			body["fill"]	= fill.toInteger();
+			body["outline"] = outline.toInteger();
+			if (auto res = m_cli.Post("/set-player-color", body.dump(), "application/json")) {
+				if (res->status == 200) {
+					return { .success = true };
+				} else {
+					nlohmann::json result = nlohmann::json::parse(res->body);
+					if (result.contains("error")) {
+						std::cout << result.dump() << std::endl;
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error";
+					}
+				}
+			} else {
+				debug::log() << httplib::to_string(res.error()) << "\n";
+				throw "Could not connect to server";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.error	 = e
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.error	 = "Unknown error."
+			};
+		}
+	});
+}
+
 std::future<api::user_stats_response> api::fetch_user_stats(int id) {
 	return std::async([this, id]() -> api::user_stats_response {
 		try {
@@ -665,6 +707,14 @@ bool api::replay::operator!=(const api::replay &other) const {
 	return !(*this == other);
 }
 
+bool api::user_stub::operator==(const api::user_stub &other) const {
+	return other.id == id && other.name == name && other.fill == fill && other.outline == outline;
+}
+
+bool api::user_stub::operator!=(const api::user_stub &other) const {
+	return !(*this == other);
+}
+
 bool api::comment_search_query::operator==(const api::comment_search_query &other) const {
 	return limit == other.limit &&
 		   sortBy == other.sortBy &&
@@ -706,6 +756,8 @@ void to_json(nlohmann::json &j, const api::user_stats &s) {
 		{ "createdAt", s.createdAt },
 		{ "tier", s.tier },
 		{ "count", s.count },
+		{ "outlineColor", s.outlineColor },
+		{ "fillColor", s.fillColor },
 	};
 	if (s.recentLevel) {
 		j["recentLevel"] = *s.recentLevel;
@@ -716,11 +768,13 @@ void to_json(nlohmann::json &j, const api::user_stats &s) {
 }
 
 void from_json(const nlohmann::json &j, api::user_stats &s) {
-	s.id		= j.at("id").get<int>();
-	s.username	= j.at("username").get<std::string>();
-	s.createdAt = j.at("createdAt").get<std::time_t>();
-	s.tier		= j.at("tier").get<int>();
-	s.count		= j.at("count").get<api::user_stat_counts>();
+	s.id		   = j.at("id").get<int>();
+	s.username	   = j.at("username").get<std::string>();
+	s.createdAt	   = j.at("createdAt").get<std::time_t>();
+	s.tier		   = j.at("tier").get<int>();
+	s.count		   = j.at("count").get<api::user_stat_counts>();
+	s.outlineColor = j.at("outlineColor").get<int>();
+	s.fillColor	   = j.at("fillColor").get<int>();
 	if (j.contains("recentLevel")) {
 		s.recentLevel = j.at("recentLevel").get<api::level>();
 	}
@@ -734,7 +788,7 @@ void from_json(const nlohmann::json &j, api::user_stats &s) {
 
 void from_json(const nlohmann::json &j, api::level &l) {
 	l.id		  = j["id"].get<int>();
-	l.author	  = j["author"];
+	l.author	  = j["author"].get<api::user_stub>();
 	l.code		  = j.value("code", "");
 	l.title		  = j["title"];
 	l.description = j["description"];

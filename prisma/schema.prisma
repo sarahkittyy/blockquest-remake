@@ -26,6 +26,8 @@ model User {
 	scores		UserLevelScore[]
 	comments	UserLevelComment[]
 	reset			UserPasswordReset?
+	outlineColor	String	@default("0x000000FF")
+	fillColor		String	@default("0xFFFFFFFF")
 }
 
 

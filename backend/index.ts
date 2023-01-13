@@ -41,6 +41,8 @@ app.post('/replay/search/:levelId(\\d+)', checkAuth(), Replay.search);
 app.post('/replay/:id(\\d+)', checkAuth(), Replay.get);
 app.post('/replay/:id(\\d+)/:hide(hide|unhide)', requireAuth(0), Replay.hide);
 
+app.post('/set-player-color', requireAuth(0), User.setColor);
+
 app.post('/comments/level/:levelId(\\d+)', Comment.get);
 app.post('/comments/new/:levelId(\\d+)', requireAuth(0), Comment.post);
 

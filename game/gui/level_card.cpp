@@ -23,7 +23,8 @@ level_card::level_card(api::level& lvl, sf::Color bg)
 	  m_lvl(lvl),
 	  m_tmap(resource::get().tex("assets/tiles.png"), 32, 32, 16),
 	  m_lb_modal(lvl),
-	  m_comment_modal(lvl) {
+	  m_comment_modal(lvl),
+	  m_player_icon(lvl.author.fill, lvl.author.outline) {
 
 	m_map_tex.create(256, 256);
 	m_tmap.load(m_lvl.code);
@@ -41,15 +42,15 @@ void level_card::imdraw(fsm* sm) {
 	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFB8CABFF), "%s", m_lvl.title.c_str());
 	ImGui::SameLine();
 	ImGui::BeginGroup();
-	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFFFFFFFF), "(%s)", m_lvl.author.c_str());
+	ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(0xFFFFFFFF), "(%s)", m_lvl.author.name.c_str());
 	ImGui::SameLine();
-	ImGui::Image(resource::get().imtex("assets/gui/play.png"), ImVec2(16, 16));
+	m_player_icon.imdraw(16, 16);
 	ImGui::EndGroup();
 	if (ImGui::IsItemHovered()) {
 		ImGui::SetTooltip("View player profile");
 		ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 		if (ImGui::IsMouseClicked(0)) {
-			m_user_modal.reset(new user_modal(m_lvl.author));
+			m_user_modal.reset(new user_modal(m_lvl.author.name));
 			m_user_modal->open();
 		}
 	}

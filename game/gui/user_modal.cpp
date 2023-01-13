@@ -49,6 +49,7 @@ void user_modal::imdraw(fsm* sm) {
 			if (rsp.stats->recentScore && rsp.stats->recentScoreLevel && !m_recent_score_tile) {
 				m_recent_score_tile.reset(new level_card(*rsp.stats->recentScoreLevel));
 			}
+			m_player_icon.reset(new player_icon(rsp.stats->fillColor, rsp.stats->outlineColor));
 		}
 	}
 
@@ -69,7 +70,12 @@ void user_modal::imdraw(fsm* sm) {
 		} else {
 			api::user_stats stats = *m_stats_handle.get().stats;
 
-			ImGui::Image(resource::get().imtex("assets/gui/play.png"), ImVec2(16, 16));
+			if (m_player_icon) {
+				m_player_icon->imdraw(16, 16);
+			} else {
+				ImGui::Image(resource::get().imtex("assets/gui/play.png"), ImVec2(16, 16));
+			}
+
 			ImGui::SameLine();
 			ImGui::TextColored(sf::Color::Cyan, "%s #%d", stats.username.c_str(), stats.id);
 

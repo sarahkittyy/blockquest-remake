@@ -8,6 +8,8 @@ import {
 	randNumber,
 	randCatchPhrase,
 	randRecentDate,
+	randColor,
+	randHexaDecimal,
 } from '@ngneat/falso';
 import bcrypt from 'bcrypt';
 
@@ -39,6 +41,8 @@ async function fakeUser(): Promise<User> {
 			email: randEmail(),
 			confirmed: false,
 			tier: 0,
+			fillColor: '0x' + randHexaDecimal({ length: 6 }).join('').toUpperCase() + 'FF',
+			outlineColor: '0x' + randHexaDecimal({ length: 6 }).join('').toUpperCase() + 'FF',
 		},
 	});
 	return user;

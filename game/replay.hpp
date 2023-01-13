@@ -39,6 +39,10 @@ public:
 	size_t serial_size() const;	  // get the amount of bytes required to store the whole compressed replay
 	bool alt() const;
 
+	// player colors
+	sf::Color fill() const;
+	sf::Color outline() const;
+
 	// replay header information
 	struct header {
 		char version[12];	// the version this replay was made in

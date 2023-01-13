@@ -17,6 +17,22 @@ export function isValidLevel(code: string): boolean {
 	return true;
 }
 
+export interface UserStub {
+	id: number;
+	name: string;
+	fill: number;
+	outline: number;
+}
+
+export function toUserStub(user: User): UserStub {
+	return {
+		id: user.id,
+		name: user.name,
+		fill: parseInt(user.fillColor, 16),
+		outline: parseInt(user.outlineColor, 16),
+	};
+}
+
 export interface UserLevelScoreRunner extends UserLevelScore {
 	user: User;
 }
@@ -215,17 +231,14 @@ export function toCommentResponse(comment: UserLevelCommentPoster): ICommentResp
 		updatedAt: comment.updatedAt.getTime() / 1000,
 		id: comment.id,
 		levelId: comment.levelId,
-		user: {
-			id: comment.userId,
-			name: comment.user.name,
-		},
+		user: toUserStub(comment.user),
 	};
 }
 
 export function toReplayResponse(replay: UserLevelScoreRunner): IReplayResponse {
 	return {
 		id: replay.id,
-		user: replay.user.name,
+		user: toUserStub(replay.user),
 		levelId: replay.levelId,
 		raw: replay.replay.toString('base64'),
 		time: replay.time,
@@ -261,7 +274,7 @@ export function toLevelResponse(lvl: LevelMetadataIncluded, userId?: number): IL
 	return {
 		id: lvl.id,
 		code: lvl.code,
-		author: lvl.author.name,
+		author: toUserStub(lvl.author),
 		title: lvl.title,
 		description: lvl.description ?? '',
 		createdAt: lvl.createdAt.getTime() / 1000,

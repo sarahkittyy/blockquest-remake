@@ -20,9 +20,48 @@ export interface IUserStats {
 	recentLevel?: ILevelResponse;
 	recentScore?: IReplayResponse;
 	recentScoreLevel?: ILevelResponse;
+	outlineColor: number;
+	fillColor: number;
+}
+
+function colorIntToHexString(color: number) {
+	const hex = color.toString(16);
+	return `0x${'0'.repeat(8 - hex.length)}${hex}`;
 }
 
 export default class User {
+	static async setColor(req: Request, res: Response) {
+		const fillColor: number | undefined = parseInt(req.body.fill);
+		if (fillColor == null) return res.status(400).send({ error: 'No fill color specified' });
+		const outlineColor: number | undefined = parseInt(req.body.outline);
+		if (outlineColor == null) return res.status(400).send({ error: 'No outline color specified' });
+
+		const token: tools.IAuthToken = res.locals.token;
+
+		const fillColorHex: string = colorIntToHexString(fillColor);
+		if (fillColorHex.length != 10)
+			return res.status(400).send({ error: 'Invalid fill color specified' });
+		const outlineColorHex: string = colorIntToHexString(outlineColor);
+		if (outlineColorHex.length != 10)
+			return res.status(400).send({ error: 'Invalid outline color specified' });
+
+		try {
+			await prisma.user.update({
+				where: {
+					id: token.id,
+				},
+				data: {
+					fillColor: fillColorHex,
+					outlineColor: outlineColorHex,
+				},
+			});
+
+			return res.status(200).send();
+		} catch (e) {
+			return res.status(500).send({ error: 'Could not update user (NO_UPDATE_COLOR)' });
+		}
+	}
+
 	static async getByName(req: Request, res: Response) {
 		const token: tools.IAuthToken | undefined = res.locals.token;
 
@@ -95,6 +134,8 @@ export default class User {
 			recentLevel: user.levels[0] ? tools.toLevelResponse(user.levels[0]) : undefined,
 			recentScore: user.scores[0] ? tools.toReplayResponse(user.scores[0]) : undefined,
 			recentScoreLevel: user.scores[0] ? tools.toLevelResponse(user.scores[0].level) : undefined,
+			outlineColor: parseInt(user.outlineColor, 16),
+			fillColor: parseInt(user.fillColor, 16),
 		};
 
 		return res.status(200).send(stats);
@@ -172,6 +213,8 @@ export default class User {
 			recentLevel: user.levels[0] ? tools.toLevelResponse(user.levels[0]) : undefined,
 			recentScore: user.scores[0] ? tools.toReplayResponse(user.scores[0]) : undefined,
 			recentScoreLevel: user.scores[0] ? tools.toLevelResponse(user.scores[0].level) : undefined,
+			outlineColor: parseInt(user.outlineColor, 16),
+			fillColor: parseInt(user.fillColor, 16),
 		};
 
 		return res.status(200).send(stats);

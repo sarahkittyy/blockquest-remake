@@ -75,6 +75,22 @@ bool replay::alt() const {
 		return m_h.alt;
 }
 
+sf::Color replay::fill() const {
+	if (m_rpl.has_value()) {
+		return sf::Color(m_rpl->user.fill);
+	} else {
+		return sf::Color::White;
+	}
+}
+
+sf::Color replay::outline() const {
+	if (m_rpl.has_value()) {
+		return sf::Color(m_rpl->user.outline);
+	} else {
+		return sf::Color::Black;
+	}
+}
+
 std::time_t replay::get_created() const {
 	return m_h.created;
 }

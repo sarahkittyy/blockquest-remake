@@ -30,23 +30,23 @@ menu_bar::menu_bar()
 	std::memset(m_user_email, 0, 150);
 	m_pword_just_reset = false;
 
-	m_outer_player_color[0] = context::get().player_outline().r / 255.f;
-	m_outer_player_color[1] = context::get().player_outline().g / 255.f;
-	m_outer_player_color[2] = context::get().player_outline().b / 255.f;
-	m_outer_player_color[3] = context::get().player_outline().a / 255.f;
+	m_outer_player_color[0] = context::get().get_player_outline().r / 255.f;
+	m_outer_player_color[1] = context::get().get_player_outline().g / 255.f;
+	m_outer_player_color[2] = context::get().get_player_outline().b / 255.f;
+	m_outer_player_color[3] = context::get().get_player_outline().a / 255.f;
 
-	m_inner_player_color[0] = context::get().player_fill().r / 255.f;
-	m_inner_player_color[1] = context::get().player_fill().g / 255.f;
-	m_inner_player_color[2] = context::get().player_fill().b / 255.f;
-	m_inner_player_color[3] = context::get().player_fill().a / 255.f;
+	m_inner_player_color[0] = context::get().get_player_fill().r / 255.f;
+	m_inner_player_color[1] = context::get().get_player_fill().g / 255.f;
+	m_inner_player_color[2] = context::get().get_player_fill().b / 255.f;
+	m_inner_player_color[3] = context::get().get_player_fill().a / 255.f;
 
 	m_preview_player_rt.create(64, 64);
 	m_preview_player.setScale(1.0, -1.0);
 	m_preview_player.setPosition(0, 64);
 
 	m_preview_player.set_animation("dash");
-	m_preview_player.set_fill_color(context::get().player_fill());
-	m_preview_player.set_outline_color(context::get().player_outline());
+	m_preview_player.set_fill_color(context::get().get_player_fill());
+	m_preview_player.set_outline_color(context::get().get_player_outline());
 }
 
 void menu_bar::process_event(sf::Event e) {
@@ -127,6 +127,7 @@ void menu_bar::imdraw(std::string& info_msg, fsm* sm) {
 	m_signup_handle.poll();
 	m_verify_handle.poll();
 	m_reverify_handle.poll();
+	m_submit_color_handle.poll();
 
 	ImGuiWindowFlags modal_flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
 
@@ -267,23 +268,46 @@ void menu_bar::imdraw(std::string& info_msg, fsm* sm) {
 			ImGui::PopID();
 		}
 		ImGui::EndTable();
-		ImGuiColorEditFlags ceditflags = ImGuiColorEditFlags_NoSidePreview;
-		ImGui::Image(m_preview_player_rt.getTexture());
+		ImGuiColorEditFlags ceditflags = ImGuiColorEditFlags_None;
+		ImGui::Image(m_preview_player_rt.getTexture(), sf::Vector2f(64, 64));
 		if (ImGui::ColorEdit4("Player Outline", m_outer_player_color, ceditflags)) {
-			context::get().player_outline() = sf::Color(	 //
+			sf::Color oc = sf::Color(						 //
 				std::floor(m_outer_player_color[0] * 255),	 //
 				std::floor(m_outer_player_color[1] * 255),	 //
 				std::floor(m_outer_player_color[2] * 255),	 //
 				std::floor(m_outer_player_color[3] * 255));
-			m_preview_player.set_outline_color(context::get().player_outline());
+			context::get().set_player_outline(oc);
+			m_preview_player.set_outline_color(oc);
 		}
 		if (ImGui::ColorEdit4("Player Fill", m_inner_player_color, ceditflags)) {
-			context::get().player_fill() = sf::Color(		 //
+			sf::Color fc = sf::Color(						 //
 				std::floor(m_inner_player_color[0] * 255),	 //
 				std::floor(m_inner_player_color[1] * 255),	 //
 				std::floor(m_inner_player_color[2] * 255),	 //
 				std::floor(m_inner_player_color[3] * 255));
-			m_preview_player.set_fill_color(context::get().player_fill());
+			context::get().set_player_fill(fc);
+			m_preview_player.set_fill_color(fc);
+		}
+		if (m_submit_color_handle.ready()) {
+			auto res = m_submit_color_handle.get();
+			if (res.success) {
+				m_submit_color_handle.reset();
+			} else {
+				ImGui::TextColored(sf::Color::Red, "Could not upload color: %s", res.error->c_str());
+			}
+		}
+		const std::string upload_colors_label = m_submit_color_handle.fetching() ? "Uploading...###UploadColors" : "Upload Colors###UploadColors";
+		ImGui::BeginDisabled(m_submit_color_handle.fetching());
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/upload.png"), upload_colors_label.c_str())) {
+			if (!m_submit_color_handle.fetching())
+				m_submit_color_handle.reset(api::get().set_color(context::get().get_player_fill(), context::get().get_player_outline()));
+		}
+		ImGui::EndDisabled();
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+			if (m_submit_color_handle.fetching())
+				ImGui::SetTooltip("Uploading your color to the server...");
+			else
+				ImGui::SetTooltip("Set this color as your publically visible one");
 		}
 		// alt controls toggle
 		ImGui::Checkbox("BlockBros controls", &context::get().alt_controls());
