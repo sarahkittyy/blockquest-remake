@@ -4,6 +4,7 @@ import * as tools from '@util/tools';
 import { prisma } from '@/db';
 import { ILevelResponse, LevelQueryInclude } from './Level';
 import { IReplayResponse } from './Replay';
+import { stringify } from 'flatted';
 
 export interface IUserStats {
 	id: number;
@@ -22,6 +23,7 @@ export interface IUserStats {
 	recentScoreLevel?: ILevelResponse;
 	outlineColor: number;
 	fillColor: number;
+	pinned?: ILevelResponse;
 }
 
 function colorIntToHexString(color: number) {
@@ -30,6 +32,40 @@ function colorIntToHexString(color: number) {
 }
 
 export default class User {
+	static pinLevel = (pin: boolean) => async (req: Request, res: Response) => {
+		const id: number = parseInt(req.params.id ?? 'nan');
+		if (isNaN(id) && pin) return res.status(400).send({ error: 'No level ID specified' });
+
+		const token: tools.IAuthToken = res.locals.token;
+
+		try {
+			if (pin) {
+				await prisma.user.update({
+					where: {
+						id: token.id,
+					},
+					data: {
+						pinned: { connect: { id } },
+					},
+				});
+			} else {
+				await prisma.user.update({
+					where: {
+						id: token.id,
+					},
+					data: {
+						pinned: { disconnect: true },
+					},
+				});
+			}
+			return res.status(200).send();
+		} catch (e) {
+			return res
+				.status(500)
+				.send({ error: `Could not ${pin ? 'pin' : 'unpin'} level: ${stringify(e)}` });
+		}
+	};
+
 	static async setColor(req: Request, res: Response) {
 		const fillColor: number | undefined = parseInt(req.body.fill);
 		if (fillColor == null) return res.status(400).send({ error: 'No fill color specified' });
@@ -87,6 +123,9 @@ export default class User {
 						},
 					},
 				},
+				pinned: {
+					...LevelQueryInclude(token?.id),
+				},
 				_count: {
 					select: {
 						comments: true,
@@ -136,6 +175,7 @@ export default class User {
 			recentScoreLevel: user.scores[0] ? tools.toLevelResponse(user.scores[0].level) : undefined,
 			outlineColor: parseInt(user.outlineColor, 16),
 			fillColor: parseInt(user.fillColor, 16),
+			...(user.pinned && { pinned: tools.toLevelResponse(user.pinned) }),
 		};
 
 		return res.status(200).send(stats);
@@ -166,6 +206,9 @@ export default class User {
 						},
 					},
 				},
+				pinned: {
+					...LevelQueryInclude(token?.id),
+				},
 				_count: {
 					select: {
 						comments: true,
@@ -177,6 +220,8 @@ export default class User {
 		});
 
 		if (!user) return res.status(404).send({ error: 'User not found' });
+
+		console.log(user);
 
 		let records = 0;
 		const scoreLevels = await prisma.level.findMany({
@@ -215,6 +260,7 @@ export default class User {
 			recentScoreLevel: user.scores[0] ? tools.toLevelResponse(user.scores[0].level) : undefined,
 			outlineColor: parseInt(user.outlineColor, 16),
 			fillColor: parseInt(user.fillColor, 16),
+			...(user.pinned && { pinned: tools.toLevelResponse(user.pinned) }),
 		};
 
 		return res.status(200).send(stats);

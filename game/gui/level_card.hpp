@@ -25,10 +25,11 @@ public:
 
 	void imdraw(fsm* sm);
 
-
 private:
 	static int m_next_id;	// for imgui
 	int m_ex_id;
+
+	static int m_pinned_level_id;
 
 	sf::Color m_bg;
 	api::level m_lvl;
@@ -42,5 +43,6 @@ private:
 	std::unique_ptr<user_modal> m_user_modal;
 
 	api_handle<api::vote_response> m_vote_handle;
+	api_handle<api::response> m_pin_handle;
 };
 

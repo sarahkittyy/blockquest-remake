@@ -59,6 +59,7 @@ public:
 		std::optional<int> myVote;
 		std::optional<int> verificationId;
 		int version;
+		std::optional<bool> pinned;
 		inline bool verified() const {
 			return verificationId.has_value();
 		}
@@ -212,6 +213,7 @@ public:
 		std::optional<api::level> recentLevel;
 		int outlineColor;
 		int fillColor;
+		std::optional<api::level> pinned;
 	};
 
 	struct user_stats_response {
@@ -242,6 +244,8 @@ public:
 	std::future<api::user_stats_response> fetch_user_stats(std::string name);
 
 	std::future<api::response> set_color(sf::Color fill, sf::Color outline);
+	// if id = -1, will unpin the level
+	std::future<api::response> pin_level(int id = -1);
 
 	// get the current app version
 	const char* version() const;

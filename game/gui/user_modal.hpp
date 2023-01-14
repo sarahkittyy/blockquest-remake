@@ -31,5 +31,7 @@ private:
 
 	std::unique_ptr<level_card> m_recent_level_tile;
 	std::unique_ptr<level_card> m_recent_score_tile;
+	std::unique_ptr<level_card> m_pinned_level_tile;
+
 	void m_fetch();
 };

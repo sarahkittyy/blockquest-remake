@@ -45,6 +45,13 @@ export const LevelQueryInclude = (uid?: number) => ({
 				...ScoreQueryHide(uid),
 			},
 		},
+		...(uid && {
+			pinnedTo: {
+				where: {
+					id: uid,
+				},
+			},
+		}),
 		_count: {
 			select: {
 				comments: true,
@@ -79,6 +86,7 @@ export interface ILevelResponse {
 	myVote?: 1 | 0 | -1;
 	verificationId?: number;
 	version: number;
+	pinned?: boolean;
 }
 
 /* options for searching through levels */

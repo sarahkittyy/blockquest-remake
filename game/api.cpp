@@ -25,6 +25,52 @@ api &api::get() {
 	return instance;
 }
 
+std::future<api::response> api::pin_level(int id) {
+	return std::async([this, id]() -> api::response {
+		try {
+			nlohmann::json body = nlohmann::json::object();
+			auth::get().add_jwt_to_body(body);
+			std::string uri = "/level/";
+			if (id == -1) {
+				uri += "unpin";
+			} else {
+				uri += std::to_string(id) + "/pin";
+			}
+			if (auto res = m_cli.Post(uri, body.dump(), "application/json")) {
+				if (res->status == 200) {
+					return { .success = true };
+				} else {
+					nlohmann::json result = nlohmann::json::parse(res->body);
+					if (result.contains("error")) {
+						std::cout << result.dump() << std::endl;
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error";
+					}
+				}
+			} else {
+				debug::log() << httplib::to_string(res.error()) << "\n";
+				throw "Could not connect to server";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.error	 = e
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.error	 = "Unknown error."
+			};
+		}
+	});
+}
+
 std::future<api::response> api::set_replay_visibility(int rid, bool visible) {
 	return std::async([this, rid, visible]() -> api::response {
 		try {
@@ -765,6 +811,9 @@ void to_json(nlohmann::json &j, const api::user_stats &s) {
 	if (s.recentScore) {
 		j["recentScore"] = *s.recentScore;
 	}
+	if (s.pinned) {
+		j["pinned"] = *s.pinned;
+	}
 }
 
 void from_json(const nlohmann::json &j, api::user_stats &s) {
@@ -783,6 +832,9 @@ void from_json(const nlohmann::json &j, api::user_stats &s) {
 	}
 	if (j.contains("recentScoreLevel")) {
 		s.recentScoreLevel = j.at("recentScoreLevel").get<api::level>();
+	}
+	if (j.contains("pinned")) {
+		s.pinned = j.at("pinned").get<api::level>();
 	}
 }
 
@@ -816,6 +868,9 @@ void from_json(const nlohmann::json &j, api::level &l) {
 	if (j.contains("myRecord")) {
 		l.myRecord = j["myRecord"].get<api::level_record>();
 	}
+	if (j.contains("pinned")) {
+		l.pinned = j["pinned"].get<bool>();
+	}
 }
 
 void to_json(nlohmann::json &j, const api::level &l) {
@@ -831,6 +886,8 @@ void to_json(nlohmann::json &j, const api::level &l) {
 	j["comments"]	 = l.comments;
 	j["likes"]		 = l.likes;
 	j["dislikes"]	 = l.dislikes;
+	if (l.pinned)
+		j["pinned"] = *l.pinned;
 	if (l.myVote)
 		j["myVote"] = *l.myVote;
 	if (l.record)

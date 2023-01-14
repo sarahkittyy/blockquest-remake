@@ -16,7 +16,8 @@
 #include <iomanip>
 #include <sstream>
 
-int level_card::m_next_id = 0;
+int level_card::m_next_id		  = 0;
+int level_card::m_pinned_level_id = -1;
 
 level_card::level_card(api::level& lvl, sf::Color bg)
 	: m_bg(bg),
@@ -81,18 +82,21 @@ void level_card::imdraw(fsm* sm) {
 	}
 
 	// likes/dislikes/downloads/records
-	ImVec2 x16(16, 16);
-	ImVec2 uv0(0, 0), uv1(1, 1);
-	int fp				  = 4;
-	ImVec4 bg			  = ImVec4(1, 0, 0, 0);
-	std::string likes	  = std::to_string(m_lvl.likes) + "###LIKES" + std::to_string(m_ex_id);
-	std::string dislikes  = std::to_string(m_lvl.dislikes) + "###DISLIKES" + std::to_string(m_ex_id);
-	std::string downloads = std::to_string(m_lvl.downloads) + "###DOWNLOADS" + std::to_string(m_ex_id);
-	std::string comments  = std::to_string(m_lvl.comments) + "###COMMENTS" + std::to_string(m_ex_id);
-	std::string records	  = std::to_string(m_lvl.records) + "###RECORDS" + std::to_string(m_ex_id);
-	ImU32 likes_tcol	  = ImGui::GetColorU32(sf::Color::Green);
-	ImU32 dislikes_tcol	  = ImGui::GetColorU32(sf::Color::Red);
-	bool authed			  = auth::get().authed();
+	const ImVec2 x16(16, 16);
+	const ImVec2 uv0(0, 0), uv1(1, 1);
+	const int fp				= 4;
+	const ImVec4 bg				= ImVec4(1, 0, 0, 0);
+	const std::string likes		= std::to_string(m_lvl.likes) + "###LIKES" + std::to_string(m_ex_id);
+	const std::string dislikes	= std::to_string(m_lvl.dislikes) + "###DISLIKES" + std::to_string(m_ex_id);
+	const std::string downloads = std::to_string(m_lvl.downloads) + "###DOWNLOADS" + std::to_string(m_ex_id);
+	const std::string comments	= std::to_string(m_lvl.comments) + "###COMMENTS" + std::to_string(m_ex_id);
+	const std::string records	= std::to_string(m_lvl.records) + "###RECORDS" + std::to_string(m_ex_id);
+	const std::string pinned	= "###PINBTNLVL" + std::to_string(m_ex_id);
+	const ImU32 likes_tcol		= ImGui::GetColorU32(sf::Color::Green);
+	const ImU32 dislikes_tcol	= ImGui::GetColorU32(sf::Color::Red);
+	const bool authed			= auth::get().authed();
+	const bool can_pin			= authed;
+	const bool is_pinned		= m_lvl.id == m_pinned_level_id;
 	ImGui::PushStyleColor(ImGuiCol_Text, likes_tcol);
 	ImGui::BeginDisabled(m_vote_handle.fetching() || m_lvl.myVote.value_or(0) == 1 || !authed);
 	if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/heart.png"), likes.c_str(), x16, uv0, uv1, fp, bg)) {
@@ -145,6 +149,35 @@ void level_card::imdraw(fsm* sm) {
 	}
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
 		ImGui::SetTooltip("Comments");
+	}
+
+	ImGui::SameLine();
+
+	ImGui::BeginDisabled(!can_pin);
+	if (ImGui::ImageButtonWithText(resource::get().imtex(!is_pinned ? "assets/gui/pin.png" : "assets/gui/unpin.png"), pinned.c_str(), x16, uv0, uv1, fp, bg)) {
+		if (!m_pin_handle.fetching() && can_pin)
+			m_pin_handle.reset(api::get().pin_level(is_pinned ? -1 : m_lvl.id));
+	}
+	ImGui::EndDisabled();
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+		if (!can_pin)
+			ImGui::SetTooltip("Not logged in!");
+		else if (!is_pinned)
+			ImGui::SetTooltip("Pin level to profile");
+		else
+			ImGui::SetTooltip("Unpin level from profile");
+	}
+
+	m_pin_handle.poll();
+	if (m_pin_handle.ready()) {
+		auto res = m_pin_handle.get();
+		if (res.success) {
+			m_lvl.pinned	  = !is_pinned;
+			m_pinned_level_id = is_pinned ? -1 : m_lvl.id;
+			m_pin_handle.reset();
+		} else {
+			m_pin_handle.reset();
+		}
 	}
 
 	m_vote_handle.poll();

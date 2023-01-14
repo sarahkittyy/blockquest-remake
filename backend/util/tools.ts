@@ -48,6 +48,7 @@ export interface LevelMetadataIncluded extends Level {
 	_count: {
 		comments: number;
 	};
+	pinnedTo?: User[];
 }
 
 export interface IAuthToken {
@@ -303,6 +304,7 @@ export function toLevelResponse(lvl: LevelMetadataIncluded, userId?: number): IL
 			verificationId: lvl.verificationId,
 		}),
 		version: lvl.version,
+		...(lvl.pinnedTo?.length != 1 ? {} : { pinned: true }),
 	};
 }
 

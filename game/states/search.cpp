@@ -196,9 +196,9 @@ void search::imdraw(fsm* sm) {
 					ImGui::TableNextColumn();
 					int idx = row * query().cols + col;
 
-					api::level& l = m_query_handle.get().levels[idx];
-
-					m_gui_level_tile(l).imdraw(sm);
+					api::level& l	 = m_query_handle.get().levels[idx];
+					level_card& tile = m_gui_level_tile(l);
+					tile.imdraw(sm);
 					ImGui::PopID();
 					if (idx >= m_query_handle.get().levels.size() - 1) {
 						no_more_levels = true;

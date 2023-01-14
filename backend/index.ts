@@ -34,7 +34,9 @@ app.post('/level/search', checkAuth(), Level.search);
 app.get('/level/quickplay', checkAuth(), Level.getQuickplay);
 app.get('/level/:id/ping-download', Level.downloadPing);
 app.post('/level/:id(\\d+)/:vote(like|dislike)', requireAuth(0), Level.vote);
-app.post('/level/:id', checkAuth(), Level.getById);
+app.post('/level/:id(\\d+)', checkAuth(), Level.getById);
+app.post('/level/:id(\\d+)/pin', requireAuth(0), User.pinLevel(true));
+app.post('/level/unpin', requireAuth(0), User.pinLevel(false));
 
 app.post('/replay/upload', requireAuth(0), Replay.upload);
 app.post('/replay/search/:levelId(\\d+)', checkAuth(), Replay.search);

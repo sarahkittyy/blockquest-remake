@@ -28,6 +28,8 @@ model User {
 	reset			UserPasswordReset?
 	outlineColor	String	@default("0x000000FF")
 	fillColor		String	@default("0xFFFFFFFF")
+	pinned		Level?		@relation(fields: [pinnedId], references: id, name: "pinned")
+	pinnedId	Int?
 }
 
 
@@ -49,6 +51,7 @@ model Level {
 	verification	UserLevelScore?		@relation(fields: [verificationId], references: id, name: "verify")
 	verificationId	Int?				@unique
 	version						Int					@default(1)
+	pinnedTo		User[]				@relation("pinned")
 }
 
 model UserPasswordReset {

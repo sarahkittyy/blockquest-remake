@@ -1,6 +1,8 @@
 #include "user_modal.hpp"
 
+#include "auth.hpp"
 #include "fsm.hpp"
+#include "gui/image_text_button.hpp"
 #include "resource.hpp"
 
 int user_modal::m_next_id = 0;
@@ -49,6 +51,10 @@ void user_modal::imdraw(fsm* sm) {
 			if (rsp.stats->recentScore && rsp.stats->recentScoreLevel && !m_recent_score_tile) {
 				m_recent_score_tile.reset(new level_card(*rsp.stats->recentScoreLevel));
 			}
+			if (rsp.stats->pinned && !m_pinned_level_tile) {
+				m_pinned_level_tile.reset(new level_card(*rsp.stats->pinned));
+			}
+
 			m_player_icon.reset(new player_icon(rsp.stats->fillColor, rsp.stats->outlineColor));
 		}
 	}
@@ -70,6 +76,7 @@ void user_modal::imdraw(fsm* sm) {
 		} else {
 			api::user_stats stats = *m_stats_handle.get().stats;
 
+			// player stats
 			if (m_player_icon) {
 				m_player_icon->imdraw(16, 16);
 			} else {
@@ -118,22 +125,35 @@ void user_modal::imdraw(fsm* sm) {
 			ImGui::SameLine();
 			ImGui::Text("%d", stats.count.records);
 
-			if (ImGui::BeginTable("###Recencies", 2, ImGuiTableFlags_Borders)) {
+			// dynamic column
+			const int column_count = int(bool(m_recent_level_tile)) + int(bool(m_recent_score_tile)) + int(bool(m_pinned_level_tile));
+			if (column_count > 0 && ImGui::BeginTable("###Recencies", column_count, ImGuiTableFlags_Borders)) {
 				ImGui::TableNextRow();
 				ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(sf::Color(0xC8AD7FFF)));
-				ImGui::TableNextColumn();
-				ImGui::Text("Most recent level");
-				ImGui::TableNextColumn();
-				ImGui::Text("Most recent score");
+				if (m_pinned_level_tile) {
+					ImGui::TableNextColumn();
+					ImGui::Text("Pinned Level");
+				}
+				if (m_recent_level_tile) {
+					ImGui::TableNextColumn();
+					ImGui::Text("Most recent level");
+				}
+				if (m_recent_score_tile) {
+					ImGui::TableNextColumn();
+					ImGui::Text("Most recent score");
+				}
 				ImGui::PopStyleColor();
 				ImGui::TableNextRow();
-
-				ImGui::TableNextColumn();
+				if (m_pinned_level_tile) {
+					ImGui::TableNextColumn();
+					m_pinned_level_tile->imdraw(sm);
+				}
 				if (m_recent_level_tile) {
+					ImGui::TableNextColumn();
 					m_recent_level_tile->imdraw(sm);
 				}
-				ImGui::TableNextColumn();
 				if (m_recent_score_tile) {
+					ImGui::TableNextColumn();
 					auto score = *stats.recentScore;
 					char date_fmt[100];
 					tm* date_tm = std::localtime(&stats.recentScore->createdAt);
