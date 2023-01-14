@@ -94,6 +94,7 @@ void world::m_restart_world() {
 	m_yv		   = 0;
 	m_flip_gravity = false;
 	m_dead		   = false;
+	m_first_input  = false;
 	m_sync_player_position();
 	m_player.setScale(1, 1);
 	if (m_playback) {
@@ -504,7 +505,8 @@ http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platforme
 
 bool world::update(sf::Time dt) {
 	if (m_playback.has_value() && m_cstep < m_playback->size() && !lost() && !won()) {
-		m_this_frame = m_playback->get(m_cstep);
+		m_first_input = true;
+		m_this_frame  = m_playback->get(m_cstep);
 	} else {
 		m_this_frame.left  = m_has_focus ? settings::get().key_down(key::LEFT) : false;
 		m_this_frame.right = m_has_focus ? settings::get().key_down(key::RIGHT) : false;
@@ -513,6 +515,8 @@ bool world::update(sf::Time dt) {
 		m_this_frame.up	   = m_has_focus ? settings::get().key_down(key::UP) : false;
 		m_this_frame.down  = m_has_focus ? settings::get().key_down(key::DOWN) : false;
 	}
+
+	bool any_key = m_this_frame.left || m_this_frame.right || m_this_frame.jump || m_this_frame.dash || m_this_frame.down || m_this_frame.up;
 
 	if (settings::get().key_down(key::RESTART) && !ImGui::GetIO().WantCaptureKeyboard) {
 		if (!m_restarted)
@@ -559,12 +563,18 @@ bool world::update(sf::Time dt) {
 		}
 	}
 
+	m_first_input |= m_this_frame.left || m_this_frame.right || m_this_frame.jump || m_this_frame.dash || m_this_frame.down || m_this_frame.up;
+
 	// physics updates!
-	m_ctime += dt;
 	bool stepped = false;
-	while (m_ctime > replay::timestep) {
-		m_ctime -= replay::timestep;
-		step(replay::timestep);
+	if (m_first_input) {
+		m_ctime += dt;
+		while (m_ctime > replay::timestep) {
+			m_ctime -= replay::timestep;
+			step(replay::timestep);
+			stepped = true;
+		}
+	} else {
 		stepped = true;
 	}
 

@@ -65,7 +65,7 @@ edit::edit()
 	m_timer_text.setFillColor(sf::Color::Black);
 	m_timer_text.setOutlineThickness(1);
 	m_timer_text.setOutlineColor(sf::Color(0x964B00));
-	m_timer_text.setString("00:00");
+	m_timer_text.setString("00.00");
 	m_timer_text.setOrigin(m_timer_text.getLocalBounds().width / 2.f, 0);
 	m_timer_text.setPosition(34 * 64 / 2.f, 16.f);
 
@@ -1084,6 +1084,7 @@ void edit::m_gui_block_picker(fsm* sm) {
 }
 
 void edit::m_toggle_test_play() {
+	m_timer_text.setString("0.00");
 	if (!m_test_playing()) {
 		if (!m_level().valid()) {
 			m_info_msg = "Cannot start without a valid start & end position";

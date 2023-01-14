@@ -114,7 +114,8 @@ private:
 	// were these keys hit last frame?
 	input_state m_last_frame;
 
-	bool m_restarted = false;	// did the player just restart
+	bool m_restarted   = false;	  // did the player just restart
+	bool m_first_input = false;
 
 	replay m_replay;   // the state of all inputs, each frame
 	int m_cstep;	   // current step
