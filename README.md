@@ -1,4 +1,4 @@
-# bq-r
+# bq-r ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/sarahkittyy/blockquest-remake?label=VERSION&style=plastic)
 
 [Download the latest release here :)](https://github.com/sarahkittyy/blockquest-remake/releases/latest)
 
