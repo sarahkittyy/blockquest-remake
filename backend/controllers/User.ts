@@ -170,12 +170,14 @@ export default class User {
 				votes: user._count.votes,
 				records,
 			},
-			recentLevel: user.levels[0] ? tools.toLevelResponse(user.levels[0]) : undefined,
+			recentLevel: user.levels[0] ? tools.toLevelResponse(user.levels[0], token?.id) : undefined,
 			recentScore: user.scores[0] ? tools.toReplayResponse(user.scores[0]) : undefined,
-			recentScoreLevel: user.scores[0] ? tools.toLevelResponse(user.scores[0].level) : undefined,
+			recentScoreLevel: user.scores[0]
+				? tools.toLevelResponse(user.scores[0].level, token?.id)
+				: undefined,
 			outlineColor: parseInt(user.outlineColor, 16),
 			fillColor: parseInt(user.fillColor, 16),
-			...(user.pinned && { pinned: tools.toLevelResponse(user.pinned) }),
+			...(user.pinned && { pinned: tools.toLevelResponse(user.pinned, token?.id) }),
 		};
 
 		return res.status(200).send(stats);
@@ -255,12 +257,14 @@ export default class User {
 				votes: user._count.votes,
 				records,
 			},
-			recentLevel: user.levels[0] ? tools.toLevelResponse(user.levels[0]) : undefined,
+			recentLevel: user.levels[0] ? tools.toLevelResponse(user.levels[0], token?.id) : undefined,
 			recentScore: user.scores[0] ? tools.toReplayResponse(user.scores[0]) : undefined,
-			recentScoreLevel: user.scores[0] ? tools.toLevelResponse(user.scores[0].level) : undefined,
+			recentScoreLevel: user.scores[0]
+				? tools.toLevelResponse(user.scores[0].level, token?.id)
+				: undefined,
 			outlineColor: parseInt(user.outlineColor, 16),
 			fillColor: parseInt(user.fillColor, 16),
-			...(user.pinned && { pinned: tools.toLevelResponse(user.pinned) }),
+			...(user.pinned && { pinned: tools.toLevelResponse(user.pinned, token?.id) }),
 		};
 
 		return res.status(200).send(stats);

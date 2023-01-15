@@ -302,7 +302,7 @@ export default class Level {
 				return res.status(404).send({ error: `Level id "${id}" not found` });
 			}
 			return res.status(200).send({
-				level: tools.toLevelResponse(level),
+				level: tools.toLevelResponse(level, token?.id),
 			});
 		} catch (e) {
 			log.error(e);
@@ -329,7 +329,7 @@ export default class Level {
 				return res.status(500).send({ error: `Quickplay fetch failed.` });
 			}
 			return res.status(200).send({
-				level: tools.toLevelResponse(level),
+				level: tools.toLevelResponse(level, token?.id),
 			});
 		} catch (e) {
 			return res.status(500).send({
