@@ -10,10 +10,11 @@ animated_sprite::animated_sprite(sf::Texture& tex, int tx, int ty)
 	m_spr.setTexture(m_tex);
 
 	m_anims["default"] = { 0 };
-	m_update_sprite_rect();
+
 }
 
 animated_sprite::~animated_sprite() {
+	
 }
 
 void animated_sprite::add_animation(std::string name, std::vector<int> frames) {
@@ -26,6 +27,7 @@ void animated_sprite::set_animation(std::string name) {
 	if (m_cframe >= m_anims[m_current_animation].size()) {
 		m_cframe = m_anims[m_current_animation].size() - 1;
 	}
+	// update the sprite rect
 	m_update_sprite_rect();
 }
 

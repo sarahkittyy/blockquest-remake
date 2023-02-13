@@ -17,6 +17,7 @@
 #include "api_handle.hpp"
 
 #include "gui/forgot_password_modal.hpp"
+#include "gui/settings_modal.hpp"
 #include "gui/user_modal.hpp"
 
 class menu_bar {
@@ -27,8 +28,6 @@ public:
 	void process_event(sf::Event e);
 
 private:
-	std::optional<key> m_listening_key;	  // key to listen to for changing controls
-
 	std::array<std::pair<ImGui::Gif, const char*>, 5> m_rules_gifs;	  // the 5 gifs of the rules
 
 	// buffers for auth info
@@ -38,19 +37,13 @@ private:
 	char m_user_email[150];
 	int m_v_code;
 
-	player m_preview_player;
-	sf::RenderTexture m_preview_player_rt;
-
-	float m_outer_player_color[4];
-	float m_inner_player_color[4];
-
 	api_handle<auth::response> m_login_handle;
 	api_handle<auth::response> m_signup_handle;
 	api_handle<auth::response> m_verify_handle;
 	api_handle<auth::reverify_response> m_reverify_handle;
-	api_handle<api::response> m_submit_color_handle;
 
 	std::unique_ptr<user_modal> m_self_modal;
+	std::unique_ptr<settings_modal> m_settings_modal;
 
 	std::unique_ptr<forgot_password_modal> m_fgp_modal;
 	bool m_pword_just_reset;

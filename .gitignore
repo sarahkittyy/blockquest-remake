@@ -17,3 +17,5 @@ bq-r.json
 *.log
 profile.txt
 gmon.out
+.cache
+.vscode
