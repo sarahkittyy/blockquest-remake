@@ -17,6 +17,7 @@
 #include "../gui/image_text_button.hpp"
 
 #include "context.hpp"
+#include "multiplayer.hpp"
 #include "states/search.hpp"
 #include "util.hpp"
 
@@ -149,8 +150,6 @@ void edit::m_update_transforms() {
 	m_map.setPosition(win_sz.x / 2.f, 0);
 	m_map.setScale(scale, scale);
 
-	debug::log() << scale << "\n";
-
 	debug::get().setOrigin(m_rt.getSize().x / 2.f, -24 / scale);
 	debug::get().setPosition(win_sz.x / 2.f + 64 * scale, 0);
 	debug::get().setScale(scale, scale);
@@ -201,10 +200,13 @@ void edit::update(fsm* sm, sf::Time dt) {
 		!m_test_playing() &&
 		m_level().map().in_bounds(mouse_tile)) {
 		// metadata check
-		if (m_level().has_metadata() && !m_is_current_level_ours())
+		if (m_level().has_metadata() && !m_is_current_level_ours()) {
 			m_level().clear_metadata();
+			multiplayer::get().leave();
+		}
 		if (m_level().has_metadata()) {
 			m_modified = true;
+			multiplayer::get().leave();
 		}
 		// verification check
 		if (m_verification) {
@@ -288,6 +290,14 @@ void edit::update(fsm* sm, sf::Time dt) {
 			std::ostringstream ss;
 			ss << whole << "." << rest;
 			m_timer_text.setString(ss.str());
+		}
+	}
+
+	// if this is a level with metadata, and we're connected to multiplayer, join the room
+	if (m_level().has_metadata() && multiplayer::get().ready()) {
+		// join if not already in
+		if (!multiplayer::get().room().has_value()) {
+			multiplayer::get().join(m_level().get_metadata().id);
 		}
 	}
 
@@ -576,6 +586,11 @@ void edit::imdraw(fsm* sm) {
 		ImGui::Begin("Level Info");
 		m_gui_level_info(sm);
 		ImGui::End();
+
+		// multiplayer chat
+		if (multiplayer::get().room().has_value()) {
+			multiplayer::get().open_chat();
+		}
 	}
 	// victory  
 	if (m_test_play_world && m_test_play_world->won() && !m_test_play_world->has_playback()) {
@@ -591,6 +606,7 @@ void edit::imdraw(fsm* sm) {
 		}
 	}
 
+	multiplayer::get().imdraw();
 }
 
 bool edit::m_is_current_level_ours() const {
@@ -620,6 +636,7 @@ void edit::m_clear_level() {
 	m_upload_handle.reset();
 	m_download_handle.reset();
 	m_modified = false;
+	multiplayer::get().leave();
 	m_level().clear();
 	std::memset(m_title_buffer, 0, 50);
 	std::memset(m_description_buffer, 0, 50);

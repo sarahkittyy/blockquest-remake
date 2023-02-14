@@ -7,6 +7,7 @@
 #include "api.hpp"
 #include "debug.hpp"
 #include "imgui.h"
+#include "multiplayer.hpp"
 #include "resource.hpp"
 #include "tilemap.hpp"
 #include "util.hpp"
@@ -305,6 +306,42 @@ void menu_bar::imdraw(std::string& info_msg, fsm* sm) {
 		}
 		ImGui::EndTable();
 		ImGui::EndPopup();
+	}
+
+	if (auth::get().authed() && !m_auth_unresolved()) {
+		int istate = static_cast<int>(multiplayer::get().get_state());
+		int x	   = istate % 2;
+		int y	   = istate / 2;
+		ImVec2 uv0(x / 2.f, y / 2.f);
+		ImVec2 uv1(x / 2.f + 0.5f, y / 2.f + 0.5f);
+		if (ImGui::MenuItem("Multiplayer")) {
+			switch (multiplayer::get().get_state()) {
+			case multiplayer::state::CONNECTED:
+				multiplayer::get().disconnect();
+				break;
+			case multiplayer::state::CONNECTING:
+				break;
+			case multiplayer::state::DISCONNECTED:
+				multiplayer::get().connect();
+				break;
+			}
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			switch (multiplayer::get().get_state()) {
+			case multiplayer::state::CONNECTED:
+				ImGui::Text("Connected. Click to disconnect.");
+				break;
+			case multiplayer::state::CONNECTING:
+				ImGui::Text("Connecting...");
+				break;
+			case multiplayer::state::DISCONNECTED:
+				ImGui::Text("Disconnected. Click to connect.");
+				break;
+			}
+			ImGui::EndTooltip();
+		}
+		ImGui::Image(resource::get().imtex("assets/gui/connection.png"), ImVec2(26, 26), uv0, uv1);
 	}
 
 	ImGui::Text("[ %s ]", api::get().version());

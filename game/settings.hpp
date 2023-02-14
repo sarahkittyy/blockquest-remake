@@ -33,13 +33,10 @@ public:
 	std::unordered_map<key, sf::Keyboard::Key> get_key_map() const;
 	void set_key_map(std::unordered_map<key, sf::Keyboard::Key> map);
 
-	bool& enable_multiplayer();
-
 private:
 	settings();
 	settings(const settings&)		= delete;
 	void operator=(const settings&) = delete;
 
 	std::unordered_map<key, sf::Keyboard::Key> m_keys;	 // key mappings
-	bool m_enable_multiplayer = false;
 };

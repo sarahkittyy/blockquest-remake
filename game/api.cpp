@@ -25,6 +25,46 @@ api &api::get() {
 	return instance;
 }
 
+std::future<api::multiplayer_token_response> api::fetch_multiplayer_token() {
+	return std::async([this]() -> api::multiplayer_token_response {
+		try {
+			nlohmann::json body = nlohmann::json::object();
+			auth::get().add_jwt_to_body(body);
+			if (auto res = m_cli.Post("/multiplayer-token", body.dump(), "application/json")) {
+				nlohmann::json result = nlohmann::json::parse(res->body);
+				if (res->status == 200) {
+					return { .success = true, .token = result["token"].get<std::string>() };
+				} else {
+					if (result.contains("error")) {
+						std::cout << result.dump() << std::endl;
+						throw std::runtime_error(result["error"]);
+					} else {
+						throw "Unknown server error";
+					}
+				}
+			} else {
+				debug::log() << httplib::to_string(res.error()) << "\n";
+				throw "Could not connect to server";
+			}
+		} catch (const char *e) {
+			return {
+				.success = false,
+				.error	 = e
+			};
+		} catch (std::exception &e) {
+			return {
+				.success = false,
+				.error	 = e.what()
+			};
+		} catch (...) {
+			return {
+				.success = false,
+				.error	 = "Unknown error."
+			};
+		}
+	});
+}
+
 std::future<api::response> api::pin_level(int id) {
 	return std::async([this, id]() -> api::response {
 		try {

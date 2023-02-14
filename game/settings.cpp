@@ -13,8 +13,7 @@ settings::settings()
 		  { key::JUMP, sf::Keyboard::Space },
 		  { key::DASH, sf::Keyboard::Down },
 		  { key::RESTART, sf::Keyboard::R },
-	  }),
-	  m_enable_multiplayer(false) {
+	  }) {
 }
 
 std::string settings::server_url() const {
@@ -37,10 +36,6 @@ void settings::set_key_map(std::unordered_map<key, sf::Keyboard::Key> map) {
 
 std::unordered_map<key, sf::Keyboard::Key> settings::get_key_map() const {
 	return m_keys;
-}
-
-bool& settings::enable_multiplayer() {
-	return m_enable_multiplayer;
 }
 
 settings& settings::get() {

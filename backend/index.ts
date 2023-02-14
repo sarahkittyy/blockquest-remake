@@ -3,6 +3,9 @@ require('module-alias/register');
 import express, { NextFunction, Request, Response } from 'express';
 import log from '@/log';
 
+import * as multiplayer from '@/multiplayer';
+import * as tools from '@util/tools';
+
 import Auth from '@controllers/Auth';
 import Level from '@controllers/Level';
 import Replay from '@controllers/Replay';
@@ -11,13 +14,13 @@ import User from '@controllers/User';
 
 import { checkAuth, requireAuth } from '@util/tools';
 
-import { mailer } from '@util/mail';
+import { createServer } from 'http';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use((req: Request, _: Response, next: NextFunction) => {
 	log.info(`${req.method} ${req.originalUrl}`);
 	next();
 });
@@ -51,8 +54,14 @@ app.post('/comments/new/:levelId(\\d+)', requireAuth(0), Comment.post);
 app.post('/users/:id(\\d+)', checkAuth(), User.get);
 app.post('/users/name/:name', checkAuth(), User.getByName);
 
-app.get('/token', requireAuth(0), (req: Request, res: Response) => {
+app.get('/token', requireAuth(0), (_: Request, res: Response) => {
 	return res.send(res.locals.token);
+});
+
+// fetches a token for playing multiplayer
+app.post('/multiplayer-token', requireAuth(0), async (req: Request, res: Response) => {
+	const token: tools.IAuthToken = res.locals.token;
+	return res.send({ token: multiplayer.generateAccessToken(token.id) });
 });
 
 app.get('/download', (req: Request, res: Response) => {
@@ -66,6 +75,9 @@ app.use('*', (req: Request, res: Response) => {
 });
 
 const port = process.env.PORT ?? '3000';
-app.listen(parseInt(port), () => {
+const server = createServer(app);
+multiplayer.configure(server);
+
+server.listen(parseInt(port), () => {
 	log.info(`Listening on port ${port}`);
 });

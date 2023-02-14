@@ -18,6 +18,7 @@
 #include "states/search.hpp"
 
 #include "api.hpp"
+#include "multiplayer.hpp"
 #include "util.hpp"
 
 app::app(int argc, char** argv) {
@@ -82,6 +83,7 @@ int app::run() {
 		sf::Time dt = delta_clock.restart();
 		ImGui::SFML::Update(win, dt);
 		debug::get().flush();
+		multiplayer::get().update();
 		m_fsm.update(dt);
 
 		// imgui rendering

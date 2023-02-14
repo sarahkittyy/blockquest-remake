@@ -122,12 +122,21 @@ async function main() {
 		});
 	});
 
-	// test account
+	// test accounts
 	await prisma.user.create({
 		data: {
 			name: 'dev',
 			password: (await saltAndHash('dev')) ?? 'UNDEFINED',
 			email: process.env.DEV_EMAIL ?? 'dev@dev.dev',
+			confirmed: true,
+			tier: 0,
+		},
+	});
+	await prisma.user.create({
+		data: {
+			name: 'dev2',
+			password: (await saltAndHash('dev2')) ?? 'UNDEFINED',
+			email: 'dev2@dev.dev',
 			confirmed: true,
 			tier: 0,
 		},

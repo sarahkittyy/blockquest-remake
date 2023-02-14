@@ -39,13 +39,13 @@ public:
 	}
 
 	Body& get() {
-		if (!m_status) throw std::runtime_error("Attempt to fetch api handle response when not ready");
-		return *m_status;
+		if (!m_status.has_value()) throw std::runtime_error("Attempt to fetch api handle response when not ready");
+		return m_status.value();
 	}
 
 	const Body& get() const {
-		if (!m_status) throw std::runtime_error("Attempt to fetch api handle response when not ready");
-		return *m_status;
+		if (!m_status.has_value()) throw std::runtime_error("Attempt to fetch api handle response when not ready");
+		return m_status.value();
 	}
 
 private:

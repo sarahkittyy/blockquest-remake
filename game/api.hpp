@@ -125,6 +125,12 @@ public:
 		std::optional<api::level> level;
 	};
 
+	struct multiplayer_token_response {
+		bool success;
+		std::optional<std::string> error;
+		std::optional<std::string> token;
+	};
+
 	struct level_search_query {
 		int cursor			  = -1;
 		int rows			  = 4;
@@ -239,6 +245,8 @@ public:
 	std::future<api::replay_upload_response> upload_replay(::replay rp);
 
 	std::future<api::response> set_replay_visibility(int rid, bool visible);
+
+	std::future<api::multiplayer_token_response> fetch_multiplayer_token();
 
 	std::future<api::user_stats_response> fetch_user_stats(int id);
 	std::future<api::user_stats_response> fetch_user_stats(std::string name);

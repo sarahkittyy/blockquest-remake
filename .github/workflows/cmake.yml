@@ -29,6 +29,7 @@ jobs:
 
     - run: |
         choco install openssl
+        vcpkg install socket-io-client
       shell: cmd
 
     - name: Configure CMake

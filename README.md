@@ -18,6 +18,7 @@ All assets in `assets/` are ripped straight from the original BlockQuest SWF ava
 
 - C++20
 - OpenSSL
+- [socket.io-client-cpp](https://github.com/socketio/socket.io-client-cpp/blob/master/INSTALL.md)
 
 ## Building
 
