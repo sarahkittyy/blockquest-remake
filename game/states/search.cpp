@@ -15,7 +15,7 @@
 namespace states {
 
 search::search()
-	: m_sort_opts{ "downloads", "likes", "dislikes", "id", "createdAt", "updatedAt", "title", "author" },
+	: m_sort_opts{ "downloads", "likes", "online", "dislikes", "id", "createdAt", "updatedAt", "title", "author" },
 	  m_order_opts{ "asc", "desc" },
 	  m_temp_rows(query().rows),
 	  m_temp_cols(query().cols),

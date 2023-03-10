@@ -26,6 +26,7 @@ import { stringify } from 'flatted';
 const SortableFields = [
 	'id',
 	'downloads',
+	'online',
 	'likes',
 	'dislikes',
 	'createdAt',
@@ -231,6 +232,13 @@ export default class Level {
 
 		const token: tools.IAuthToken | undefined = res.locals.token;
 
+		// online player sorting
+		let sortOnline = false;
+		if (opts.sortBy === 'online') {
+			sortOnline = true;
+			opts.sortBy = 'likes';
+		}
+
 		const levels = await prisma.level.findMany({
 			take: opts.limit,
 			...(opts.cursor > 1 && {
@@ -261,8 +269,15 @@ export default class Level {
 		}
 		const lastLevel = levels[levels.length - 1];
 
+		let levelsMapped = levels.map((lvl) => tools.toLevelResponse(lvl, token?.id));
+		if (sortOnline) {
+			levelsMapped = levelsMapped.sort((a: ILevelResponse, b: ILevelResponse) => {
+				return (b.players - a.players) * (opts.order === 'desc' ? 1 : -1);
+			});
+		}
+
 		const ret: ISearchResponse = {
-			levels: levels.map((lvl) => tools.toLevelResponse(lvl, token?.id)),
+			levels: levelsMapped,
 			cursor: lastLevel?.id && levels.length >= opts.limit ? lastLevel.id : -1,
 		};
 

@@ -35,7 +35,7 @@ private:
 	api::level_search_query& query();		// just fetches the query from context
 	api::level_search_query m_last_query;	// holds the query that we send to the api
 
-	const char* m_sort_opts[8];	  // api sortBy options
+	const char* m_sort_opts[9];	  // api sortBy options
 	int m_sort_selection;
 
 	const char* m_order_opts[2];   // api order options
