@@ -30,10 +30,26 @@ jobs:
     - run: |
         choco install openssl
       shell: cmd
+
+    - name: Cache
+      uses: actions/cache@v2
+      id: cache-vcpkg
+      with:
+        path: |
+          ~/vcpkg 
+          ./build/vcpkg_installed
+          ${{ env.HOME }}/.cache/vcpkg/archives
+          ${{ env.XDG_CACHE_HOME }}/vcpkg/archives
+          ${{ env.LOCALAPPDATA }}\vcpkg\archives
+          ${{ env.APPDATA }}\vcpkg\archives
+        key: ${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('./vcpkg.json')}}
+        restore-keys: |
+          ${{ runner.os }}-${{ env.BUILD_TYPE }}
     
     - run: |
         vcpkg install socket-io-client:x64-windows
         vcpkg integrate install
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
