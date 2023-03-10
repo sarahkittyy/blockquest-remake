@@ -34,12 +34,14 @@ set(flags -DCPPHTTPLIB_OPENSSL_SUPPORT -DSIO_TLS=1)
 
 if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
 	list(APPEND flags -DNDEBUG -DSERVER_URL="https://bq-r.sushicat.rocks")
+	set(sio_lib sioclient::sioclient_tls)
 else()
 	list(APPEND flags -DNO_VERIFY_CERTS -DSERVER_URL="http://localhost:3000")
+	set(sio_lib sioclient::sioclient)
 endif()
 
 set(includes game/ lib/imgui/ lib/http lib/nlohmann lib/ImGuiFileDialog lib/ ${OPENSSL_INCLUDE_DIR})
-set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL OpenSSL::SSL OpenSSL::Crypto sioclient::sioclient sioclient::sioclient_tls)
+set(libs sfml-graphics sfml-window sfml-audio sfml-network sfml-system OpenGL::GL OpenAL OpenSSL::SSL OpenSSL::Crypto ${sio_lib})
 
 if(APP_VERSION)
 	list(APPEND flags "-DAPP_TAG=${APP_VERSION}")

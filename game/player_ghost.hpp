@@ -1,6 +1,7 @@
 #pragma once
 
 #include "multiplayer.hpp"
+#include "nametag.hpp"
 #include "player.hpp"
 
 class player_ghost : public sf::Drawable, public sf::Transformable {
@@ -17,6 +18,7 @@ private:
 
 	uint64_t m_last_update;
 	player m_p;
+	nametag m_nametag;
 	multiplayer::player_state m_state;
 	multiplayer::player_data m_data;
 };

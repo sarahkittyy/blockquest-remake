@@ -100,6 +100,8 @@ private:
 	bool m_chat_open;
 	bool m_players_open;
 
+	const sf::Time m_state_update_interval = sf::milliseconds(50);
+
 	std::optional<std::string> m_room;
 	std::unordered_map<int, player_data> m_player_data;
 	std::unordered_map<int, player_state> m_player_state;

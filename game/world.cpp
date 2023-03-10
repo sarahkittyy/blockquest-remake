@@ -95,7 +95,7 @@ input_state world::get_player_inputs() const {
 }
 
 bool world::get_player_grounded() const {
-	return m_player_grounded();
+	return !m_first_input ? true : m_player_grounded();
 }
 
 void world::m_init_world() {

@@ -157,7 +157,7 @@ void multiplayer::update() {
 		disconnect();
 	}
 
-	if (ready() && auth::get().authed() && m_room.has_value() && m_state_clock.getElapsedTime() > sf::milliseconds(100)) {
+	if (ready() && auth::get().authed() && m_room.has_value() && m_state_clock.getElapsedTime() > m_state_update_interval) {
 		m_h.socket()->emit("state_update", m_last_state.to_message());
 		m_state_clock.restart();
 	}

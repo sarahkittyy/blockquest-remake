@@ -18,6 +18,7 @@ void player_ghost::flush_state(const multiplayer::player_state& s) {
 
 void player_ghost::flush_data(const multiplayer::player_data& d) {
 	m_data = d;
+	m_nametag.set_name(m_data.name);
 }
 
 void player_ghost::update() {
@@ -78,18 +79,19 @@ void player_ghost::update() {
 
 	m_state.xv = util::clamp(m_state.xv, -phys.xv_max, phys.xv_max);   // cap xv
 
-	float gravity_sign = m_state.sy < 0 ? -1.f : 1.f;
+	// float gravity_sign = m_state.sy < 0 ? -1.f : 1.f;
 
-	if (!m_state.grounded) { m_state.yv += phys.grav * t * gravity_sign; }	 // gravity
-	if (gravity_sign < 0) {													 // cap yv
-		m_state.yv = util::clamp(m_state.yv, -phys.yv_max, phys.jump_v);
-	} else {
-		m_state.yv = util::clamp(m_state.yv, -phys.jump_v, phys.yv_max);
-	}
+	// if (!m_state.grounded) { m_state.yv += phys.grav * t * gravity_sign; }	 // gravity
+	// if (gravity_sign < 0) {													 // cap yv
+	// m_state.yv = util::clamp(m_state.yv, -phys.yv_max, phys.jump_v);
+	//} else {
+	// m_state.yv = util::clamp(m_state.yv, -phys.jump_v, phys.yv_max);
+	//}
 
 	m_state.xp += m_state.xv * t;
-	m_state.yp += m_state.yv * t;
+	// m_state.yp += m_state.yv * t;
 	m_p.setPosition(m_state.xp * m_p.size().x, m_state.yp * m_p.size().y);
+	m_nametag.setPosition(m_p.getPosition().x, m_p.getPosition().y - m_p.size().y);
 }
 
 void player_ghost::draw(sf::RenderTarget& t, sf::RenderStates s) const {
@@ -98,4 +100,5 @@ void player_ghost::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	// for the extra border tile offset
 	s.transform.translate(1 * m_p.size().x, 0);
 	t.draw(m_p, s);
+	t.draw(m_nametag, s);
 }
