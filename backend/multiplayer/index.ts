@@ -76,6 +76,11 @@ export function emitUserData(user: User) {
 
 // player states are queued and distributed at a fixed interval
 const ROOMS: { [room: string]: { [id: number]: IPlayerState } } = {};
+const ROOMS_SIZE: { [room: string]: number } = {};
+
+export function playerCount(levelId: number): number {
+	return ROOMS_SIZE[`${levelId}`] ?? 0;
+}
 
 // run when a user connects
 async function postAuthentication(socket: Socket) {
@@ -92,6 +97,7 @@ async function postAuthentication(socket: Socket) {
 			await socket.join(room);
 			// tell everyone in the room that the user joined
 			io.in(room).emit('joined', { ...data, room });
+			ROOMS_SIZE[room] = (ROOMS_SIZE[room] ?? 0) + 1;
 			const socketsInRoom = await io.in(room).fetchSockets();
 			socket.emit(
 				'data_update',
@@ -103,6 +109,7 @@ async function postAuthentication(socket: Socket) {
 	// when a user leaves
 	socket.on('leave', async () => {
 		// tell everyone we left
+		ROOMS_SIZE[room] = (ROOMS_SIZE[room] ?? 0) - 1;
 		io.in(room).emit('left', data.id);
 		socket.leave(room);
 		room = undefined;
@@ -138,6 +145,7 @@ async function postAuthentication(socket: Socket) {
 	});
 
 	socket.on('disconnect', () => {
+		ROOMS_SIZE[room] = (ROOMS_SIZE[room] ?? 0) + 1;
 		log.info(`user ${data.name} disconnected`);
 	});
 }

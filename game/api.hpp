@@ -60,6 +60,7 @@ public:
 		std::optional<int> verificationId;
 		int version;
 		std::optional<bool> pinned;
+		int players;
 		inline bool verified() const {
 			return verificationId.has_value();
 		}

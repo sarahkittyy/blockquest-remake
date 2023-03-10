@@ -87,6 +87,7 @@ export interface ILevelResponse {
 	verificationId?: number;
 	version: number;
 	pinned?: boolean;
+	players: number;
 }
 
 /* options for searching through levels */

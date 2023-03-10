@@ -890,6 +890,7 @@ void from_json(const nlohmann::json &j, api::level &l) {
 	l.comments	  = j["comments"].get<int>();
 	l.likes		  = j["likes"].get<int>();
 	l.dislikes	  = j["dislikes"].get<int>();
+	l.players	  = j["players"].get<int>();
 	if (j.contains("myVote")) {
 		l.myVote = j["myVote"].get<int>();
 	}
@@ -926,6 +927,7 @@ void to_json(nlohmann::json &j, const api::level &l) {
 	j["comments"]	 = l.comments;
 	j["likes"]		 = l.likes;
 	j["dislikes"]	 = l.dislikes;
+	j["players"]	 = l.players;
 	if (l.pinned)
 		j["pinned"] = *l.pinned;
 	if (l.myVote)

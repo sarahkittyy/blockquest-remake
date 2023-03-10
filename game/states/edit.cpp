@@ -307,7 +307,6 @@ void edit::update(fsm* sm, sf::Time dt) {
 			if (!m_test_playing() || m_test_play_world->lost() || m_test_play_world->won()) {
 				// editing mode, no player on screen
 				// TODO: decrease frequency
-				// TODO: static "editing" state
 				multiplayer::get().emit_state(multiplayer::player_state::empty(auth::get().authed() ? auth::get().get_jwt().id : -1));
 			} else {
 				// gameplay mode
@@ -341,6 +340,13 @@ void edit::update(fsm* sm, sf::Time dt) {
 	} else {
 		m_rt.draw(*m_test_play_world);
 		m_rt.draw(m_timer_text);
+		if (multiplayer::get().room().has_value()) {
+			nametag& self_tag = multiplayer::get().get_self_tag();
+			sf::Vector2f p	  = m_test_play_world->get_player_pos();
+			sf::Vector2i s	  = m_test_play_world->get_player_size();
+			self_tag.setPosition((p.x + 1.f) * s.x, (p.y - 1.f) * s.y);
+			m_rt.draw(self_tag);
+		}
 	}
 	if (multiplayer::get().ready()) {
 		m_rt.draw(multiplayer::get());

@@ -86,6 +86,10 @@ sf::Vector2f world::get_player_scale() const {
 	return m_player.getScale();
 }
 
+sf::Vector2i world::get_player_size() const {
+	return m_player.size();
+}
+
 std::string world::get_player_anim() const {
 	return m_player.get_animation();
 }

@@ -195,6 +195,10 @@ void multiplayer::update() {
 	}
 }
 
+nametag& multiplayer::get_self_tag() {
+	return m_self_tag;
+}
+
 void multiplayer::m_configure_socket_listeners() {
 	m_h.socket()->off_all();
 
@@ -234,6 +238,8 @@ void multiplayer::m_configure_socket_listeners() {
 		// if it was us, update the room we're in
 		if (d.id == auth::get().get_jwt().id) {
 			m_room = data["room"]->get_string();
+			// also update our nametag
+			m_self_tag.set_name(d.name);
 		}
 	});
 	m_h.socket()->on("left", [this](sio::event& ev) {
@@ -369,6 +375,7 @@ void multiplayer::imdraw() {
 	}
 
 	if (m_chat_open) {
+		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
 		ImGui::Begin(chat_title.c_str(), &m_chat_open);
 		ImGui::BeginChild("ChatScrolling###ChatScrolling", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), false, ImGuiWindowFlags_HorizontalScrollbar);
 		int i = 0;

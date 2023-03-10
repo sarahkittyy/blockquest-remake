@@ -10,6 +10,8 @@ import { IReplayResponse } from '@/controllers/Replay';
 import { ICommentResponse } from '@/controllers/Comment';
 import crypto from 'crypto';
 
+import * as multiplayer from '@/multiplayer';
+
 export function isValidLevel(code: string): boolean {
 	const levelRegex = /^(?:[0-9]{3}|\/){1024}/g;
 	if (code.match(/^[/0-9]{1023,3073}$/) == null) return false;
@@ -305,6 +307,7 @@ export function toLevelResponse(lvl: LevelMetadataIncluded, userId?: number): IL
 		}),
 		version: lvl.version,
 		...(lvl.pinnedTo?.length != 1 ? {} : { pinned: true }),
+		players: multiplayer.playerCount(lvl.id),
 	};
 }
 

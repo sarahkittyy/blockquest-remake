@@ -195,6 +195,17 @@ void level_card::imdraw(fsm* sm) {
 	m_comment_modal.imdraw(sm);
 	if (m_user_modal) m_user_modal->imdraw(sm);
 
+	// player count
+
+	if (m_lvl.players > 0) {
+		ImGui::Image(resource::get().imtex("assets/gui/connection.png"), x16, ImVec2(0, 0.5), ImVec2(0.5, 1));
+		ImGui::SameLine();
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+		ImGui::PushStyleColor(ImGuiCol_Text, sf::Color(51, 255, 87));
+		ImGui::Text("Online: %d", m_lvl.players);
+		ImGui::PopStyleColor();
+	}
+
 	// extra info
 
 	char date_fmt[100];

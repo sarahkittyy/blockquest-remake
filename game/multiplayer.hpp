@@ -11,6 +11,7 @@
 #include "api.hpp"
 #include "api_handle.hpp"
 #include "auth.hpp"
+#include "nametag.hpp"
 #include "settings.hpp"
 
 class player_ghost;
@@ -84,6 +85,8 @@ public:
 	void emit_state(const player_state& state);
 	std::unordered_map<int, player_state> get_states() const;
 
+	nametag& get_self_tag();
+
 private:
 	multiplayer();
 	multiplayer(const multiplayer& other) = delete;
@@ -107,6 +110,8 @@ private:
 	std::unordered_map<int, player_state> m_player_state;
 	player_data m_get_player_data_or_default(int uid) const;
 	player_state m_get_player_state_or_default(int uid) const;
+
+	nametag m_self_tag;
 
 	// rendering contexts created in other threads are invalidated when the thread closes.
 	// we queue up the data updates so that we can generate the player icons when needed

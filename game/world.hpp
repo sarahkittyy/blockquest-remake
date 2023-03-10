@@ -39,6 +39,7 @@ public:
 	sf::Vector2f get_player_pos() const;
 	sf::Vector2f get_player_vel() const;
 	sf::Vector2f get_player_scale() const;
+	sf::Vector2i get_player_size() const;
 	std::string get_player_anim() const;
 	input_state get_player_inputs() const;
 	bool get_player_grounded() const;
