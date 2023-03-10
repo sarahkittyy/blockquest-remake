@@ -75,6 +75,8 @@ multiplayer::multiplayer()
 
 	// default player icon
 	m_player_renders[-1] = std::make_shared<player_icon>(sf::Color::White, sf::Color::Black);
+
+	m_self_tag.set_name("Unnamed");
 }
 
 void multiplayer::draw(sf::RenderTarget& t, sf::RenderStates s) const {
@@ -239,7 +241,7 @@ void multiplayer::m_configure_socket_listeners() {
 		if (d.id == auth::get().id()) {
 			m_room = data["room"]->get_string();
 			// also update our nametag
-			m_self_tag.set_name(d.name);
+			m_self_tag.set_name(auth::get().username());
 		}
 	});
 	m_h.socket()->on("left", [this](sio::event& ev) {

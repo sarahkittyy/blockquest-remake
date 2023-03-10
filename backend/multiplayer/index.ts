@@ -153,7 +153,7 @@ async function postAuthentication(socket: Socket) {
 		io.in(room)
 			.fetchSockets()
 			.then((sockets) => {
-				ROOMS_SIZE[room] = sockets.length;
+				ROOMS_SIZE[room] = sockets.length - 1;
 			})
 			.catch((e) => log.error(e));
 		log.info(`user ${data.name} disconnected`);
