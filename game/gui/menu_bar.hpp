@@ -16,6 +16,8 @@
 
 #include "api_handle.hpp"
 
+#include "player_icon.hpp"
+
 #include "gui/forgot_password_modal.hpp"
 #include "gui/settings_modal.hpp"
 #include "gui/user_modal.hpp"
@@ -36,6 +38,8 @@ private:
 	char m_email[150];
 	char m_user_email[150];
 	int m_v_code;
+
+	player_icon m_p_icon;
 
 	api_handle<auth::response> m_login_handle;
 	api_handle<auth::response> m_signup_handle;

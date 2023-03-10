@@ -1,5 +1,7 @@
 import log from '@/log';
+import { MP_FLUSH_INTERVAL_MS } from '@/util/constants';
 import { prisma } from '@db/index';
+import { User } from '@prisma/client';
 import http from 'http';
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,24 +17,45 @@ export function generateAccessToken(userId: number): string {
 }
 
 interface IPlayerData {
-	id: number;
-	name: string;
-	outline: number;
-	fill: number;
+	id?: number;
+	name?: string;
+	outline?: number;
+	fill?: number;
+}
+
+function isValidData(data: IPlayerData): boolean {
+	if (data.id == undefined) return false;
+	if (data.name == undefined) return false;
+	if (data.outline == undefined) return false;
+	if (data.fill == undefined) return false;
+	return true;
 }
 
 interface IPlayerState {
-	id: number;
-	xp: number;
-	yp: number;
-	xv: number;
-	yv: number;
-	updatedAt: number;
+	id?: number;
+	xp?: number;
+	yp?: number;
+	xv?: number;
+	yv?: number;
+	sx?: number;
+	sy?: number;
+	anim?: string;
+	inputs?: number;
+	updatedAt?: number;
 }
 
-interface IPlayer {
-	data: IPlayerData;
-	state: IPlayerState;
+function isValidState(state: IPlayerState): boolean {
+	if (state.id == undefined) return false;
+	if (state.xp == undefined) return false;
+	if (state.yp == undefined) return false;
+	if (state.xv == undefined) return false;
+	if (state.yv == undefined) return false;
+	if (state.sx == undefined) return false;
+	if (state.sy == undefined) return false;
+	if (state.anim == undefined) return false;
+	if (state.inputs == undefined) return false;
+	if (state.updatedAt == undefined) return false;
+	return true;
 }
 
 interface IMessage {
@@ -41,45 +64,71 @@ interface IMessage {
 	createdAt: number;
 }
 
-async function getRoomState(io: Server, room: string): Promise<IPlayer[]> {
-	const sockets = await io.in(room).fetchSockets();
-	return [];
+export function emitUserData(user: User) {
+	const data: IPlayerData = {
+		id: user.id,
+		name: user.name,
+		outline: parseInt(user.outlineColor, 16),
+		fill: parseInt(user.fillColor, 16),
+	};
+	io?.emit('data_update', [data]);
 }
 
+// player states are queued and distributed at a fixed interval
+const ROOMS: { [room: string]: { [id: number]: IPlayerState } } = {};
+
 // run when a user connects
-async function postAuthentication(io: Server, socket: Socket) {
+async function postAuthentication(socket: Socket) {
 	const data = socket.data as IPlayerData;
+	let room: string | undefined = undefined;
 	log.info(`user ${data.name} connected`);
-	log.info(data.outline);
 
 	// when a user joins
 	socket.on('join', async (levelId: number) => {
 		if (socket.rooms.size > 1) {
 			socket.emit('warn', 'You are already in a level!');
 		} else {
-			const room = `${levelId}`;
+			room = `${levelId}`;
 			await socket.join(room);
 			// tell everyone in the room that the user joined
 			io.in(room).emit('joined', { ...data, room });
+			const socketsInRoom = await io.in(room).fetchSockets();
+			socket.emit(
+				'data_update',
+				socketsInRoom.map((s) => s.data)
+			);
 		}
 	});
 
 	// when a user leaves
 	socket.on('leave', async () => {
-		// go through all rooms that they're in (for safety, shouldn't be in more than 1)
-		socket.rooms.forEach((room) => {
-			// exclude the user's self room
-			if (room !== socket.id) {
-				// tell everyone we left
-				io.in(room).emit('left', data.id);
-				socket.leave(room);
-			}
-		});
+		// tell everyone we left
+		io.in(room).emit('left', data.id);
+		socket.leave(room);
+		room = undefined;
 	});
 
+	// data & state
+	socket.on('data_update', async (data: IPlayerData) => {
+		if (!room) return;
+		if (!isValidData(data)) return;
+		socket.to(room).emit('data_update', [data]);
+	});
+
+	socket.on('state_update', async (state: IPlayerState) => {
+		if (!room) return;
+		if (ROOMS[room] == undefined) ROOMS[room] = {};
+		if (!isValidState(state)) return;
+		ROOMS[room][state.id] = state;
+		//socket.to(room).emit('state_update', [state]);
+	});
+
+	// chat
 	socket.on('chat', async (msg: string) => {
-		io.in([...socket.rooms]).emit('chat', <IMessage>{
-			text: msg,
+		if (!room) return;
+		if (msg.length == 0) return;
+		io.in(room).emit('chat', <IMessage>{
+			text: `[${data.name}#${data.id}] ${msg}`,
 			authorId: data.id,
 			createdAt: Math.floor(new Date().getTime() / 1000),
 		});
@@ -138,8 +187,19 @@ export function configure(server: http.Server) {
 			} else {
 				socket.data = data;
 				socket.emit('authorized');
-				postAuthentication(io, socket);
+				postAuthentication(socket);
 			}
 		});
 	});
+
+	// state update interval
+	setInterval(() => {
+		for (const [roomId, room] of Object.entries(ROOMS)) {
+			if (Object.values(room).length == 0) {
+				continue;
+			}
+			io.in(roomId).emit('state_update', Object.values(room));
+			ROOMS[roomId] = {};
+		}
+	}, MP_FLUSH_INTERVAL_MS);
 }

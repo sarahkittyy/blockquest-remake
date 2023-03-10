@@ -20,6 +20,9 @@ public:
 
 	void imdraw(int xs, int ys);
 
+	const sf::Texture& get_tex();
+	player& get_player();
+
 private:
 	player m_player;
 	sf::RenderTexture m_player_rt;

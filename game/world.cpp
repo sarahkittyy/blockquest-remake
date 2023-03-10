@@ -12,6 +12,8 @@
 
 #include "resource.hpp"
 
+const world::physics world::phys;
+
 world::world(level l, std::optional<replay> rp)
 	: m_has_focus(true),
 	  m_tmap(l.map()),
@@ -70,6 +72,30 @@ world::world(level l, std::optional<replay> rp)
 world::~world() {
 	m_dash_sfx_thread.request_stop();
 	m_dash_sfx_thread.join();
+}
+
+sf::Vector2f world::get_player_pos() const {
+	return { m_xp, m_yp };
+}
+
+sf::Vector2f world::get_player_vel() const {
+	return { m_xv, m_yv };
+}
+
+sf::Vector2f world::get_player_scale() const {
+	return m_player.getScale();
+}
+
+std::string world::get_player_anim() const {
+	return m_player.get_animation();
+}
+
+input_state world::get_player_inputs() const {
+	return m_this_frame;
+}
+
+bool world::get_player_grounded() const {
+	return m_player_grounded();
 }
 
 void world::m_init_world() {

@@ -37,7 +37,7 @@ context::context()
 	load_from_file("bq-r.json");
 	resource::get().window().setFramerateLimit(m_fps_limit);
 
-	api::get().set_color(m_player_outer, m_player_inner);
+	api::get().set_color(m_player_inner, m_player_outer);
 }
 
 level& context::editor_level() {

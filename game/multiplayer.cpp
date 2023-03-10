@@ -3,6 +3,11 @@
 #include <functional>
 
 #include "debug.hpp"
+#include "gui/player_icon.hpp"
+#include "player.hpp"
+#include "player_ghost.hpp"
+#include "resource.hpp"
+#include "util.hpp"
 
 multiplayer& multiplayer::get() {
 	static multiplayer instance;
@@ -11,12 +16,26 @@ multiplayer& multiplayer::get() {
 
 multiplayer::multiplayer()
 	: m_chat_open(false),
+	  m_players_open(false),
 	  m_room({}),
 	  m_state(state::DISCONNECTED),
 	  m_mp_token({}) {
 	m_h.set_open_listener(std::bind(&multiplayer::m_on_open, this));
 	m_h.set_close_listener(std::bind(&multiplayer::m_on_close, this));
 	m_h.set_fail_listener(std::bind(&multiplayer::m_on_fail, this));
+
+	// default player icon
+	m_player_renders[-1] = std::make_shared<player_icon>(sf::Color::White, sf::Color::Black);
+}
+
+void multiplayer::draw(sf::RenderTarget& t, sf::RenderStates s) const {
+	if (!auth::get().authed()) return;
+	s.transform *= getTransform();
+	const int me = auth::get().get_jwt().id;
+	for (auto& [uid, p] : m_player_chars) {
+		if (uid == me) continue;
+		t.draw(*p, s);
+	}
 }
 
 void multiplayer::m_on_open() {
@@ -48,6 +67,8 @@ void multiplayer::disconnect() {
 	m_mp_token = {};
 	m_player_data.clear();
 	m_player_state.clear();
+	m_player_renders.clear();
+	m_player_chars.clear();
 	m_room = {};
 }
 
@@ -60,13 +81,22 @@ void multiplayer::join(int level_id) {
 }
 
 void multiplayer::leave() {
-	if (!m_room.has_value()) return;
 	m_h.socket()->emit("leave");
 	m_player_data.clear();
 	m_player_state.clear();
-	debug::log() << "leaving room " << m_room.value() << "\n";
+	m_player_renders.clear();
+	m_player_chars.clear();
+
 	m_room		= {};
 	m_chat_open = false;
+}
+
+void multiplayer::emit_state(const player_state& state) {
+	m_last_state = state;
+}
+
+std::unordered_map<int, multiplayer::player_state> multiplayer::get_states() const {
+	return m_player_state;
 }
 
 std::optional<std::string> multiplayer::room() const {
@@ -76,6 +106,23 @@ std::optional<std::string> multiplayer::room() const {
 void multiplayer::update() {
 	if (!auth::get().authed()) {
 		disconnect();
+	}
+
+	if (ready() && auth::get().authed() && m_room.has_value() && m_state_clock.getElapsedTime() > sf::milliseconds(100)) {
+		auto ptr					= sio::object_message::create();
+		ptr->get_map()["xp"]		= sio::double_message::create(m_last_state.xp);
+		ptr->get_map()["yp"]		= sio::double_message::create(m_last_state.yp);
+		ptr->get_map()["xv"]		= sio::double_message::create(m_last_state.xv);
+		ptr->get_map()["yv"]		= sio::double_message::create(m_last_state.yv);
+		ptr->get_map()["sx"]		= sio::double_message::create(m_last_state.sx);
+		ptr->get_map()["sy"]		= sio::double_message::create(m_last_state.sy);
+		ptr->get_map()["anim"]		= sio::string_message::create(m_last_state.anim);
+		ptr->get_map()["inputs"]	= sio::int_message::create(m_last_state.inputs);
+		ptr->get_map()["grounded"]	= sio::bool_message::create(m_last_state.grounded);
+		ptr->get_map()["updatedAt"] = sio::int_message::create(m_last_state.updatedAt);
+		ptr->get_map()["id"]		= sio::int_message::create(auth::get().get_jwt().id);
+		m_h.socket()->emit("state_update", ptr);
+		m_state_clock.restart();
 	}
 
 	m_token_handle.poll();
@@ -105,6 +152,10 @@ void multiplayer::update() {
 		ptr->get_map()["id"]	= sio::int_message::create(auth::get().get_jwt().id);
 		m_h.socket()->emit("authenticate", ptr);
 	}
+
+	for (auto& [uid, p] : m_player_chars) {
+		p->update();
+	}
 }
 
 void multiplayer::m_configure_socket_listeners() {
@@ -133,7 +184,29 @@ void multiplayer::m_configure_socket_listeners() {
 		d.fill		   = sf::Color(data["fill"]->get_int());
 		d.outline	   = sf::Color(data["outline"]->get_int());
 
-		m_player_data[d.id] = d;
+		m_update_player_data(d);
+
+		player_state s;
+		s.anim		= "stand";
+		s.xp		= -999;
+		s.yp		= -999;
+		s.xv		= 0;
+		s.yv		= 0;
+		s.sx		= 1;
+		s.sy		= 1;
+		s.inputs	= 0;
+		s.grounded	= false;
+		s.updatedAt = util::get_time();
+		s.id		= d.id;
+
+		m_update_player_state(s);
+
+		chat_message join_msg;
+		join_msg.authorId  = -2;
+		join_msg.color	   = sf::Color(0x77dd77ff);
+		join_msg.createdAt = std::time(nullptr);
+		join_msg.text	   = "[+] " + d.name + " joined room #" + data["room"]->get_string() + "!";
+		m_chat_messages.push_back(join_msg);
 
 		// if it was us, update the room we're in
 		if (d.id == auth::get().get_jwt().id) {
@@ -143,12 +216,58 @@ void multiplayer::m_configure_socket_listeners() {
 	m_h.socket()->on("left", [this](sio::event& ev) {
 		// player id
 		int id = ev.get_message()->get_int();
+
+		if (m_player_data.contains(id)) {
+			chat_message leave_msg;
+			leave_msg.authorId	= -2;
+			leave_msg.color		= sf::Color(0xff6961ff);
+			leave_msg.createdAt = std::time(nullptr);
+			leave_msg.text		= "[-] " + m_player_data.at(id).name + " left room #" + m_room.value() + ".";
+			m_chat_messages.push_back(leave_msg);
+		}
+
 		// remove player from data and state
 		m_player_data.erase(id);
 		m_player_state.erase(id);
+
 		// if it was us, update the room we're in
 		if (id == auth::get().get_jwt().id) {
 			m_room = {};
+		}
+	});
+
+	// game state
+	m_h.socket()->on("data_update", [this](sio::event& ev) {
+		auto msgs = ev.get_message()->get_vector();
+		for (auto& msg : msgs) {
+			auto data	   = msg->get_map();
+			player_data& d = m_player_data[data["id"]->get_int()];
+			d.id		   = data["id"]->get_int();
+			d.name		   = data["name"]->get_string();
+			d.fill		   = sf::Color(data["fill"]->get_int());
+			d.outline	   = sf::Color(data["outline"]->get_int());
+
+			m_update_player_data(d);
+		}
+	});
+	m_h.socket()->on("state_update", [this](sio::event& ev) {
+		auto msgs = ev.get_message()->get_vector();
+		for (auto& msg : msgs) {
+			auto data		= msg->get_map();
+			player_state& s = m_player_state[data["id"]->get_int()];
+			s.id			= data["id"]->get_int();
+			s.xp			= data["xp"]->get_double();
+			s.yp			= data["yp"]->get_double();
+			s.xv			= data["xv"]->get_double();
+			s.yv			= data["yv"]->get_double();
+			s.sx			= data["sx"]->get_double();
+			s.sy			= data["sy"]->get_double();
+			s.anim			= data["anim"]->get_string();
+			s.inputs		= data["inputs"]->get_int();
+			s.grounded		= data["grounded"]->get_bool();
+			s.updatedAt		= data["updatedAt"]->get_int();
+
+			m_update_player_state(s);
 		}
 	});
 
@@ -159,6 +278,7 @@ void multiplayer::m_configure_socket_listeners() {
 		msg.text	  = data["text"]->get_string();
 		msg.authorId  = data["authorId"]->get_int();
 		msg.createdAt = data["createdAt"]->get_int();
+		msg.color	  = sf::Color::White;
 
 		m_chat_messages.push_back(msg);
 	});
@@ -175,7 +295,7 @@ void multiplayer::m_configure_socket_listeners() {
 	});
 }
 
-multiplayer::player_data multiplayer::get_player_or_default(int uid) const {
+multiplayer::player_data multiplayer::m_get_player_data_or_default(int uid) const {
 	if (m_player_data.contains(uid)) {
 		return m_player_data.at(uid);
 	} else {
@@ -188,6 +308,39 @@ multiplayer::player_data multiplayer::get_player_or_default(int uid) const {
 	}
 }
 
+multiplayer::player_state multiplayer::m_get_player_state_or_default(int uid) const {
+	if (m_player_state.contains(uid)) {
+		return m_player_state.at(uid);
+	} else {
+		player_state d;
+		d.id		= uid;
+		d.xp		= -999;
+		d.yp		= -999;
+		d.xv		= 0;
+		d.yv		= 0;
+		d.sx		= 1;
+		d.sy		= 1;
+		d.anim		= "stand";
+		d.inputs	= 0;
+		d.grounded	= false;
+		d.updatedAt = util::get_time();
+		return d;
+	}
+}
+
+void multiplayer::m_update_player_state(const player_state& state) {
+	m_player_state[state.id] = state;
+	m_player_state_flush_list.insert(state.id);
+}
+
+void multiplayer::m_update_player_data(const player_data& data) {
+	m_player_data[data.id] = data;
+
+	debug::log() << "updating player data for " << data.id << "\n";
+
+	m_player_data_queue.push_back(data);
+}
+
 void multiplayer::imdraw() {
 	if (!ready()) return;
 	if (!room().has_value()) return;
@@ -196,10 +349,41 @@ void multiplayer::imdraw() {
 	chat_title += room().value();
 	chat_title += "###MPCHAT";
 
-	if (ImGui::Begin(chat_title.c_str(), &m_chat_open)) {
-		ImGui::BeginChild("ChatScrolling", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), false, ImGuiWindowFlags_HorizontalScrollbar);
+	if (!m_player_data_queue.empty()) {
+		for (auto& data : m_player_data_queue) {
+			m_player_renders[data.id].reset(new player_icon(data.fill, data.outline));
+		}
+		m_player_data_queue.clear();
+	}
+	if (!m_player_state_flush_list.empty()) {
+		for (auto& id : m_player_state_flush_list) {
+			if (!m_player_chars.contains(id)) {
+				m_player_chars[id].reset(new player_ghost());
+			}
+			m_player_chars[id]->flush_data(m_get_player_data_or_default(id));
+			m_player_chars[id]->flush_state(m_get_player_state_or_default(id));
+		}
+		m_player_state_flush_list.clear();
+	}
+
+	if (m_chat_open) {
+		ImGui::Begin(chat_title.c_str(), &m_chat_open);
+		ImGui::BeginChild("ChatScrolling###ChatScrolling", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), false, ImGuiWindowFlags_HorizontalScrollbar);
+		int i = 0;
 		for (auto& msg : m_chat_messages) {
-			ImGui::TextWrapped("[%s] %s", get_player_or_default(msg.authorId).name.c_str(), msg.text.c_str());
+			ImGui::PushID(i);
+			if (m_player_renders.contains(msg.authorId)) {
+				m_player_renders.at(msg.authorId)->imdraw(16, 16);
+				ImGui::SameLine();
+			} else if (msg.authorId != -2) {
+				m_player_renders.at(-1)->imdraw(16, 16);
+				ImGui::SameLine();
+			}
+			ImGui::PushStyleColor(ImGuiCol_Text, msg.color);
+			ImGui::TextWrapped("%s", msg.text.c_str());
+			ImGui::PopStyleColor();
+			ImGui::PopID();
+			i++;
 		}
 		ImGui::EndChild();
 		ImGui::Separator();
@@ -212,8 +396,8 @@ void multiplayer::imdraw() {
 			ImGui::SetKeyboardFocusHere(-1);
 		}
 		ImGui::PopItemWidth();
+		ImGui::End();
 	}
-	ImGui::End();
 }
 
 multiplayer::state multiplayer::get_state() const {

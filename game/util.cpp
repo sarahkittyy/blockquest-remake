@@ -1,11 +1,16 @@
 #include "util.hpp"
 
 #include <SFML/Graphics.hpp>
+#include <chrono>
 #include <cmath>
 
 #include "tilemap.hpp"
 
 namespace util {
+
+uint64_t get_time() {
+	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
 
 float clamp(float v, float min, float max) {
 	return std::max(std::min(v, max), min);

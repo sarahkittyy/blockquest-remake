@@ -30,6 +30,13 @@ search::search()
 	m_update_query();
 
 	resource::get().play_music("menu_bg");
+
+	m_bg.setTexture(resource::get().tex("assets/bg.png"));
+	m_bg.setColor(sf::Color(255, 255, 255, 128));
+	m_bg.setOrigin(m_bg.getLocalBounds().width / 2.f, m_bg.getLocalBounds().height / 2.f);
+	m_bg.rotate(33.f);
+	m_bg.setScale(4.f, 4.f);
+	m_bg.setPosition(sf::Vector2f(resource::get().window().getSize()) * 0.5f);
 }
 
 search::~search() {
@@ -50,6 +57,10 @@ void search::update(fsm* sm, sf::Time dt) {
 
 void search::process_event(sf::Event e) {
 	m_menu_bar.process_event(e);
+}
+
+void search::draw(sf::RenderTarget& t, sf::RenderStates s) const {
+	t.draw(m_bg, s);
 }
 
 void search::imdraw(fsm* sm) {

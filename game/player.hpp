@@ -19,6 +19,7 @@ public:
 
 	void set_animation(std::string name);
 	void queue_animation(std::string name);
+	std::string get_animation() const;
 
 	sf::Vector2i size() const;
 

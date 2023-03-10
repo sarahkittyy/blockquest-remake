@@ -217,8 +217,8 @@ public:
 		std::optional<api::replay> recentScore;
 		std::optional<api::level> recentScoreLevel;
 		std::optional<api::level> recentLevel;
-		int outlineColor;
 		int fillColor;
+		int outlineColor;
 		std::optional<api::level> pinned;
 	};
 

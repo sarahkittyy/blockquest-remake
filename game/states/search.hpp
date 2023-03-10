@@ -28,6 +28,9 @@ public:
 private:
 	menu_bar m_menu_bar;   // app menu bar
 
+	sf::Sprite m_bg;
+	void draw(sf::RenderTarget& t, sf::RenderStates s) const;
+
 	// QUERY STUFF
 	api::level_search_query& query();		// just fetches the query from context
 	api::level_search_query m_last_query;	// holds the query that we send to the api

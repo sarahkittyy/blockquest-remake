@@ -36,6 +36,10 @@ player::player()
 	m_outer.spr().setColor(sf::Color::Black);
 }
 
+std::string player::get_animation() const {
+	return m_inner.get_animation();
+}
+
 void player::set_outline_color(sf::Color outline) {
 	m_outer.spr().setColor(outline);
 }

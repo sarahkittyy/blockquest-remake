@@ -54,7 +54,7 @@ void settings_modal::process_event(sf::Event e) {
 	}
 }
 
-void settings_modal::imdraw() {
+void settings_modal::imdraw(bool* update_icon) {
 	ImGuiWindowFlags modal_flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
 
 	m_submit_color_handle.poll();
@@ -104,6 +104,9 @@ void settings_modal::imdraw() {
 			auto res = m_submit_color_handle.get();
 			if (res.success) {
 				m_submit_color_handle.reset();
+				if (update_icon != nullptr) {
+					*update_icon = true;
+				}
 			} else {
 				ImGui::TextColored(sf::Color::Red, "Could not upload color: %s", res.error->c_str());
 			}

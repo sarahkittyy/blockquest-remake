@@ -14,7 +14,7 @@ public:
 	settings_modal();
 
 	void open();
-	void imdraw();
+	void imdraw(bool* update_icon = nullptr);
 
 	void process_event(sf::Event e);
 

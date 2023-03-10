@@ -15,6 +15,8 @@ struct tile;
 // various utility functions namespaced for organization
 namespace util {
 
+uint64_t get_time();   // returns the current time in milliseconds
+
 float clamp(float v, float min, float max);	  // keeps a value between two values
 
 /**

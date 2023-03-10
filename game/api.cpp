@@ -842,8 +842,8 @@ void to_json(nlohmann::json &j, const api::user_stats &s) {
 		{ "createdAt", s.createdAt },
 		{ "tier", s.tier },
 		{ "count", s.count },
-		{ "outlineColor", s.outlineColor },
 		{ "fillColor", s.fillColor },
+		{ "outlineColor", s.outlineColor },
 	};
 	if (s.recentLevel) {
 		j["recentLevel"] = *s.recentLevel;

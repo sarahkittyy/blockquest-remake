@@ -10,6 +10,40 @@
 
 const sf::Time replay::timestep = sf::milliseconds(10);
 
+input_state input_state::from_int(int i) {
+	input_state s;
+	s.left	= CHECK_BIT(i, 0);
+	s.right = CHECK_BIT(i, 1);
+	s.up	= CHECK_BIT(i, 2);
+	s.down	= CHECK_BIT(i, 3);
+	s.jump	= CHECK_BIT(i, 4);
+	s.dash	= CHECK_BIT(i, 5);
+	return s;
+}
+
+input_state::operator int() const {
+	int ret = 0;
+	if (left) {
+		ret |= 1 << 0;
+	}
+	if (right) {
+		ret |= 1 << 1;
+	}
+	if (up) {
+		ret |= 1 << 2;
+	}
+	if (down) {
+		ret |= 1 << 3;
+	}
+	if (jump) {
+		ret |= 1 << 4;
+	}
+	if (dash) {
+		ret |= 1 << 5;
+	}
+	return ret;
+}
+
 replay::replay() {
 	m_frames.reserve(100);
 	reset();

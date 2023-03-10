@@ -23,7 +23,8 @@ menu_bar::menu_bar()
 									"Left + Right to wallkick"),
 					 std::make_pair(ImGui::Gif(resource::get().tex("assets/gifs/climb.png"), 25, { 240, 240 }, 20),
 									"Up & Down to climb") }),
-	  m_v_code(0) {
+	  m_v_code(0),
+	  m_p_icon(context::get().get_player_fill(), context::get().get_player_outline()) {
 	std::memset(m_username, 0, 50);
 	std::memset(m_password, 0, 50);
 	std::memset(m_email, 0, 150);
@@ -108,7 +109,10 @@ void menu_bar::imdraw(std::string& info_msg, fsm* sm) {
 
 	// Authentication
 	if (auth::get().authed() && !m_auth_unresolved()) {
-		ImGui::Image(resource::get().imtex("assets/gui/large_play.png"), ImVec2(26, 26));
+		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_p_icon.get_tex().getNativeHandle()),
+											 ImVec2(ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y + 5),
+											 ImVec2(ImGui::GetCursorScreenPos().x + 16, ImGui::GetCursorScreenPos().y + 16 + 5));
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 21);
 		ImGui::TextColored(sf::Color(228, 189, 255), "Welcome, %s!", auth::get().username().c_str());
 		if (ImGui::MenuItem("Profile")) {
 			m_self_modal.reset(new user_modal(auth::get().get_jwt().id));
@@ -358,7 +362,12 @@ void menu_bar::imdraw(std::string& info_msg, fsm* sm) {
 		m_self_modal->imdraw(sm);
 	}
 	if (m_settings_modal) {
-		m_settings_modal->imdraw();
+		bool update_icon = false;
+		m_settings_modal->imdraw(&update_icon);
+		if (update_icon) {
+			m_p_icon.set_fill_color(context::get().get_player_fill());
+			m_p_icon.set_outline_color(context::get().get_player_outline());
+		}
 	}
 
 	ImGui::EndMainMenuBar();

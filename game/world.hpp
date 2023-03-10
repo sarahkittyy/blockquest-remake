@@ -36,6 +36,35 @@ public:
 
 	bool has_playback() const;
 
+	sf::Vector2f get_player_pos() const;
+	sf::Vector2f get_player_vel() const;
+	sf::Vector2f get_player_scale() const;
+	std::string get_player_anim() const;
+	input_state get_player_inputs() const;
+	bool get_player_grounded() const;
+
+	// physics constants
+	static const struct physics {
+		float xv_max			= 12.54f;
+		float yv_max			= 20.00f;
+		float x_accel			= 60.0f;
+		float x_decel			= 60.0f;
+		float jump_v			= 16.5f;
+		float grav				= 60.f;
+		float shorthop_factor	= 0.4f;
+		float air_control		= 0.4f;
+		float dash_xv_max		= 20.f;
+		float dash_x_accel		= 120.f;
+		float dash_air_control	= 0.2f;
+		float wallkick_xv		= 9.5f;
+		float wallkick_yv		= 16.0f;
+		float ice_friction		= 0.2f;
+		float climb_yv_max		= 10.0f;
+		float climb_ya			= 180.f;
+		float climb_dismount_xv = 6.f;
+		int coyote_millis		= 75;
+	} phys;
+
 private:
 	void draw(sf::RenderTarget&, sf::RenderStates) const;	// sfml draw fn
 
@@ -80,28 +109,6 @@ private:
 		down  = 2,
 		left  = 3
 	};
-
-	// physics constants
-	const struct physics {
-		float xv_max			= 12.54f;
-		float yv_max			= 20.00f;
-		float x_accel			= 60.0f;
-		float x_decel			= 60.0f;
-		float jump_v			= 16.5f;
-		float grav				= 60.f;
-		float shorthop_factor	= 0.4f;
-		float air_control		= 0.4f;
-		float dash_xv_max		= 20.f;
-		float dash_x_accel		= 120.f;
-		float dash_air_control	= 0.2f;
-		float wallkick_xv		= 9.5f;
-		float wallkick_yv		= 16.0f;
-		float ice_friction		= 0.2f;
-		float climb_yv_max		= 10.0f;
-		float climb_ya			= 180.f;
-		float climb_dismount_xv = 6.f;
-		int coyote_millis		= 75;
-	} phys;
 
 	// units are in tiles
 	float m_xp = 0;	  // player x pos

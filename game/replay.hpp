@@ -13,6 +13,8 @@ struct input_state {
 	bool dash  = false;
 	bool up	   = false;
 	bool down  = false;
+	operator int() const;
+	static input_state from_int(int i);
 };
 
 class replay {

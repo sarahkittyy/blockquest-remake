@@ -40,6 +40,7 @@ void player_icon::set_outline_color(sf::Color outline) {
 
 void player_icon::set_view(sf::View v) {
 	m_player_rt.setView(v);
+	update();
 }
 
 void player_icon::update() {
@@ -48,10 +49,18 @@ void player_icon::update() {
 	m_player.update();
 
 	m_player_rt.clear(sf::Color::Transparent);
-	m_player_rt.draw(m_player);
+	m_player_rt.draw(m_player, s);
 	m_player_rt.display();
 }
 
 void player_icon::imdraw(int xs, int ys) {
 	ImGui::Image(m_player_rt.getTexture(), sf::Vector2f(xs, ys));
+}
+
+const sf::Texture& player_icon::get_tex() {
+	return m_player_rt.getTexture();
+}
+
+player& player_icon::get_player() {
+	return m_player;
 }

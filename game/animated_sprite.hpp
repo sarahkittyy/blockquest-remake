@@ -16,6 +16,8 @@ public:
 	void set_animation(std::string name);							 // set the currently running animation
 	// sets this animation to play after all the frames of the current one have expired
 	void queue_animation(std::string name);
+	// fetch the current anim
+	std::string get_animation() const;
 
 	void set_frame_speed(sf::Time df);	 // sets the time to play each frame for
 

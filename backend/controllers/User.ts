@@ -5,6 +5,7 @@ import { prisma } from '@/db';
 import { ILevelResponse, LevelQueryInclude } from './Level';
 import { IReplayResponse } from './Replay';
 import { stringify } from 'flatted';
+import { emitUserData } from '@/multiplayer';
 
 export interface IUserStats {
 	id: number;
@@ -82,7 +83,7 @@ export default class User {
 			return res.status(400).send({ error: 'Invalid outline color specified' });
 
 		try {
-			await prisma.user.update({
+			const user = await prisma.user.update({
 				where: {
 					id: token.id,
 				},
@@ -91,6 +92,8 @@ export default class User {
 					outlineColor: outlineColorHex,
 				},
 			});
+
+			emitUserData(user);
 
 			return res.status(200).send();
 		} catch (e) {
@@ -222,8 +225,6 @@ export default class User {
 		});
 
 		if (!user) return res.status(404).send({ error: 'User not found' });
-
-		console.log(user);
 
 		let records = 0;
 		const scoreLevels = await prisma.level.findMany({

@@ -10,11 +10,9 @@ animated_sprite::animated_sprite(sf::Texture& tex, int tx, int ty)
 	m_spr.setTexture(m_tex);
 
 	m_anims["default"] = { 0 };
-
 }
 
 animated_sprite::~animated_sprite() {
-	
 }
 
 void animated_sprite::add_animation(std::string name, std::vector<int> frames) {
@@ -33,6 +31,10 @@ void animated_sprite::set_animation(std::string name) {
 
 void animated_sprite::queue_animation(std::string name) {
 	m_queued_animation = name;
+}
+
+std::string animated_sprite::get_animation() const {
+	return m_current_animation;
 }
 
 void animated_sprite::set_frame_speed(sf::Time df) {

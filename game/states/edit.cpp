@@ -113,12 +113,14 @@ edit::edit()
 }
 
 edit::~edit() {
-	debug::get().setScale(1.f, 1.f);
-	debug::get().setPosition(0, 0);
+	// debug::get().setScale(1.f, 1.f);
+	// debug::get().setPosition(0, 0);
 
 	if (m_test_playing()) {
 		m_toggle_test_play();
 	}
+
+	multiplayer::get().leave();
 }
 
 level& edit::m_level() {
@@ -196,6 +198,7 @@ void edit::update(fsm* sm, sf::Time dt) {
 
 	// if we're not on gui, and on the map, and ready to place a tile
 	if (!ImGui::GetIO().WantCaptureMouse &&
+		!multiplayer::get().room().has_value() &&
 		m_mouse_pressed(sf::Mouse::Left) &&
 		!m_test_playing() &&
 		m_level().map().in_bounds(mouse_tile)) {
@@ -298,6 +301,41 @@ void edit::update(fsm* sm, sf::Time dt) {
 		// join if not already in
 		if (!multiplayer::get().room().has_value()) {
 			multiplayer::get().join(m_level().get_metadata().id);
+			multiplayer::get().open_chat();
+		} else {
+			// send state updates
+			if (!m_test_playing() || m_test_play_world->lost() || m_test_play_world->won()) {
+				// editing mode, no player on screen
+				// TODO: decrease frequency
+				// TODO: static "editing" state
+				multiplayer::get().emit_state(multiplayer::player_state{
+					.xp		   = -999,
+					.yp		   = -999,
+					.xv		   = 0,
+					.yv		   = 0,
+					.sx		   = 1,
+					.sy		   = 1,
+					.anim	   = "stand",
+					.inputs	   = 0,
+					.grounded  = false,
+					.updatedAt = util::get_time() });
+			} else {
+				// gameplay mode
+				sf::Vector2f p = m_test_play_world->get_player_pos();
+				sf::Vector2f v = m_test_play_world->get_player_vel();
+				sf::Vector2f s = m_test_play_world->get_player_scale();
+				multiplayer::get().emit_state(multiplayer::player_state{
+					.xp		   = p.x,
+					.yp		   = p.y,
+					.xv		   = v.x,
+					.yv		   = v.y,
+					.sx		   = s.x,
+					.sy		   = s.y,
+					.anim	   = m_test_play_world->get_player_anim(),
+					.inputs	   = int(m_test_play_world->get_player_inputs()),
+					.grounded  = m_test_play_world->get_player_grounded(),
+					.updatedAt = util::get_time() });
+			}
 		}
 	}
 
@@ -312,6 +350,9 @@ void edit::update(fsm* sm, sf::Time dt) {
 	} else {
 		m_rt.draw(*m_test_play_world);
 		m_rt.draw(m_timer_text);
+	}
+	if (multiplayer::get().ready()) {
+		m_rt.draw(multiplayer::get());
 	}
 	m_rt.display();
 }
@@ -586,11 +627,6 @@ void edit::imdraw(fsm* sm) {
 		ImGui::Begin("Level Info");
 		m_gui_level_info(sm);
 		ImGui::End();
-
-		// multiplayer chat
-		if (multiplayer::get().room().has_value()) {
-			multiplayer::get().open_chat();
-		}
 	}
 	// victory  
 	if (m_test_play_world && m_test_play_world->won() && !m_test_play_world->has_playback()) {
@@ -740,6 +776,14 @@ void edit::m_gui_menu(fsm* sm) {
 		m_quickplay_handle.reset(api::get().quickplay_level());
 	}
 	ImGui::EndDisabled();
+
+	// chat
+	if (multiplayer::get().ready()) {
+		if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/chat.png"), "Open Chat###OpenChatButton")) {
+			multiplayer::get().open_chat();
+		}
+	}
+
 	if (!m_quickplay_handle.fetching() && m_quickplay_handle.ready()) {
 		auto res = m_quickplay_handle.get();
 		if (!res.success) {
