@@ -20,7 +20,7 @@ find_package(OpenGL REQUIRED)
 
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
-find_package(sioclient CONFIG REQUIRED)
+find_package(sioclient REQUIRED)
 
 # not libs
 set(CMAKE_CXX_STANDARD 20)
