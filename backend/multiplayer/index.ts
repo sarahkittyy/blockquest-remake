@@ -79,7 +79,7 @@ const ROOMS: { [room: string]: { [id: number]: IPlayerState } } = {};
 
 // run when a user connects
 async function postAuthentication(socket: Socket) {
-	const data = socket.data as IPlayerData;
+	let data = socket.data as IPlayerData;
 	let room: string | undefined = undefined;
 	log.info(`user ${data.name} connected`);
 
@@ -109,9 +109,11 @@ async function postAuthentication(socket: Socket) {
 	});
 
 	// data & state
-	socket.on('data_update', async (data: IPlayerData) => {
+	socket.on('data_update', async (new_data: IPlayerData) => {
 		if (!room) return;
 		if (!isValidData(data)) return;
+		new_data.id = data.id;
+		data = new_data;
 		socket.to(room).emit('data_update', [data]);
 	});
 
@@ -119,6 +121,7 @@ async function postAuthentication(socket: Socket) {
 		if (!room) return;
 		if (ROOMS[room] == undefined) ROOMS[room] = {};
 		if (!isValidState(state)) return;
+		state.id = data.id;
 		ROOMS[room][state.id] = state;
 		//socket.to(room).emit('state_update', [state]);
 	});

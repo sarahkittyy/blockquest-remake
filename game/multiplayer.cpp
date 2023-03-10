@@ -14,6 +14,55 @@ multiplayer& multiplayer::get() {
 	return instance;
 }
 
+multiplayer::player_state multiplayer::player_state::empty(int id) {
+	return multiplayer::player_state{
+		.id		   = id,
+		.xp		   = -999,
+		.yp		   = 999,
+		.xv		   = 0,
+		.yv		   = 0,
+		.sx		   = 1,
+		.sy		   = 1,
+		.anim	   = "stand",
+		.inputs	   = 0,
+		.grounded  = true,
+		.updatedAt = util::get_time(),
+	};
+}
+
+sio::message::ptr multiplayer::player_state::to_message() const {
+	auto ptr					= sio::object_message::create();
+	ptr->get_map()["xp"]		= sio::double_message::create(xp);
+	ptr->get_map()["yp"]		= sio::double_message::create(yp);
+	ptr->get_map()["xv"]		= sio::double_message::create(xv);
+	ptr->get_map()["yv"]		= sio::double_message::create(yv);
+	ptr->get_map()["sx"]		= sio::double_message::create(sx);
+	ptr->get_map()["sy"]		= sio::double_message::create(sy);
+	ptr->get_map()["anim"]		= sio::string_message::create(anim);
+	ptr->get_map()["inputs"]	= sio::int_message::create(inputs);
+	ptr->get_map()["grounded"]	= sio::bool_message::create(grounded);
+	ptr->get_map()["updatedAt"] = sio::int_message::create(updatedAt);
+	ptr->get_map()["id"]		= sio::int_message::create(auth::get().authed() ? auth::get().get_jwt().id : -1);
+	return ptr;
+}
+
+multiplayer::player_state multiplayer::player_state::from_message(const sio::message::ptr& msg) {
+	auto data = msg->get_map();
+	multiplayer::player_state s;
+	s.id		= data["id"]->get_int();
+	s.xp		= data["xp"]->get_double();
+	s.yp		= data["yp"]->get_double();
+	s.xv		= data["xv"]->get_double();
+	s.yv		= data["yv"]->get_double();
+	s.sx		= data["sx"]->get_double();
+	s.sy		= data["sy"]->get_double();
+	s.anim		= data["anim"]->get_string();
+	s.inputs	= data["inputs"]->get_int();
+	s.grounded	= data["grounded"]->get_bool();
+	s.updatedAt = data["updatedAt"]->get_int();
+	return s;
+}
+
 multiplayer::multiplayer()
 	: m_chat_open(false),
 	  m_players_open(false),
@@ -109,19 +158,7 @@ void multiplayer::update() {
 	}
 
 	if (ready() && auth::get().authed() && m_room.has_value() && m_state_clock.getElapsedTime() > sf::milliseconds(100)) {
-		auto ptr					= sio::object_message::create();
-		ptr->get_map()["xp"]		= sio::double_message::create(m_last_state.xp);
-		ptr->get_map()["yp"]		= sio::double_message::create(m_last_state.yp);
-		ptr->get_map()["xv"]		= sio::double_message::create(m_last_state.xv);
-		ptr->get_map()["yv"]		= sio::double_message::create(m_last_state.yv);
-		ptr->get_map()["sx"]		= sio::double_message::create(m_last_state.sx);
-		ptr->get_map()["sy"]		= sio::double_message::create(m_last_state.sy);
-		ptr->get_map()["anim"]		= sio::string_message::create(m_last_state.anim);
-		ptr->get_map()["inputs"]	= sio::int_message::create(m_last_state.inputs);
-		ptr->get_map()["grounded"]	= sio::bool_message::create(m_last_state.grounded);
-		ptr->get_map()["updatedAt"] = sio::int_message::create(m_last_state.updatedAt);
-		ptr->get_map()["id"]		= sio::int_message::create(auth::get().get_jwt().id);
-		m_h.socket()->emit("state_update", ptr);
+		m_h.socket()->emit("state_update", m_last_state.to_message());
 		m_state_clock.restart();
 	}
 
@@ -185,21 +222,7 @@ void multiplayer::m_configure_socket_listeners() {
 		d.outline	   = sf::Color(data["outline"]->get_int());
 
 		m_update_player_data(d);
-
-		player_state s;
-		s.anim		= "stand";
-		s.xp		= -999;
-		s.yp		= -999;
-		s.xv		= 0;
-		s.yv		= 0;
-		s.sx		= 1;
-		s.sy		= 1;
-		s.inputs	= 0;
-		s.grounded	= false;
-		s.updatedAt = util::get_time();
-		s.id		= d.id;
-
-		m_update_player_state(s);
+		m_update_player_state(player_state::empty(d.id));
 
 		chat_message join_msg;
 		join_msg.authorId  = -2;
@@ -253,21 +276,7 @@ void multiplayer::m_configure_socket_listeners() {
 	m_h.socket()->on("state_update", [this](sio::event& ev) {
 		auto msgs = ev.get_message()->get_vector();
 		for (auto& msg : msgs) {
-			auto data		= msg->get_map();
-			player_state& s = m_player_state[data["id"]->get_int()];
-			s.id			= data["id"]->get_int();
-			s.xp			= data["xp"]->get_double();
-			s.yp			= data["yp"]->get_double();
-			s.xv			= data["xv"]->get_double();
-			s.yv			= data["yv"]->get_double();
-			s.sx			= data["sx"]->get_double();
-			s.sy			= data["sy"]->get_double();
-			s.anim			= data["anim"]->get_string();
-			s.inputs		= data["inputs"]->get_int();
-			s.grounded		= data["grounded"]->get_bool();
-			s.updatedAt		= data["updatedAt"]->get_int();
-
-			m_update_player_state(s);
+			m_update_player_state(player_state::from_message(msg));
 		}
 	});
 
@@ -312,18 +321,9 @@ multiplayer::player_state multiplayer::m_get_player_state_or_default(int uid) co
 	if (m_player_state.contains(uid)) {
 		return m_player_state.at(uid);
 	} else {
-		player_state d;
-		d.id		= uid;
-		d.xp		= -999;
-		d.yp		= -999;
-		d.xv		= 0;
-		d.yv		= 0;
-		d.sx		= 1;
-		d.sy		= 1;
-		d.anim		= "stand";
-		d.inputs	= 0;
-		d.grounded	= false;
-		d.updatedAt = util::get_time();
+		player_state d = player_state::empty(uid);
+		d.id		   = uid;
+		d.updatedAt	   = util::get_time();
 		return d;
 	}
 }
@@ -347,6 +347,8 @@ void multiplayer::imdraw() {
 
 	std::string chat_title = "Chat - #";
 	chat_title += room().value();
+	chat_title += " - Players: ";
+	chat_title += std::to_string(player_count());
 	chat_title += "###MPCHAT";
 
 	if (!m_player_data_queue.empty()) {
@@ -398,6 +400,10 @@ void multiplayer::imdraw() {
 		ImGui::PopItemWidth();
 		ImGui::End();
 	}
+}
+
+int multiplayer::player_count() const {
+	return m_player_chars.size();
 }
 
 multiplayer::state multiplayer::get_state() const {

@@ -308,23 +308,14 @@ void edit::update(fsm* sm, sf::Time dt) {
 				// editing mode, no player on screen
 				// TODO: decrease frequency
 				// TODO: static "editing" state
-				multiplayer::get().emit_state(multiplayer::player_state{
-					.xp		   = -999,
-					.yp		   = -999,
-					.xv		   = 0,
-					.yv		   = 0,
-					.sx		   = 1,
-					.sy		   = 1,
-					.anim	   = "stand",
-					.inputs	   = 0,
-					.grounded  = false,
-					.updatedAt = util::get_time() });
+				multiplayer::get().emit_state(multiplayer::player_state::empty(auth::get().authed() ? auth::get().get_jwt().id : -1));
 			} else {
 				// gameplay mode
 				sf::Vector2f p = m_test_play_world->get_player_pos();
 				sf::Vector2f v = m_test_play_world->get_player_vel();
 				sf::Vector2f s = m_test_play_world->get_player_scale();
 				multiplayer::get().emit_state(multiplayer::player_state{
+					.id		   = auth::get().authed() ? auth::get().get_jwt().id : -1,
 					.xp		   = p.x,
 					.yp		   = p.y,
 					.xv		   = v.x,

@@ -43,9 +43,12 @@ public:
 		float sx;
 		float sy;
 		std::string anim = "stand";
-		int inputs;
-		bool grounded;
+		int inputs		 = 0;
+		bool grounded	 = true;
 		uint64_t updatedAt;
+		static player_state empty(int id);
+		sio::message::ptr to_message() const;
+		static player_state from_message(const sio::message::ptr& msg);
 	};
 
 	struct chat_message {
@@ -63,6 +66,9 @@ public:
 	void disconnect();
 	// fetch the state of the multiplayer engine
 	state get_state() const;
+
+	// check how many players are in the current room.
+	int player_count() const;
 
 	// shortcut for get_state() == state::CONNECTED
 	bool ready() const;
