@@ -97,8 +97,8 @@ async function postAuthentication(socket: Socket) {
 			await socket.join(room);
 			// tell everyone in the room that the user joined
 			io.in(room).emit('joined', { ...data, room });
-			ROOMS_SIZE[room] = (ROOMS_SIZE[room] ?? 0) + 1;
 			const socketsInRoom = await io.in(room).fetchSockets();
+			ROOMS_SIZE[room] = socketsInRoom.length;
 			socket.emit(
 				'data_update',
 				socketsInRoom.map((s) => s.data)
@@ -109,9 +109,14 @@ async function postAuthentication(socket: Socket) {
 	// when a user leaves
 	socket.on('leave', async () => {
 		// tell everyone we left
-		ROOMS_SIZE[room] = (ROOMS_SIZE[room] ?? 0) - 1;
 		io.in(room).emit('left', data.id);
 		socket.leave(room);
+		io.in(room)
+			.fetchSockets()
+			.then((sockets) => {
+				ROOMS_SIZE[room] = sockets.length;
+			})
+			.catch((e) => log.error(e));
 		room = undefined;
 	});
 
@@ -145,7 +150,12 @@ async function postAuthentication(socket: Socket) {
 	});
 
 	socket.on('disconnect', () => {
-		ROOMS_SIZE[room] = (ROOMS_SIZE[room] ?? 0) + 1;
+		io.in(room)
+			.fetchSockets()
+			.then((sockets) => {
+				ROOMS_SIZE[room] = sockets.length;
+			})
+			.catch((e) => log.error(e));
 		log.info(`user ${data.name} disconnected`);
 	});
 }
