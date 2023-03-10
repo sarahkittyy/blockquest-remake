@@ -220,7 +220,6 @@ export function configure(server: http.Server) {
 				continue;
 			}
 			io.in(roomId).emit('state_update', Object.values(room));
-			ROOMS[roomId] = {};
 		}
 	}, MP_FLUSH_INTERVAL_MS);
 }
