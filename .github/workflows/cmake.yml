@@ -32,7 +32,7 @@ jobs:
       shell: cmd
     
     - run: |
-        vcpkg install socket-io-client:x64-windows-rel
+        vcpkg install socket-io-client:x64-windows
         vcpkg integrate install
 
     - name: Configure CMake
