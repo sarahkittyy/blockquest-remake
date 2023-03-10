@@ -10,6 +10,7 @@
 #include "particles/smoke.hpp"
 #include "particles/victory.hpp"
 
+#include "auth.hpp"
 #include "resource.hpp"
 
 const world::physics world::phys;
@@ -523,6 +524,15 @@ void world::step(sf::Time dt) {
 	m_last_frame = m_this_frame;
 }
 
+void world::m_check_colors() {
+	if (m_player.get_fill_color() != context::get().get_player_fill()) {
+		m_player.set_fill_color(context::get().get_player_fill());
+	}
+	if (m_player.get_outline_color() != context::get().get_player_outline()) {
+		m_player.set_outline_color(context::get().get_player_outline());
+	}
+}
+
 /*
 http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platformers/
 - Decompose movement into X and Y axes, step one at a time. If you’re planning on implementing slopes afterwards, step X first, then Y. Otherwise, the order shouldn’t matter much. Then, for each axis:
@@ -548,7 +558,7 @@ bool world::update(sf::Time dt) {
 
 	bool any_key = m_this_frame.left || m_this_frame.right || m_this_frame.jump || m_this_frame.dash || m_this_frame.down || m_this_frame.up;
 
-	if (settings::get().key_down(key::RESTART) && !ImGui::GetIO().WantCaptureKeyboard) {
+	if (settings::get().key_down(key::RESTART) && !ImGui::GetIO().WantCaptureKeyboard && resource::get().window().hasFocus()) {
 		if (!m_restarted)
 			m_restart_world();
 		m_restarted = true;
@@ -559,6 +569,7 @@ bool world::update(sf::Time dt) {
 	m_pmgr.update(dt);
 
 	// update the player's animations
+	m_check_colors();
 	m_player.update();
 
 	if (won()) {

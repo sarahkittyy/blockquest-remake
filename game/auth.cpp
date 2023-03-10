@@ -1,5 +1,6 @@
 #include "auth.hpp"
 
+#include "api.hpp"
 #include "debug.hpp"
 #include "settings.hpp"
 #include "util.hpp"
@@ -70,6 +71,7 @@ std::future<auth::response> auth::signup(std::string email, std::string username
 						.tier = payload_json["tier"].get<int>(),
 						.raw = jwt,
 					};
+					api::get().flush_colors();
 					return {
 						.success = true,
 						.confirmed = m_jwt->confirmed
@@ -138,6 +140,7 @@ std::future<auth::response> auth::login(std::string email_or_username, std::stri
 						.tier = payload_json["tier"].get<int>(),
 						.raw = jwt,
 					};
+					api::get().flush_colors();
 					return {
 						.success = true,
 						.confirmed = m_jwt->confirmed,

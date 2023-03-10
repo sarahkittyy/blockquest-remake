@@ -266,6 +266,8 @@ public:
 
 	// sends a download ping to be run when we fetch a level
 	void ping_download(int id);
+	// flush self-colors on auth
+	void flush_colors();
 
 private:
 	api();

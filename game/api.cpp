@@ -835,6 +835,18 @@ bool api::replay_search_query::operator!=(const replay_search_query &other) cons
 	return !(other == *this);
 }
 
+void api::flush_colors() {
+	std::thread([this]() {
+		const int me = auth::get().id();
+		if (me == -1) return;
+		auto res = fetch_user_stats(me).get();
+		if (res.success) {
+			context::get().set_player_fill(sf::Color(res.stats->fillColor));
+			context::get().set_player_outline(sf::Color(res.stats->outlineColor));
+		}
+	}).detach();
+}
+
 void to_json(nlohmann::json &j, const api::user_stats &s) {
 	j = nlohmann::json{
 		{ "id", s.id },
