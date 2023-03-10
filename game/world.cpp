@@ -517,6 +517,7 @@ void world::step(sf::Time dt) {
 		resource::get().play_sound("gravityflip");
 		m_flip_gravity = !m_flip_gravity;
 		m_dashing	   = false;
+		m_yv		   = m_flip_gravity ? -0.1f : 0.1f;
 		m_player.setScale(m_player.getScale().x, m_flip_gravity ? -1 : 1);
 	}
 
@@ -640,8 +641,8 @@ bool world::update(sf::Time dt) {
 	// some debug info
 	// debug::get() << "dt = " << dt.asMilliseconds() << "ms\n";
 	// debug::get() << "velocity = " << sf::Vector2f(m_xv, m_yv) << "\n";
-	// debug::get() << "touching Y-: " << m_touching[int(dir::up)] << "\n";
-	// debug::get() << "touching Y+: " << m_touching[int(dir::down)] << "\n";
+	debug::get() << "touching Y-: " << m_touching[int(dir::up)] << "\n";
+	debug::get() << "touching Y+: " << m_touching[int(dir::down)] << "\n";
 	debug::get() << "touching X-: " << m_touching[int(dir::left)] << "\n";
 	debug::get() << "touching X+: " << m_touching[int(dir::right)] << "\n";
 
