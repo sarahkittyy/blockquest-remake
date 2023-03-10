@@ -60,6 +60,7 @@ public:
 	std::future<reverify_response> resend_verify();
 
 	std::string username() const;	// the current authed username
+	int id() const;					// the current authed user id, or -1
 	int tier() const;				// the user's tier that we're logged in as
 
 	jwt get_jwt();

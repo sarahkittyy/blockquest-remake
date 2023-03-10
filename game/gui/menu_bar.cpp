@@ -115,7 +115,7 @@ void menu_bar::imdraw(std::string& info_msg, fsm* sm) {
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 21);
 		ImGui::TextColored(sf::Color(228, 189, 255), "Welcome, %s!", auth::get().username().c_str());
 		if (ImGui::MenuItem("Profile")) {
-			m_self_modal.reset(new user_modal(auth::get().get_jwt().id));
+			m_self_modal.reset(new user_modal(auth::get().id()));
 			m_self_modal->open();
 		}
 		if (ImGui::MenuItem("Logout")) {

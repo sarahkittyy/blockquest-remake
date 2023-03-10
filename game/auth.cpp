@@ -24,6 +24,10 @@ std::string auth::username() const {
 	return m_jwt ? m_jwt->username : "Not logged in";
 }
 
+int auth::id() const {
+	return authed() ? m_jwt->id : -1;
+}
+
 int auth::tier() const {
 	return m_jwt ? m_jwt->tier : -1;
 }

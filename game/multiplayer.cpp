@@ -42,7 +42,7 @@ sio::message::ptr multiplayer::player_state::to_message() const {
 	ptr->get_map()["inputs"]	= sio::int_message::create(inputs);
 	ptr->get_map()["grounded"]	= sio::bool_message::create(grounded);
 	ptr->get_map()["updatedAt"] = sio::int_message::create(updatedAt);
-	ptr->get_map()["id"]		= sio::int_message::create(auth::get().authed() ? auth::get().get_jwt().id : -1);
+	ptr->get_map()["id"]		= sio::int_message::create(auth::get().id());
 	return ptr;
 }
 
@@ -80,7 +80,7 @@ multiplayer::multiplayer()
 void multiplayer::draw(sf::RenderTarget& t, sf::RenderStates s) const {
 	if (!auth::get().authed()) return;
 	s.transform *= getTransform();
-	const int me = auth::get().get_jwt().id;
+	const int me = auth::get().id();
 	for (auto& [uid, p] : m_player_chars) {
 		if (uid == me) continue;
 		t.draw(*p, s);
@@ -186,7 +186,7 @@ void multiplayer::update() {
 		// authenticate
 		auto ptr				= sio::object_message::create();
 		ptr->get_map()["token"] = sio::string_message::create(m_mp_token.value());
-		ptr->get_map()["id"]	= sio::int_message::create(auth::get().get_jwt().id);
+		ptr->get_map()["id"]	= sio::int_message::create(auth::get().id());
 		m_h.socket()->emit("authenticate", ptr);
 	}
 
@@ -236,7 +236,7 @@ void multiplayer::m_configure_socket_listeners() {
 		m_chat_messages.push_back(join_msg);
 
 		// if it was us, update the room we're in
-		if (d.id == auth::get().get_jwt().id) {
+		if (d.id == auth::get().id()) {
 			m_room = data["room"]->get_string();
 			// also update our nametag
 			m_self_tag.set_name(d.name);
@@ -260,7 +260,7 @@ void multiplayer::m_configure_socket_listeners() {
 		m_player_state.erase(id);
 
 		// if it was us, update the room we're in
-		if (id == auth::get().get_jwt().id) {
+		if (id == auth::get().id()) {
 			m_room = {};
 		}
 	});
