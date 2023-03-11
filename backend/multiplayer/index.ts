@@ -78,7 +78,7 @@ export function emitUserData(user: User) {
 const ROOMS: { [room: string]: { [id: number]: IPlayerState } } = {};
 
 export function playerCount(levelId: number): number {
-	return io?.sockets?.adapter?.rooms[`${levelId}`]?.length ?? 0;
+	return io?.sockets?.adapter?.rooms?.get(`${levelId}`)?.size ?? 0;
 }
 
 // run when a user connects
