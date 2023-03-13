@@ -526,6 +526,7 @@ void world::step(sf::Time dt) {
 }
 
 void world::m_check_colors() {
+	if (has_playback()) return;
 	if (m_player.get_fill_color() != context::get().get_player_fill()) {
 		m_player.set_fill_color(context::get().get_player_fill());
 	}
