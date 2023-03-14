@@ -154,8 +154,9 @@ void leaderboard_modal::imdraw(fsm* sm) {
 						for (int i = 0; i < res.scores.size(); ++i) {
 							ImGui::PushID(i);
 							ImGui::TableNextRow();
-							auto& score	  = res.scores[i];
-							bool outdated = score.levelVersion != m_lvl.version;
+							auto& score		   = res.scores[i];
+							bool outdatedLevel = score.levelVersion != m_lvl.version;
+							bool outdatedScore = score.version != api::get().version();
 							ImGui::TableNextColumn();
 							if (score == wr) {
 								ImGui::Image(resource::get().imtex("assets/gui/crown.png"), sf::Vector2f(16, 16));
@@ -195,12 +196,15 @@ void leaderboard_modal::imdraw(fsm* sm) {
 							std::strftime(date_fmt, 100, "%D %r", date_tm);
 							ImGui::Text("%s", date_fmt);
 							ImGui::TableNextColumn();
-							ImGui::TextColored(outdated ? sf::Color::Red : sf::Color::White, "%d%s", score.levelVersion, outdated ? " (outdated)" : "");
-							if (outdated && ImGui::IsItemHovered()) {
+							ImGui::TextColored(outdatedLevel ? sf::Color::Red : sf::Color::White, "%d%s", score.levelVersion, outdatedLevel ? " (outdated)" : "");
+							if (outdatedLevel && ImGui::IsItemHovered()) {
 								ImGui::SetTooltip("Level has been updated since this replay was ran.");
 							}
 							ImGui::TableNextColumn();
-							ImGui::Text("%s", score.version.c_str());
+							ImGui::TextColored(outdatedScore ? sf::Color::Red : sf::Color::White, "%s", score.version.c_str());
+							if (outdatedScore && ImGui::IsItemHovered()) {
+								ImGui::SetTooltip("Game has been updated since this replay was ran. May not work properly.");
+							}
 							ImGui::TableNextColumn();
 							if (ImGui::ImageButtonWithText(resource::get().imtex("assets/gui/download.png"), "Replay")) {
 								sm->swap_state<states::edit>(m_lvl, replay(score));
