@@ -35,17 +35,11 @@ jobs:
       uses: actions/cache@v3
       id: cache-vcpkg
       with:
-        path: |
-          ~/vcpkg 
-          ./build/vcpkg_installed
-          ${{ env.HOME }}/.cache/vcpkg/archives
-          ${{ env.XDG_CACHE_HOME }}/vcpkg/archives
-          ${{ env.LOCALAPPDATA }}\vcpkg\archives
-          ${{ env.APPDATA }}\vcpkg\archives
+        path: C:/vcpkg
         key: ${{ runner.os }}-${{ env.BUILD_TYPE }}-vcpkg
     
     - name: Install socket-io-client (vcpkg)
-      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+      if: ${{ steps.cache-vcpkg.outputs.cache-hit != 'true' }}
       run: |
         vcpkg install socket-io-client:x64-windows
         vcpkg integrate install
