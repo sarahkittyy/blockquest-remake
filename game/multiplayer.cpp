@@ -260,6 +260,7 @@ void multiplayer::m_configure_socket_listeners() {
 		// remove player from data and state
 		m_player_data.erase(id);
 		m_player_state.erase(id);
+		m_player_state_flush_list.erase(id);
 
 		// if it was us, update the room we're in
 		if (id == auth::get().id()) {

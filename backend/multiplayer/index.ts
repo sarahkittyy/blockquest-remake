@@ -142,6 +142,9 @@ async function postAuthentication(socket: Socket) {
 	});
 
 	socket.on('disconnect', () => {
+		if (room != undefined) {
+			io.in(room).emit('left', data.id);
+		}
 		log.info(`user ${data.name} disconnected`);
 	});
 }
