@@ -100,6 +100,8 @@ private:
 
 	void m_configure_socket_listeners();
 
+	void m_remove_player(int id);
+
 	bool m_chat_open;
 	bool m_players_open;
 
@@ -118,6 +120,11 @@ private:
 	std::vector<player_data> m_player_data_queue;
 	// all the uids to flush ghosts for
 	std::set<int> m_player_state_flush_list;
+	// player erase queue
+	std::vector<int> m_player_erase_queue;
+	std::mutex m_player_data_queue_mutex;
+	std::mutex m_player_state_flush_list_mutex;
+	std::mutex m_player_erase_queue_mutex;
 
 	void m_update_player_state(const player_state& state);
 	void m_update_player_data(const player_data& data);

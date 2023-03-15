@@ -257,10 +257,7 @@ void multiplayer::m_configure_socket_listeners() {
 			m_chat_messages.push_back(leave_msg);
 		}
 
-		// remove player from data and state
-		m_player_data.erase(id);
-		m_player_state.erase(id);
-		m_player_state_flush_list.erase(id);
+		m_remove_player(id);
 
 		// if it was us, update the room we're in
 		if (id == auth::get().id()) {
@@ -339,6 +336,8 @@ multiplayer::player_state multiplayer::m_get_player_state_or_default(int uid) co
 
 void multiplayer::m_update_player_state(const player_state& state) {
 	m_player_state[state.id] = state;
+
+	std::scoped_lock<std::mutex> lock(m_player_state_flush_list_mutex);
 	m_player_state_flush_list.insert(state.id);
 }
 
@@ -347,7 +346,13 @@ void multiplayer::m_update_player_data(const player_data& data) {
 
 	debug::log() << "updating player data for " << data.id << "\n";
 
+	std::scoped_lock<std::mutex> lock(m_player_data_queue_mutex);
 	m_player_data_queue.push_back(data);
+}
+
+void multiplayer::m_remove_player(int id) {
+	std::scoped_lock<std::mutex> lock(m_player_erase_queue_mutex);
+	m_player_erase_queue.push_back(id);
 }
 
 void multiplayer::imdraw() {
@@ -360,13 +365,28 @@ void multiplayer::imdraw() {
 	chat_title += std::to_string(player_count());
 	chat_title += "###MPCHAT";
 
+	if (!m_player_erase_queue.empty()) {
+		std::scoped_lock<std::mutex> lock(m_player_erase_queue_mutex);
+		for (auto& id : m_player_erase_queue) {
+			m_player_data.erase(id);
+			m_player_state.erase(id);
+			m_player_state_flush_list.erase(id);
+			m_player_chars.erase(id);
+			m_player_renders.erase(id);
+		}
+		m_player_erase_queue.clear();
+	}
+
 	if (!m_player_data_queue.empty()) {
+		std::scoped_lock<std::mutex> lock(m_player_data_queue_mutex);
 		for (auto& data : m_player_data_queue) {
 			m_player_renders[data.id].reset(new player_icon(data.fill, data.outline));
 		}
 		m_player_data_queue.clear();
 	}
+
 	if (!m_player_state_flush_list.empty()) {
+		std::scoped_lock<std::mutex> lock(m_player_state_flush_list_mutex);
 		for (auto& id : m_player_state_flush_list) {
 			if (!m_player_chars.contains(id)) {
 				m_player_chars[id].reset(new player_ghost());
