@@ -32,7 +32,7 @@ jobs:
       shell: cmd
 
     - name: Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       id: cache-vcpkg
       with:
         path: |
@@ -42,14 +42,13 @@ jobs:
           ${{ env.XDG_CACHE_HOME }}/vcpkg/archives
           ${{ env.LOCALAPPDATA }}\vcpkg\archives
           ${{ env.APPDATA }}\vcpkg\archives
-        key: ${{ runner.os }}-${{ env.BUILD_TYPE }}
-        restore-keys: |
-          ${{ runner.os }}-${{ env.BUILD_TYPE }}
+        key: ${{ runner.os }}-${{ env.BUILD_TYPE }}-vcpkg
     
-    - run: |
+    - name: Install socket-io-client (vcpkg)
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+      run: |
         vcpkg install socket-io-client:x64-windows
         vcpkg integrate install
-      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
