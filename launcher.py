@@ -4,6 +4,7 @@ import sys
 import shutil
 import distutils.dir_util
 import time
+import subprocess
 
 def stage1():
     version_path = getattr(sys, '_MEIPASS', os.getcwd())
@@ -91,7 +92,8 @@ def stage3():
 
 def launch():
     if os.name == 'nt':
-        os.system('.\blockquest-remake.exe 1> latest.log 2>&1')
+        with open('latest.log', 'w') as logfile:
+            subprocess.run('blockquest-remake.exe', stdout=logfile, stderr=logfile)
     else:
         fdout = os.open('latest.log', os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
         os.dup2(fdout, 1)
