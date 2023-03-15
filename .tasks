@@ -1,6 +1,6 @@
 [generate]
 
-command=cmake -DAPP_VERSION="v1.3.4" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
+command=cmake -DAPP_VERSION="vDEBUG" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
 cwd=build
 
 [build]
@@ -10,7 +10,8 @@ cwd=build
 
 [test]
 
-command=env SERVER_URL=https://bq-r.sushicat.rocks ./start-authed.sh
+command=cmake -DAPP_VERSION="vDEBUG" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
+cwd=build
 
 [run]
 

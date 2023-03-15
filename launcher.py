@@ -91,9 +91,13 @@ def stage3():
 
 def launch():
     if os.name == 'nt':
-        os.system('start ./blockquest-remake.exe')
+        os.system('.\blockquest-remake.exe 1> latest.log 2>&1')
     else:
+        fdout = os.open('latest.log', os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+        os.dup2(fdout, 1)
+        os.dup2(fdout, 2)
         os.execv('./blockquest-remake.exe', ['./blockquest-remake.exe'])
+        os._exit(127)
 
 if len(sys.argv) < 2:
     stage1()

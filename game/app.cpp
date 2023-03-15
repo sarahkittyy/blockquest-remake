@@ -5,6 +5,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "backward.hpp"
+
 #include "auth.hpp"
 #include "context.hpp"
 #include "debug.hpp"
@@ -215,5 +217,7 @@ void app::configure_imgui_style() {
 
 int main(int argc, char** argv) {
 	app app(argc, argv);
-	return app.run();
+	app.run();
+
+	return 0;
 }
