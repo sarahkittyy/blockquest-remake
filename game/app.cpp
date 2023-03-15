@@ -216,8 +216,14 @@ void app::configure_imgui_style() {
 }
 
 int main(int argc, char** argv) {
-	app app(argc, argv);
-	app.run();
+	try {
+		app app(argc, argv);
+		app.run();
+	} catch (std::exception& e) {
+		std::cout << "Unhandled exception: " << e.what() << std::endl;
+	} catch (...) {
+		std::cout << "Unhandled exception." << std::endl;
+	}
 
 	return 0;
 }

@@ -93,7 +93,7 @@ def stage3():
 def launch():
     if os.name == 'nt':
         with open('latest.log', 'w') as logfile:
-            subprocess.run('blockquest-remake.exe', stdout=logfile, stderr=logfile)
+            subprocess.Popen('blockquest-remake.exe', stdout=logfile, stderr=logfile)
     else:
         fdout = os.open('latest.log', os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
         os.dup2(fdout, 1)
