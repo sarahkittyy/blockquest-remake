@@ -15,6 +15,7 @@ struct input_state {
 	bool down  = false;
 	operator int() const;
 	static input_state from_int(int i);
+	bool operator==(const input_state& other) const;
 };
 
 class replay {

@@ -558,8 +558,6 @@ bool world::update(sf::Time dt) {
 		m_this_frame.down  = m_has_focus ? settings::get().key_down(key::DOWN) : false;
 	}
 
-	bool any_key = m_this_frame.left || m_this_frame.right || m_this_frame.jump || m_this_frame.dash || m_this_frame.down || m_this_frame.up;
-
 	if (settings::get().key_down(key::RESTART) && !ImGui::GetIO().WantCaptureKeyboard && resource::get().window().hasFocus()) {
 		if (!m_restarted)
 			m_restart_world();
@@ -582,7 +580,7 @@ bool world::update(sf::Time dt) {
 		m_space_to_retry.setColor(opacity);
 		m_game_clear.setColor(opacity);
 		m_fadeout.setFillColor(sf::Color(220, 220, 220, m_end_alpha / 2.f));
-		if (m_just_jumped() && !ImGui::GetIO().WantCaptureKeyboard) {
+		if (m_last_frame.jump && !m_this_frame.jump && !ImGui::GetIO().WantCaptureKeyboard) {
 			m_restart_world();
 			return false;
 		} else {
@@ -597,7 +595,7 @@ bool world::update(sf::Time dt) {
 		m_space_to_retry.setColor(opacity);
 		m_game_over.setColor(opacity);
 		m_fadeout.setFillColor(sf::Color(0, 0, 0, m_end_alpha / 2.f));
-		if (m_just_jumped()) {
+		if (m_last_frame.jump && !m_this_frame.jump) {
 			m_restart_world();
 			return false;
 		} else {

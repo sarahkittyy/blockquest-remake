@@ -21,6 +21,10 @@ input_state input_state::from_int(int i) {
 	return s;
 }
 
+bool input_state::operator==(const input_state& other) const {
+	return left == other.left && right == other.right && up == other.up && down == other.down && jump == other.jump && dash == other.dash;
+}
+
 input_state::operator int() const {
 	int ret = 0;
 	if (left) {
