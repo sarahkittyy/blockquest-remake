@@ -5,8 +5,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "backward.hpp"
-
 #include "auth.hpp"
 #include "context.hpp"
 #include "debug.hpp"

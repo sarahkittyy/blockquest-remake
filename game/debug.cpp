@@ -82,7 +82,6 @@ debug& debug::box(sf::FloatRect box, sf::Color color) {
 
 template <>
 debug& debug::operator<<(sf::FloatRect val) {
-	if (ndebug()) return *this;
 	*this << "[l="
 		  << val.left
 		  << ", t="
@@ -97,7 +96,6 @@ debug& debug::operator<<(sf::FloatRect val) {
 
 template <>
 debug& debug::operator<<(tile t) {
-	if (ndebug()) return *this;
 	*this << "(" << int(t.type) << ")";
 	return *this;
 }

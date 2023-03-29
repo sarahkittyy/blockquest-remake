@@ -17,6 +17,7 @@ api::api()
 	  m_gh_cli("https://api.github.com") {
 #ifdef NO_VERIFY_CERTS
 	m_cli.enable_server_certificate_verification(false);
+	m_gh_cli.enable_server_certificate_verification(false);
 #endif
 }
 

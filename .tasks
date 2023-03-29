@@ -1,4 +1,4 @@
-[generate]
+[test]
 
 command=cmake -DAPP_VERSION="vDEBUG" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
 cwd=build
@@ -8,7 +8,7 @@ cwd=build
 command=make
 cwd=build
 
-[test]
+[generate]
 
 command=cmake -DAPP_VERSION="vDEBUG" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
 cwd=build

@@ -1,6 +1,7 @@
 #include "multiplayer.hpp"
 
 #include <functional>
+#include <vector>
 
 #include "debug.hpp"
 #include "gui/player_icon.hpp"
@@ -192,6 +193,38 @@ void multiplayer::update() {
 		m_h.socket()->emit("authenticate", ptr);
 	}
 
+	if (!m_player_data_queue.empty()) {
+		std::scoped_lock<std::mutex> lock(m_player_data_queue_mutex);
+		for (auto& data : m_player_data_queue) {
+			m_player_renders[data.id].reset(new player_icon(data.fill, data.outline));
+		}
+		m_player_data_queue.clear();
+	}
+
+	if (!m_player_state_flush_list.empty()) {
+		std::scoped_lock<std::mutex> lock(m_player_state_flush_list_mutex);
+		for (auto& id : m_player_state_flush_list) {
+			if (!m_player_chars.contains(id)) {
+				m_player_chars[id].reset(new player_ghost());
+			}
+			m_player_chars[id]->flush_data(m_get_player_data_or_default(id));
+			m_player_chars[id]->flush_state(m_get_player_state_or_default(id));
+		}
+		m_player_state_flush_list.clear();
+	}
+
+	if (!m_player_erase_queue.empty()) {
+		std::scoped_lock<std::mutex> lock(m_player_erase_queue_mutex);
+		for (auto& id : m_player_erase_queue) {
+			m_player_data.erase(id);
+			m_player_state.erase(id);
+			m_player_state_flush_list.erase(id);
+			m_player_chars.erase(id);
+			m_player_renders.erase(id);
+		}
+		m_player_erase_queue.clear();
+	}
+
 	for (auto& [uid, p] : m_player_chars) {
 		p->update();
 	}
@@ -270,7 +303,8 @@ void multiplayer::m_configure_socket_listeners() {
 		auto msgs = ev.get_message()->get_vector();
 		for (auto& msg : msgs) {
 			auto data	   = msg->get_map();
-			player_data& d = m_player_data[data["id"]->get_int()];
+			int id		   = data["id"]->get_int();
+			player_data& d = m_player_data[id];
 			d.id		   = data["id"]->get_int();
 			d.name		   = data["name"]->get_string();
 			d.fill		   = sf::Color(data["fill"]->get_int());
@@ -282,7 +316,9 @@ void multiplayer::m_configure_socket_listeners() {
 	m_h.socket()->on("state_update", [this](sio::event& ev) {
 		auto msgs = ev.get_message()->get_vector();
 		for (auto& msg : msgs) {
-			m_update_player_state(player_state::from_message(msg));
+			player_state st = player_state::from_message(msg);
+			if (!m_player_state.contains(st.id)) continue;	 // ignore deleted players
+			m_update_player_state(st);
 		}
 	});
 
@@ -364,38 +400,6 @@ void multiplayer::imdraw() {
 	chat_title += " - Players: ";
 	chat_title += std::to_string(player_count());
 	chat_title += "###MPCHAT";
-
-	if (!m_player_erase_queue.empty()) {
-		std::scoped_lock<std::mutex> lock(m_player_erase_queue_mutex);
-		for (auto& id : m_player_erase_queue) {
-			m_player_data.erase(id);
-			m_player_state.erase(id);
-			m_player_state_flush_list.erase(id);
-			m_player_chars.erase(id);
-			m_player_renders.erase(id);
-		}
-		m_player_erase_queue.clear();
-	}
-
-	if (!m_player_data_queue.empty()) {
-		std::scoped_lock<std::mutex> lock(m_player_data_queue_mutex);
-		for (auto& data : m_player_data_queue) {
-			m_player_renders[data.id].reset(new player_icon(data.fill, data.outline));
-		}
-		m_player_data_queue.clear();
-	}
-
-	if (!m_player_state_flush_list.empty()) {
-		std::scoped_lock<std::mutex> lock(m_player_state_flush_list_mutex);
-		for (auto& id : m_player_state_flush_list) {
-			if (!m_player_chars.contains(id)) {
-				m_player_chars[id].reset(new player_ghost());
-			}
-			m_player_chars[id]->flush_data(m_get_player_data_or_default(id));
-			m_player_chars[id]->flush_state(m_get_player_state_or_default(id));
-		}
-		m_player_state_flush_list.clear();
-	}
 
 	if (m_chat_open) {
 		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);

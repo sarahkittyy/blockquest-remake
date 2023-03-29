@@ -16,11 +16,6 @@ if(NOT sfml_POPULATED)
 	add_subdirectory(${sfml_SOURCE_DIR} ${sfml_BINARY_DIR})
 endif()
 
-FetchContent_Declare(backward
-	GIT_REPOSITORY https://github.com/bombela/backward-cpp
-	GIT_TAG v1.6)
-FetchContent_MakeAvailable(backward)
-
 find_package(OpenGL REQUIRED)
 
 set(OPENSSL_USE_STATIC_LIBS TRUE)
@@ -55,12 +50,10 @@ endif()
 if(WIN32)
 	list(APPEND includes lib/ImGuiFileDialog/dirent)
 	set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc")
-	add_executable(bq-r WIN32 ${sources} ${BACKWARD_ENABLE} ${imgui_sources} ${filedialog_sources} ${APP_ICON_RESOURCE_WINDOWS})
-	add_backward(bq-r)
+	add_executable(bq-r WIN32 ${sources} ${imgui_sources} ${filedialog_sources} ${APP_ICON_RESOURCE_WINDOWS})
 	list(APPEND libs sfml-main)
 else()
-	add_executable(bq-r ${sources} ${imgui_sources} ${BACKWARD_ENABLE} ${filedialog_sources} ${APP_ICON_RESOURCE_WINDOWS})
-	add_backward(bq-r)
+	add_executable(bq-r ${sources} ${imgui_sources} ${filedialog_sources} ${APP_ICON_RESOURCE_WINDOWS})
 endif()
 
 target_compile_options(bq-r PUBLIC ${flags})

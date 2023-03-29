@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Rect.hpp>
+#include <iostream>
 #include <sstream>
 #include <vector>
 #include "imgui.h"
@@ -26,7 +27,11 @@ public:
 
 	template <typename T>	// output something to the stream
 	debug& operator<<(T val) {
-		if (ndebug()) return *this;
+		if (ndebug()) {
+			if (m_log_mode)
+				std::cout << val;
+			return *this;
+		}
 		if (m_log_mode)
 			m_log << val;
 		else
@@ -37,7 +42,6 @@ public:
 	debug& operator<<(sf::FloatRect);
 	template <typename T>
 	debug& operator<<(sf::Vector2<T> v) {
-		if (ndebug()) return *this;
 		*this << "{"
 			  << v.x
 			  << ", "
@@ -49,7 +53,6 @@ public:
 	debug& operator<<(tile t);
 	template <typename T>
 	debug& operator<<(std::vector<T> vec) {
-		if (ndebug()) return *this;
 		if (vec.size() == 0) {
 			*this << "{}";
 		} else {

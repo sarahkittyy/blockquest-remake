@@ -87,6 +87,11 @@ async function postAuthentication(socket: Socket) {
 	let room: string | undefined = undefined;
 	log.info(`user ${data.name} connected`);
 
+	socket.onAny((event, ...args) => {
+		if (event === 'state_update') return;
+		log.debug(`user ${data.name} ${room ?? ''} event: ${event}`);
+	});
+
 	// when a user joins
 	socket.on('join', async (levelId: number) => {
 		if (socket.rooms.size > 1) {
@@ -97,18 +102,19 @@ async function postAuthentication(socket: Socket) {
 			// tell everyone in the room that the user joined
 			io.in(room).emit('joined', { ...data, room });
 			const socketsInRoom = await io.in(room).fetchSockets();
-			socket.emit(
-				'data_update',
-				socketsInRoom.map((s) => s.data)
-			);
+			const socketsData = socketsInRoom.map((s) => s.data);
+			socket.emit('data_update', socketsData);
+			log.info(`room ${room} update: ${JSON.stringify(socketsData)} users`);
 		}
 	});
 
 	// when a user leaves
 	socket.on('leave', async () => {
+		if (room == undefined) return;
 		// tell everyone we left
 		io.in(room).emit('left', data.id);
 		socket.leave(room);
+		log.info(`room ${room} update: ${playerCount(parseInt(room))} users`);
 		room = undefined;
 	});
 
@@ -144,6 +150,8 @@ async function postAuthentication(socket: Socket) {
 	socket.on('disconnect', () => {
 		if (room != undefined) {
 			io.in(room).emit('left', data.id);
+			socket.leave(room);
+			room = undefined;
 		}
 		log.info(`user ${data.name} disconnected`);
 	});
