@@ -706,7 +706,7 @@ bool world::update(sf::Time dt) {
 		m_space_to_retry.setColor(opacity);
 		m_game_clear.setColor(opacity);
 		m_fadeout.setFillColor(sf::Color(220, 220, 220, m_end_alpha / 2.f));
-		if (m_cvars.last_frame.jump && !m_cvars.this_frame.jump && !ImGui::GetIO().WantCaptureKeyboard) {
+		if (!m_cvars.last_frame.jump && m_cvars.this_frame.jump && !ImGui::GetIO().WantCaptureKeyboard) {
 			m_restart_world();
 			return false;
 		} else {

@@ -23,6 +23,8 @@ class settings {
 public:
 	static settings& get();
 
+	bool is_big_endian() const;
+
 	void set_key(key k, sf::Keyboard::Key v);
 	sf::Keyboard::Key get_key(key k) const;
 	std::optional<key> get_key(sf::Keyboard::Key k) const;

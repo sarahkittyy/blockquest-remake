@@ -16,6 +16,14 @@ settings::settings()
 	  }) {
 }
 
+bool settings::is_big_endian() const {
+	union {
+		uint32_t i;
+		char c[4];
+	} bint = { 0x01020304 };
+	return bint.c[0] == 1;
+}
+
 std::string settings::server_url() const {
 	if (const char* env_p = std::getenv("SERVER_URL")) {
 		return std::string(env_p);
