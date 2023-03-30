@@ -32,29 +32,45 @@ function isValidData(data: IPlayerData): boolean {
 	return true;
 }
 
+interface ControlVars {
+	xp: number;
+	yp: number;
+	xv: number;
+	yv: number;
+	sx: number;
+	sy: number;
+	climbing: boolean;
+	dashing: boolean;
+	jumping: boolean;
+	dash_dir: number;
+	climbing_facing: number;
+	since_wallkick_ms: number;
+	time_airborne_ms: number;
+
+	this_frame: number;
+	last_frame: number;
+	grounded: boolean;
+	facing: number;
+	against_ladder_left: boolean;
+	against_ladder_right: boolean;
+	can_wallkick_left: boolean;
+	can_wallkick_right: boolean;
+	on_ice: boolean;
+	flip_gravity: boolean;
+	alt_controls: boolean;
+	tile_above: boolean;
+}
+
 interface IPlayerState {
 	id?: number;
-	xp?: number;
-	yp?: number;
-	xv?: number;
-	yv?: number;
-	sx?: number;
-	sy?: number;
+	controls?: ControlVars;
 	anim?: string;
-	inputs?: number;
 	updatedAt?: number;
 }
 
 function isValidState(state: IPlayerState): boolean {
 	if (state.id == undefined) return false;
-	if (state.xp == undefined) return false;
-	if (state.yp == undefined) return false;
-	if (state.xv == undefined) return false;
-	if (state.yv == undefined) return false;
-	if (state.sx == undefined) return false;
-	if (state.sy == undefined) return false;
-	if (state.anim == undefined) return false;
-	if (state.inputs == undefined) return false;
+	if (state.controls == undefined) return false;
 	if (state.updatedAt == undefined) return false;
 	return true;
 }
@@ -88,7 +104,7 @@ async function postAuthentication(socket: Socket) {
 	let room: string | undefined = undefined;
 	log.info(`user ${data.name} connected`);
 
-	socket.onAny((event, ...args) => {
+	socket.onAny((event) => {
 		if (event === 'state_update') return;
 		log.debug(`user ${data.name} ${room ?? ''} event: ${event}`);
 	});

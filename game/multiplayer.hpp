@@ -13,6 +13,7 @@
 #include "auth.hpp"
 #include "nametag.hpp"
 #include "settings.hpp"
+#include "world.hpp"
 
 class player_ghost;
 class player;
@@ -37,15 +38,8 @@ public:
 
 	struct player_state {
 		int id;
-		float xp;
-		float yp;
-		float xv;
-		float yv;
-		float sx;
-		float sy;
+		world::control_vars controls;
 		std::string anim = "stand";
-		int inputs		 = 0;
-		bool grounded	 = true;
 		uint64_t updatedAt;
 		static player_state empty(int id);
 		sio::message::ptr to_message() const;

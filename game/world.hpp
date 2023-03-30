@@ -15,6 +15,7 @@
 #include "replay.hpp"
 #include "resource.hpp"
 #include "settings.hpp"
+#include "sio_client.h"
 #include "tilemap.hpp"
 
 // takes in a level and renders it, as well as handles input and logic and physics and all things game-y :3
@@ -23,17 +24,57 @@ public:
 	world(level l, std::optional<replay> replay = {});
 	~world();
 
+	enum dir {
+		up	  = 0,
+		right = 1,
+		down  = 2,
+		left  = 3
+	};
+
 	bool update(sf::Time dt);	// true if stepped
 	void step(sf::Time dt);		// handles physics stuff
 	void process_event(sf::Event e);
 
 	// all variables used for the pre-physics controls
-	struct control_vars_before {
+	struct control_vars {
+		float xp;
+		float yp;
+		float xv;
+		float yv;
+		float sx;
+		float sy;
+		bool climbing;
+		bool dashing;
+		bool jumping;
+		dir dash_dir;
+		dir climbing_facing;
+		sf::Time since_wallkick;
+		sf::Time time_airborne;
+
+		// unchanged vars
+		input_state this_frame;
+		input_state last_frame;
+		bool grounded;
+		dir facing;
+		bool against_ladder_left;
+		bool against_ladder_right;
+		bool can_wallkick_left;
+		bool can_wallkick_right;
+		bool on_ice;
+		bool flip_gravity;
+		bool alt_controls;
+		bool tile_above;
+
+		// true for a period after wallkicking where we should keep facing & movnig the direction of the kick
+		bool is_wallkick_locked() const;
+		bool grounded_ago(sf::Time t) const;							 // has a player been grounded in the last t seconds?
+		void player_wallkick(dir d, particle_manager* pmgr = nullptr);	 // walljump
+
+		static const control_vars empty;
+		sio::message::ptr to_message() const;
+		static control_vars from_message(const sio::message::ptr& msg);
 	};
-	// the results of the controls
-	struct control_vars_after {
-	};
-	static control_vars_after run_controls(const control_vars_before& before);
+	static void run_controls(sf::Time dt, control_vars& v, particle_manager* pmgr = nullptr);
 
 	bool won() const;
 	bool lost() const;
@@ -51,6 +92,7 @@ public:
 	std::string get_player_anim() const;
 	input_state get_player_inputs() const;
 	bool get_player_grounded() const;
+	control_vars get_player_control_vars() const;
 
 	// physics constants
 	static const struct physics {
@@ -111,26 +153,10 @@ private:
 
 	// PLAYER DATA //
 
+	control_vars m_cvars;
+
 	player m_player;			// player character
 	int m_start_x, m_start_y;	// start position
-
-	enum dir {
-		up	  = 0,
-		right = 1,
-		down  = 2,
-		left  = 3
-	};
-
-	// units are in tiles
-	float m_xp = 0;	  // player x pos
-	float m_yp = 0;	  // player y pos
-	float m_xv = 0;	  // player x vel
-	float m_yv = 0;	  // player y vel
-
-	// were these keys hit this frame?
-	input_state m_this_frame;
-	// were these keys hit last frame?
-	input_state m_last_frame;
 
 	bool m_restarted   = false;	  // did the player just restart
 	bool m_first_input = false;
@@ -141,28 +167,14 @@ private:
 
 	bool m_touched_goal = false;
 
-	sf::Time m_time_airborne  = sf::seconds(0);	  // counts the number of frames we're airborne for, for coyote time
-	bool m_jumping			  = false;
-	bool m_dashing			  = false;
-	dir m_dash_dir			  = dir::left;
-	sf::Time m_since_wallkick = sf::seconds(999);
-
-	bool m_climbing		  = false;	 // are we scaling a ladder rn
-	dir m_climbing_facing = dir::left;
-
-	// true for a period after wallkicking where we should keep facing & movnig the direction of the kick
-	bool m_is_wallkick_locked() const;
-	bool m_on_ice() const;
+	bool m_on_ice() const;	 // check touching list for ice
 
 	// dashing produces a rythmic noise that the current update loop is not precise enough to handle
 	std::jthread m_dash_sfx_thread;
 
-	bool m_flip_gravity = false;   // is gravity flipped?
-
 	void m_update_animation();		 // update the animation state of the player
 	void m_player_die();			 // run when the player dies
 	void m_player_win();			 // run when the player hits the goal
-	void m_player_wallkick(dir d);	 // walljump
 	bool m_dead = false;			 // used to short circuit logic in the case of a death
 	void m_sync_player_position();	 // set the player sprite's position to the internal physics position
 	// handle contacts. returns true if a collision occured.
@@ -201,8 +213,7 @@ private:
 	bool m_test_touching_any(dir d, std::function<bool(tile)> pred) const;
 	bool m_test_touching_none(dir d, std::function<bool(tile)> pred) const;
 
-	bool m_player_grounded() const;					// is the player on solid ground
-	bool m_player_grounded_ago(sf::Time t) const;	// has a player been grounded in the last t seconds?
+	bool m_player_grounded() const;	  // is the player on solid ground
 	bool m_just_jumped() const;
 	bool m_player_oob() const;
 	bool m_can_player_wallkick(dir d, bool keys_pressed = true) const;	 // can the player wallkick (d = direction of kick)
@@ -210,7 +221,7 @@ private:
 	bool m_against_ladder(dir d) const;									 // is there a ladder in the given direction
 	dir m_facing() const;												 // which direction is the player facing
 
-	constexpr dir mirror(dir d) const;	 // left -> right, up -> down
+	static constexpr dir mirror(dir d);	  // left -> right, up -> down
 
-	sf::Vector2f m_player_size() const;	  // width and height of the full player aabb
+	static sf::Vector2f player_size();	 // width and height of the full player aabb
 };

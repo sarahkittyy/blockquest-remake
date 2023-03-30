@@ -310,20 +310,10 @@ void edit::update(fsm* sm, sf::Time dt) {
 				multiplayer::get().emit_state(multiplayer::player_state::empty(auth::get().id()));
 			} else {
 				// gameplay mode
-				sf::Vector2f p = m_test_play_world->get_player_pos();
-				sf::Vector2f v = m_test_play_world->get_player_vel();
-				sf::Vector2f s = m_test_play_world->get_player_scale();
 				multiplayer::get().emit_state(multiplayer::player_state{
 					.id		   = auth::get().id(),
-					.xp		   = p.x,
-					.yp		   = p.y,
-					.xv		   = v.x,
-					.yv		   = v.y,
-					.sx		   = s.x,
-					.sy		   = s.y,
+					.controls  = m_test_play_world->get_player_control_vars(),
 					.anim	   = m_test_play_world->get_player_anim(),
-					.inputs	   = int(m_test_play_world->get_player_inputs()),
-					.grounded  = m_test_play_world->get_player_grounded(),
 					.updatedAt = util::get_time() });
 			}
 		}

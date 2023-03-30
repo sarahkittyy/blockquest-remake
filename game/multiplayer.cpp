@@ -18,32 +18,18 @@ multiplayer& multiplayer::get() {
 multiplayer::player_state multiplayer::player_state::empty(int id) {
 	return multiplayer::player_state{
 		.id		   = id,
-		.xp		   = -999,
-		.yp		   = 999,
-		.xv		   = 0,
-		.yv		   = 0,
-		.sx		   = 1,
-		.sy		   = 1,
+		.controls  = world::control_vars::empty,
 		.anim	   = "stand",
-		.inputs	   = 0,
-		.grounded  = true,
 		.updatedAt = util::get_time(),
 	};
 }
 
 sio::message::ptr multiplayer::player_state::to_message() const {
 	auto ptr					= sio::object_message::create();
-	ptr->get_map()["xp"]		= sio::double_message::create(xp);
-	ptr->get_map()["yp"]		= sio::double_message::create(yp);
-	ptr->get_map()["xv"]		= sio::double_message::create(xv);
-	ptr->get_map()["yv"]		= sio::double_message::create(yv);
-	ptr->get_map()["sx"]		= sio::double_message::create(sx);
-	ptr->get_map()["sy"]		= sio::double_message::create(sy);
-	ptr->get_map()["anim"]		= sio::string_message::create(anim);
-	ptr->get_map()["inputs"]	= sio::int_message::create(inputs);
-	ptr->get_map()["grounded"]	= sio::bool_message::create(grounded);
-	ptr->get_map()["updatedAt"] = sio::int_message::create(updatedAt);
 	ptr->get_map()["id"]		= sio::int_message::create(auth::get().id());
+	ptr->get_map()["controls"]	= controls.to_message();
+	ptr->get_map()["anim"]		= sio::string_message::create(anim);
+	ptr->get_map()["updatedAt"] = sio::int_message::create(updatedAt);
 	return ptr;
 }
 
@@ -51,15 +37,8 @@ multiplayer::player_state multiplayer::player_state::from_message(const sio::mes
 	auto data = msg->get_map();
 	multiplayer::player_state s;
 	s.id		= data["id"]->get_int();
-	s.xp		= data["xp"]->get_double();
-	s.yp		= data["yp"]->get_double();
-	s.xv		= data["xv"]->get_double();
-	s.yv		= data["yv"]->get_double();
-	s.sx		= data["sx"]->get_double();
-	s.sy		= data["sy"]->get_double();
+	s.controls	= world::control_vars::from_message(data["controls"]);
 	s.anim		= data["anim"]->get_string();
-	s.inputs	= data["inputs"]->get_int();
-	s.grounded	= data["grounded"]->get_bool();
 	s.updatedAt = data["updatedAt"]->get_int();
 	return s;
 }
