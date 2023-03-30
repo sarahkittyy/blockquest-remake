@@ -1,7 +1,6 @@
 [test]
 
-command=cmake -DAPP_VERSION="vDEBUG" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
-cwd=build
+command=env SERVER_URL=https://bq-r.sushicat.rocks BQR_USERNAME=dev BQR_PASSWORD=dev ./build/bq-r
 
 [build]
 
@@ -16,4 +15,4 @@ cwd=build
 [run]
 
 # this script is gitignored because it's my own login info :p
-command=env BQR_USERNAME=dev BQR_PASSWORD=dev ./build/bq-r
+command=env SERVER_URL=https://localhost:3000 BQR_USERNAME=dev BQR_PASSWORD=dev ./build/bq-r

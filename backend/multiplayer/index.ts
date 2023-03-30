@@ -3,6 +3,7 @@ import { MP_FLUSH_INTERVAL_MS } from '@/util/constants';
 import { prisma } from '@db/index';
 import { User } from '@prisma/client';
 import http from 'http';
+import https from 'https';
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -133,7 +134,7 @@ async function postAuthentication(socket: Socket) {
 		if (!isValidState(state)) return;
 		state.id = data.id;
 		ROOMS[room][state.id] = state;
-		//socket.to(room).emit('state_update', [state]);
+		// socket.to(room).emit('state_update', [state]);
 	});
 
 	// chat
@@ -186,7 +187,7 @@ async function authenticate(
 }
 
 // initializes socket.io
-export function configure(server: http.Server) {
+export function configure(server: http.Server | https.Server) {
 	io = new Server(server, {
 		transports: ['websocket'],
 		cors: {

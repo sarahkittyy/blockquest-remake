@@ -27,6 +27,14 @@ public:
 	void step(sf::Time dt);		// handles physics stuff
 	void process_event(sf::Event e);
 
+	// all variables used for the pre-physics controls
+	struct control_vars_before {
+	};
+	// the results of the controls
+	struct control_vars_after {
+	};
+	static control_vars_after run_controls(const control_vars_before& before);
+
 	bool won() const;
 	bool lost() const;
 

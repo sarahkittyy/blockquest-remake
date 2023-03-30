@@ -190,6 +190,11 @@ bool world::m_alt_controls() const {
 		return context::get().alt_controls();
 }
 
+world::control_vars_after world::run_controls(const world::control_vars_before& before) {
+	world::control_vars_after after;
+	return after;
+}
+
 void world::step(sf::Time dt) {
 	// -1 if gravity is flipped. used for y velocity calculations
 	float gravity_sign = m_flip_gravity ? -1 : 1;

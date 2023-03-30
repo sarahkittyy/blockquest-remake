@@ -5,6 +5,7 @@ import log from '@/log';
 
 import * as multiplayer from '@/multiplayer';
 import * as tools from '@util/tools';
+import fs from 'fs';
 
 import Auth from '@controllers/Auth';
 import Level from '@controllers/Level';
@@ -14,7 +15,8 @@ import User from '@controllers/User';
 
 import { checkAuth, requireAuth } from '@util/tools';
 
-import { createServer } from 'http';
+import http from 'http';
+import https from 'https';
 
 const app = express();
 app.use(express.json());
@@ -75,9 +77,23 @@ app.use('*', (req: Request, res: Response) => {
 });
 
 const port = process.env.PORT ?? '3000';
-const server = createServer(app);
-multiplayer.configure(server);
+let server: https.Server | http.Server | undefined = undefined;
+let isHttps = false;
+
+// https dev server
+if (process.env.SSL_KEY?.length > 0 && process.env.SSL_CRT?.length > 0) {
+	const key = fs.readFileSync(process.env.SSL_KEY);
+	const cert = fs.readFileSync(process.env.SSL_CRT);
+	server = https.createServer({ key, cert }, app);
+	multiplayer.configure(server);
+	isHttps = true;
+} else {
+	// http without self signed keys
+	server = http.createServer(app);
+	multiplayer.configure(server);
+}
 
 server.listen(parseInt(port), () => {
 	log.info(`Listening on port ${port}`);
+	log.info(`https: ${isHttps}`);
 });

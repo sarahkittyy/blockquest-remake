@@ -19,3 +19,5 @@ profile.txt
 gmon.out
 .cache
 .vscode
+selfsigned.*
+!selfsighed.sh

@@ -39,3 +39,12 @@ The `assets/` folder must be in the current directory.
 $ cd blockquest-remake
 $ ./build/bq-r
 ```
+
+## HTTPS Development
+
+Run `./selfsigned.sh` to generate `selfsigned.crt` and `selfsigned.key`. Set the corresponding variables in `.env`:
+
+```env
+SSL_KEY=selfsigned.key
+SSL_CRT=selfsigned.crt
+```
