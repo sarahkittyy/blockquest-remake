@@ -43,6 +43,12 @@ void player_ghost::update() {
 	world::control_vars& v = m_state.controls;
 	world::run_controls(dt, v);
 
+	v.xp += v.xv * dt.asSeconds();
+	if (v.grounded) {
+		v.yv = 0;
+	}
+	v.yp += v.yv * dt.asSeconds();
+
 	m_p.setPosition(v.xp * m_p.size().x, v.yp * m_p.size().y);
 	m_nametag.setPosition(m_p.getPosition().x, m_p.getPosition().y - m_p.size().y);
 	m_p.setScale(v.sx, v.sy);
