@@ -102,7 +102,7 @@ async function postAuthentication(socket: Socket) {
 			// tell everyone in the room that the user joined
 			io.in(room).emit('joined', { ...data, room });
 			const socketsInRoom = await io.in(room).fetchSockets();
-			const socketsData = socketsInRoom.map((s) => s.data);
+			const socketsData = socketsInRoom.map((s) => s.data as IPlayerData);
 			socket.emit('data_update', socketsData);
 			log.info(`room ${room} update: ${JSON.stringify(socketsData)} users`);
 		}

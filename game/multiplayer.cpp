@@ -129,7 +129,7 @@ void multiplayer::join(int level_id) {
 	if (m_room.has_value()) return;
 	m_h.socket()->emit("join", sio::int_message::create(level_id));
 	debug::log() << "joining room " << level_id << "\n";
-	m_room = std::to_string(level_id);
+	// m_room = std::to_string(level_id);
 }
 
 void multiplayer::leave() {
@@ -249,16 +249,23 @@ void multiplayer::m_configure_socket_listeners() {
 		debug::log() << "socket error: " << ev.get_message()->get_string() << "\n";
 		disconnect();
 	});
+	m_h.socket()->on_error([this](const std::shared_ptr<sio::message>& err) {
+		debug::log() << "socket error"
+					 << "\n";
+		disconnect();
+	});
 
 	// joining and leaving (called when we do it too)
 	m_h.socket()->on("joined", [this](sio::event& ev) {
 		// player data
-		auto data	   = ev.get_message()->get_map();
-		player_data& d = m_player_data[data["id"]->get_int()];
-		d.id		   = data["id"]->get_int();
-		d.name		   = data["name"]->get_string();
-		d.fill		   = sf::Color(data["fill"]->get_int());
-		d.outline	   = sf::Color(data["outline"]->get_int());
+		auto data = ev.get_message()->get_map();
+		int id	  = data["id"]->get_int();
+		player_data d;
+		d.id	  = id;
+		d.name	  = data["name"]->get_string();
+		d.fill	  = sf::Color(data["fill"]->get_int());
+		d.outline = sf::Color(data["outline"]->get_int());
+		debug::log() << "[joined] " << d.name << "#" << d.id << "\n";
 
 		m_update_player_data(d);
 		m_update_player_state(player_state::empty(d.id));
@@ -301,14 +308,15 @@ void multiplayer::m_configure_socket_listeners() {
 	// game state
 	m_h.socket()->on("data_update", [this](sio::event& ev) {
 		auto msgs = ev.get_message()->get_vector();
+		debug::log() << "[data_update] sz:" << msgs.size() << "\n";
 		for (auto& msg : msgs) {
-			auto data	   = msg->get_map();
-			int id		   = data["id"]->get_int();
-			player_data& d = m_player_data[id];
-			d.id		   = data["id"]->get_int();
-			d.name		   = data["name"]->get_string();
-			d.fill		   = sf::Color(data["fill"]->get_int());
-			d.outline	   = sf::Color(data["outline"]->get_int());
+			auto data = msg->get_map();
+			int id	  = data["id"]->get_int();
+			player_data d;
+			d.id	  = id;
+			d.name	  = data["name"]->get_string();
+			d.fill	  = sf::Color(data["fill"]->get_int());
+			d.outline = sf::Color(data["outline"]->get_int());
 
 			m_update_player_data(d);
 		}
@@ -317,7 +325,7 @@ void multiplayer::m_configure_socket_listeners() {
 		auto msgs = ev.get_message()->get_vector();
 		for (auto& msg : msgs) {
 			player_state st = player_state::from_message(msg);
-			if (!m_player_state.contains(st.id)) continue;	 // ignore deleted players
+			if (!m_player_data.contains(st.id)) continue;	// ignore deleted players
 			m_update_player_state(st);
 		}
 	});
