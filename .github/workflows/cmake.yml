@@ -32,7 +32,7 @@ jobs:
       shell: cmd
 
     - name: Fetch vcpkg cache
-      uses: actions/cache/resture@v3
+      uses: actions/cache/restore@v3
       id: cache-vcpkg
       with:
         path: C:/vcpkg
