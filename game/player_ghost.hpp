@@ -13,6 +13,8 @@ public:
 	void flush_state(const multiplayer::player_state& s);
 	void flush_data(const multiplayer::player_data& d);
 
+	void set_particle_manager(particle_manager* pmgr = nullptr);
+
 private:
 	void draw(sf::RenderTarget& t, sf::RenderStates s) const;
 
@@ -21,4 +23,6 @@ private:
 	nametag m_nametag;
 	multiplayer::player_state m_state;
 	multiplayer::player_data m_data;
+
+	particle_manager* m_pmgr;
 };

@@ -5,7 +5,8 @@
 #include "util.hpp"
 #include "world.hpp"
 
-player_ghost::player_ghost() {
+player_ghost::player_ghost()
+	: m_pmgr(nullptr) {
 	m_last_update = util::get_time();
 	m_p.setOrigin(m_p.size().x / 2.f, m_p.size().y / 2.f);
 	m_p.update();
@@ -19,6 +20,10 @@ void player_ghost::flush_state(const multiplayer::player_state& s) {
 void player_ghost::flush_data(const multiplayer::player_data& d) {
 	m_data = d;
 	m_nametag.set_name(m_data.name);
+}
+
+void player_ghost::set_particle_manager(particle_manager* pmgr) {
+	m_pmgr = pmgr;
 }
 
 void player_ghost::update() {
@@ -41,7 +46,7 @@ void player_ghost::update() {
 
 	// mini physics simulation
 	world::control_vars& v = m_state.controls;
-	world::run_controls(dt, v);
+	world::run_controls(dt, v, m_pmgr);
 
 	v.xp += v.xv * dt.asSeconds();
 	if (v.grounded) {

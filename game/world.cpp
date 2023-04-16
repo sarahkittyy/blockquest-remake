@@ -543,7 +543,7 @@ void world::step(sf::Time dt) {
 	m_cvars.on_ice				 = m_on_ice();
 	m_cvars.alt_controls		 = m_alt_controls();
 	m_cvars.tile_above			 = m_tile_above_player();
-	run_controls(dt, m_cvars);
+	run_controls(dt, m_cvars, &m_pmgr);
 
 	// !! physics !! //
 
@@ -802,6 +802,11 @@ void world::control_vars::player_wallkick(dir d, particle_manager* pmgr) {
 		sp.setScale(xv_sign, sp.getScale().y);
 	}
 	resource::get().play_sound("wallkick");
+	if (pmgr) {
+		auto& sp = pmgr->spawn<particles::smoke>();
+		sp.setPosition(xp - 0.35f * xv_sign, yp);
+		sp.setScale(xv_sign, sp.getScale().y);
+	}
 	sx			   = -xv_sign;
 	since_wallkick = sf::Time::Zero;
 }
