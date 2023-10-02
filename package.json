@@ -51,7 +51,7 @@
     "nodemailer": "^6.8.0",
     "pm2": "^5.2.2",
     "prettier": "^2.7.1",
-    "prisma": "^4.5.0",
+    "prisma": "^4.8.1",
     "socket.io": "^4.6.0",
     "ts-node": "^10.9.1",
     "tsc-watch": "^5.0.3",
