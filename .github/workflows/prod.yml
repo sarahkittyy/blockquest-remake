@@ -23,3 +23,7 @@ jobs:
           npx prisma migrate deploy
           npx prisma generate
           npm run build
+      
+      - name: Run
+        run: |
+            sudo supervisorctl restart bq-r
