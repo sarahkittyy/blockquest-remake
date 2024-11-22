@@ -16,7 +16,7 @@ jobs:
 
       - name: Build
         run: |
-          source ~/.zshrc
+          source ~/.bashrc
           nvm install 18.2.0
           nvm use 18.2.0
           npm install
