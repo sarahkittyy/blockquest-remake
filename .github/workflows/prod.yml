@@ -15,8 +15,9 @@ jobs:
           git pull
 
       - name: Build
-        shell: zsh {0}
         run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm install 18.2.0
           nvm use 18.2.0
           npm install
