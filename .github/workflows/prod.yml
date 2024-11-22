@@ -1,0 +1,24 @@
+name: Deploy to Prod
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: sarah-vps
+    steps:
+      - name: Checkout code
+        run: |
+          git clone https://github.com/${{ github.repository }} . || true
+          git pull
+
+      - name: Build
+        run: |
+          nvm install 18.2.0
+          nvm use 18.2.0
+          npm install
+          npx prisma migrate deploy
+          npx prisma generate
+          npm run build
