@@ -15,7 +15,7 @@ jobs:
           git pull
 
       - name: Build
-        shell: /bin/zsh
+        shell: zsh {0}
         run: |
           nvm install 18.2.0
           nvm use 18.2.0
